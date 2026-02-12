@@ -1,3 +1,2 @@
 # SITCAD
 Capstone project.
-Teting.
