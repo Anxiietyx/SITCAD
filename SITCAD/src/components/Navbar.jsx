@@ -6,12 +6,17 @@ export function Navbar(){
             <Link to="/">
                 <button>Home</button>
             </Link>
+            
             <Link to="/page1">
                 <button>Page1</button>
             </Link>
 
             <Link to="/page2">
                 <button>Page2</button>
+            </Link>
+
+            <Link to='/login'>
+                <button>Login</button>
             </Link>
         </>
     )
