@@ -2,6 +2,7 @@
 import { Link } from "react-router-dom";
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useState } from "react";
+import '../index.css'
 import { auth } from '../firebase/firebase'; 
 import SignInWithGoogle from "../components/signinwithGoogle";
 
@@ -27,37 +28,45 @@ function Login() {
 
     return (
         <>
-            <h3>This is the login page</h3>
+            
+            
+        <div className="container">
             <form onSubmit={handleSubmit}>
-                <label>Email: </label>
-                <input
-                    type='email'
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required 
-                />
+                <div className="form_area">
+                    <h3 className="title">This is the login page</h3>
+                    <label class='sub_title'>Email: </label>
+                    <input
+                        type='email'
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="form_style"
+                        required 
+                    />
 
-                <br />
+                    <br />
 
-                <label>Password: </label>
-                <input
-                    type='password'
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required 
-                />
+                    <label className="sub_title">Password: </label>
+                    <input
+                        type='password'
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="form_style"
+                        required 
+                    />
 
-                <br />
+                    <br />
 
-                <button type='submit'>Submit</button>
+                    <button type='submit' className="btn">Submit</button>
 
-                <p>New User ?
-                    <Link to="/register">
-                        <button type="button">Register</button>
-                    </Link>
-                </p>
-                <SignInWithGoogle/>
+                    <p>New User ?
+                        <Link to="/register" >
+                            <button type="button">Register</button>
+                        </Link>
+                    </p>
+                    <SignInWithGoogle/>
+                </div>
             </form>
+        </div>
         </>
     );
 }

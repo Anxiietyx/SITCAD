@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom'
+import "../index.css"
 
 export function Navbar(){
     return(
         <>
+        <div className='navbar'>
             <Link to="/">
                 <button>Home</button>
             </Link>
@@ -18,6 +20,7 @@ export function Navbar(){
             <Link to='/login'>
                 <button>Login</button>
             </Link>
+        </div>
         </>
     )
 }
