@@ -1,7 +1,7 @@
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { auth, db } from "../firebase/firebase";
+import { auth, db } from "../../../firebase/firebase";
 import { setDoc, doc } from "firebase/firestore";
-import googleLogo from "../assets/google.png";
+import googleLogo from "../../../assets/google.png";
 
 function SignInWithGoogle() {
     function googleLogin() {

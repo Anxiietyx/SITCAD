@@ -25,3 +25,4 @@ dist-ssr
 
 .firebase.js
 SITCAD/src/firebase/firebase.js
+SITCAD/node_modules

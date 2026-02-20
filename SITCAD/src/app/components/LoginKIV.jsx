@@ -2,9 +2,9 @@
 import { Link } from "react-router-dom";
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useState } from "react";
-import '../index.css'
-import { auth } from '../firebase/firebase'; 
-import SignInWithGoogle from "../components/signinwithGoogle";
+// import '../../../index.css';
+import { auth } from '../../firebase/firebase'; 
+import SignInWithGoogle from "./ivanFiles/signinwithGoogle";
 
 
 function Login() {
