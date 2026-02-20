@@ -16,6 +16,7 @@ import { ClassroomTeachingMode } from "./components/ClassroomTeachingMode";
 import { AIAnalysisDashboard } from "./components/AIAnalysisDashboard";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { NotFound } from "./components/NotFound";
+import { AuthTest } from "./components/AuthTest"; 
 
 export const router = createBrowserRouter([
   {
@@ -29,6 +30,10 @@ export const router = createBrowserRouter([
   {
     path: "/register",
     Component: Register,
+  },
+  {
+    path: "/auth-test",
+    Component: AuthTest,
   },
   {
     path: "/teacher",

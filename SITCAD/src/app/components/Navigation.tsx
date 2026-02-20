@@ -1,5 +1,7 @@
 import { useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
+import { signOut } from 'firebase/auth';
+import { auth } from "../../firebase/firebase"
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet';
@@ -59,10 +61,16 @@ function NavigationContent({ onNavigate }: { onNavigate?: () => void }) {
     onNavigate?.();
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-    onNavigate?.();
+  const handleLogout = async () => {
+    // logout();
+    // navigate('/login');
+    // onNavigate?.();
+    try {
+      await signOut(auth);
+      console.log("User logged out successfully.");
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
   };
 
   return (

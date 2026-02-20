@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useState, useEffect } from 'react';
+import { useNavigate, Navigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -7,6 +7,11 @@ import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Alert, AlertDescription } from './ui/alert';
 import { GraduationCap, Loader2 } from 'lucide-react';
+
+// ATTEMPT: Firebase Auth
+import { auth, db } from '../../firebase/firebase'
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { setDoc, doc } from "firebase/firestore";
 
 export function Login() {
   const [email, setEmail] = useState('');
@@ -16,18 +21,24 @@ export function Login() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect if already logged in
+  // Redirect if already logged in (declarative, no navigate() during render)
   if (user) {
-    navigate(user.role === 'teacher' ? '/teacher' : '/parent');
-    return null;
+    return <Navigate to={user.role === 'teacher' ? '/teacher' : '/parent'} replace />;
   }
 
-  const handleGoogleLogin = () => {
-    // Mock Google OAuth - in production, this would use Supabase Auth
-    setError('Google Sign-in would be implemented with Supabase Auth');
+  const handleGoogleLogin = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      // onAuthStateChanged in AuthContext will update `user`,
+      // which triggers the declarative <Navigate> above
+    } catch (error) {
+      console.error("Error during Google login:", error.message);
+      setError("Failed to sign in with Google. Please try again.");
+    }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);

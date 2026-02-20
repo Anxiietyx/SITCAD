@@ -4,7 +4,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useState } from "react";
 // import '../../../index.css';
 import { auth } from '../../firebase/firebase'; 
-import SignInWithGoogle from "./ivanFiles/signinwithGoogle";
+import SignInWithGoogle from "./ivanFiles/signinwithGoogleKIV";
 
 
 function Login() {

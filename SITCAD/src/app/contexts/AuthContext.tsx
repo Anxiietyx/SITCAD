@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from '../../firebase/firebase';
 
 export type UserRole = 'teacher' | 'parent';
 
@@ -11,13 +13,13 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
+  loading: boolean; // New loading state
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users for demonstration
 const mockUsers: User[] = [
   { id: 'teacher1', name: 'Ms. Sarah Johnson', email: 'teacher@school.edu', role: 'teacher' },
   { id: 'parent1', name: 'John Smith', email: 'parent@email.com', role: 'parent' },
@@ -25,12 +27,29 @@ const mockUsers: User[] = [
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true); // Initialize loading as true
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        const newUser: User = {
+          id: firebaseUser.uid,
+          name: firebaseUser.displayName || 'User',
+          email: firebaseUser.email || '',
+          role: 'teacher',
+        };
+        setUser(newUser);
+      } else {
+        setUser(null);
+      }
+      setLoading(false); // Set loading to false once auth state is determined
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Mock authentication - in production, this would call Supabase
-    // For demo: teacher@school.edu / password or parent@email.com / password
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API call
-    
+    await new Promise(resolve => setTimeout(resolve, 500));
     const foundUser = mockUsers.find(u => u.email === email);
     if (foundUser && password === 'password') {
       setUser(foundUser);
@@ -39,12 +58,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return false;
   };
 
-  const logout = () => {
-    setUser(null);
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      setUser(null);
+    } catch (error) {
+      console.error('Error logging out:', error);
+      setUser(null);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

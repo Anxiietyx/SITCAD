@@ -8,6 +8,11 @@ import { Alert, AlertDescription } from './ui/alert';
 import { GraduationCap, Loader2, Mail } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 
+// ATTEMPT: Firebase Auth
+import { auth, db } from '../../firebase/firebase'
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { setDoc, doc } from "firebase/firestore";
+
 export function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -20,14 +25,14 @@ export function Register() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleGoogleSignup = () => {
-    // Mock Google OAuth - in production, this would use Supabase Auth
-    setError('Google Sign-up would be implemented with Supabase Auth');
+  const handleGoogleSignup = async () => {
+    // try {
+    //   const 
+    // }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
 
     // Validation
     if (password !== confirmPassword) {
