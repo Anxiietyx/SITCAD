@@ -9,13 +9,13 @@ import {
   LayoutDashboard, 
   Users, 
   Calendar, 
-  Brain, 
+  Brain, // location for icon brain
   FileText, 
   MessageSquare, 
   AlertCircle,
   Sparkles,
   Monitor,
-  GraduationCap,
+  GraduationCap, // Location for icon Graduation
   LogOut,
   Home,
   User,
