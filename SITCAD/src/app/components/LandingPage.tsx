@@ -90,7 +90,7 @@ export function LandingPage() {
             <div className="w-9 h-9 bg-gradient-to-br from-[#F46197] to-[#EFCA08] rounded-xl flex items-center justify-center">
               <GraduationCap className="w-5 h-5 text-white" />
             </div>
-            <span className="font-bold text-lg font-serif">KinderLearn AI</span>
+            <span className="font-bold text-lg font-serif">Sabah Sprout</span>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" className="text-[#F46197] hover:bg-[#F46197]/10 font-semibold" onClick={() => navigate('/login')}>
@@ -146,10 +146,6 @@ export function LandingPage() {
               <Button size="lg" className="bg-[#F46197] hover:bg-[#e0507f] text-white rounded-full px-10 text-lg h-14 transition-transform hover:scale-105 shadow-lg shadow-[#F46197]/25" onClick={() => navigate('/register')}>
                 Start Free Trial
                 <Sparkles className="ml-2 h-5 w-5" />
-              </Button>
-              <Button size="lg" variant="outline" className="border-2 border-[#55D6BE] text-[#55D6BE] hover:bg-[#55D6BE]/10 rounded-full px-10 text-lg h-14 transition-transform hover:scale-105" onClick={() => navigate('/login')}>
-                <Play className="mr-2 h-5 w-5 fill-[#55D6BE]" />
-                Watch Demo
               </Button>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-6 pt-4">
@@ -382,10 +378,10 @@ export function LandingPage() {
             <div className="text-center mb-10">
               <Badge className="mb-3 bg-[#F46197]/15 text-[#F46197] border-[#F46197]/30 rounded-full px-4 py-1">
                 <Heart className="mr-1.5 h-3 w-3" />
-                Testimonials
+                Feedback
               </Badge>
-              <h2 className="text-3xl lg:text-4xl font-bold mb-3 font-serif">Loved by Educators & Parents</h2>
-              <p className="text-lg text-muted-foreground">See what our community has to say</p>
+              <h2 className="text-3xl lg:text-4xl font-bold mb-3 font-serif">Developed by GAMUDA AI ACADEMY STUDENTS</h2>
+              <p className="text-lg text-muted-foreground">See what our Team Developer has to say</p>
             </div>
             <div className="grid grid-cols-3 gap-6">
               {testimonials.map((t, i) => (
@@ -423,30 +419,15 @@ export function LandingPage() {
             <FloatingIcon icon={BookOpen} className="w-12 h-12 text-white/[0.08] bottom-8 left-16 animate-wiggle" />
             <FloatingIcon icon={Sparkles} className="w-10 h-10 text-white/10 bottom-12 right-8 animate-float" />
             {/* Mascot — holding book */}
-            <img src="/mascot/holding_book_1.png" alt="Mascot holding book" className="absolute bottom-4 left-[5%] w-36 lg:w-48 drop-shadow-2xl animate-float pointer-events-none select-none opacity-90" />
+            <img src="/mascot/holding_book_1.png" alt="Mascot holding book" className="absolute middle-4 left-[5%] w-36 lg:w-48 drop-shadow-2xl animate-float pointer-events-none select-none opacity-90" />
 
-            <div className="max-w-3xl mx-auto text-center space-y-5 relative z-10">
-              <h2 className="text-4xl lg:text-5xl font-bold text-white font-serif">Ready to Transform Your Classroom?</h2>
-              <p className="text-lg text-white/90 max-w-xl mx-auto">
-                Join thousands of educators using AI to provide personalized learning experiences
+            <div className="max-w-10xl mx-auto text-center space-y-5 relative z-10">
+              <h2 className="text-5xl lg:text-x5 font-bold text-white font-serif">Ready to Transform Your Classroom?</h2>
+              <p className="text-lg text-white/90 max-w-x100 mx-auto">
+                Hello Parents and Educators 😄😄😄 Join us on Sabah Sprout experience the personalized learning powered by AI
               </p>
               <div className="flex flex-wrap justify-center gap-4 pt-3">
-                <Button size="lg" className="bg-white text-[#F46197] hover:bg-white/90 rounded-full px-10 text-lg h-14 font-bold transition-transform hover:scale-105 shadow-lg" onClick={() => navigate('/register')}>
-                  Start Free Trial
-                  <Sparkles className="ml-2 h-5 w-5" />
-                </Button>
-                <Button size="lg" variant="outline" className="bg-white/15 border-2 border-white text-white hover:bg-white/25 rounded-full px-10 text-lg h-14 font-bold transition-transform hover:scale-105" onClick={() => navigate('/login')}>
-                  Schedule a Demo
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
               </div>
-              <p className="text-sm text-white/80 pt-2 flex items-center justify-center gap-4">
-                <span className="flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> No credit card</span>
-                <span>•</span>
-                <span className="flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> 14-day trial</span>
-                <span>•</span>
-                <span className="flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> Cancel anytime</span>
-              </p>
             </div>
           </div>
           {/* Compact footer */}
@@ -456,18 +437,17 @@ export function LandingPage() {
                 <div className="w-7 h-7 bg-gradient-to-br from-[#F46197] to-[#EFCA08] rounded-lg flex items-center justify-center">
                   <GraduationCap className="w-4 h-4 text-white" />
                 </div>
-                <span className="font-bold text-sm font-serif">KinderLearn AI</span>
+                <span className="font-bold text-sm font-serif">Sabah Sprout</span>
               </div>
               <div className="flex items-center gap-6 text-xs text-muted-foreground">
                 <a href="#" className="hover:text-[#F46197] transition-colors">Features</a>
-                <a href="#" className="hover:text-[#F46197] transition-colors">Pricing</a>
                 <a href="#" className="hover:text-[#55D6BE] transition-colors">About</a>
                 <a href="#" className="hover:text-[#55D6BE] transition-colors">Contact</a>
                 <a href="#" className="hover:text-[#EFCA08] transition-colors">Privacy</a>
                 <a href="#" className="hover:text-[#EFCA08] transition-colors">Terms</a>
               </div>
               <p className="flex items-center gap-1 text-xs text-muted-foreground">
-                &copy; 2026 KinderLearn AI &middot; Made with <Heart className="h-3 w-3 text-[#F46197] fill-[#F46197]" /> for little learners
+                &copy; 2026 Sabah Sprout &middot; Made with <Heart className="h-3 w-3 text-[#F46197] fill-[#F46197]" /> for Sabahan
               </p>
             </div>
           </footer>

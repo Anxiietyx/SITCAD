@@ -82,7 +82,7 @@ function NavigationContent({ onNavigate }: { onNavigate?: () => void }) {
             <GraduationCap className="w-6 h-6 text-white" />
           </div>
           <div className="flex-1">
-            <h2 className="font-semibold text-sm">KinderLearn AI</h2>
+            <h2 className="font-semibold text-sm">Sabah Sprout</h2>
             <Badge variant="secondary" className="text-xs capitalize">
               {user.role}
             </Badge>
@@ -172,7 +172,7 @@ export function Navigation() {
           <div className="w-8 h-8 bg-gradient-to-br from-[#55D6BE] to-[#ACFCD9] rounded-lg flex items-center justify-center">
             <GraduationCap className="w-5 h-5 text-white" />
           </div>
-          <span className="font-semibold">KinderLearn AI</span>
+          <span className="font-semibold">Sabah Sprout</span>
         </div>
         
         <Sheet open={open} onOpenChange={setOpen}>
