@@ -65,7 +65,7 @@ export const mockStudents: Student[] = [
     id: 'student1',
     name: 'Little Sprout1',
     age: 5,
-    avatar: 'https://images.unsplash.com/photo-1595814432314-90095f342694?w=200&h=200&fit=crop',
+    avatar: 'SITCAD\SITCAD\src\images\holding_book_3.png',
     classroom: 'Class A',
     parentId: 'parent1',
     enrollmentDate: '2025-09-01',

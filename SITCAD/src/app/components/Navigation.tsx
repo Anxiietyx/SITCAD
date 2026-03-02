@@ -76,7 +76,7 @@ function NavigationContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <>
       {/* Header */}
-      <div className="p-4 border-b">
+      <div className="p-4">
         <div className="flex items-center gap-2 mb-2">
           <div className="w-10 h-10 bg-gradient-to-br from-[#55D6BE] to-[#ACFCD9] rounded-lg flex items-center justify-center">
             <GraduationCap className="w-6 h-6 text-black"/>
