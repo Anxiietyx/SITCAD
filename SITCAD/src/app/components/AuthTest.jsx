@@ -64,14 +64,14 @@ export function AuthTest() {
             </p>
             <button
               onClick={handleLogout}
-              className="mt-4 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+              className="mt-4 bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
             >
               Log Out
             </button>
           </div>
         ) : (
           <div className="text-center">
-            <p className="text-red-600 font-medium mb-4">No user is logged in.</p>
+            <p className="text-yellow-600 font-medium mb-4">No user is logged in.</p>
             <button
               onClick={handleGoogleLogin}
               className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"

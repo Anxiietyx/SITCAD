@@ -142,9 +142,9 @@ export function AILessonPlanning() {
               <Sparkles className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-semibold">AI Lesson Planning Assistant</h1>
+              <h1 className="text-2xl font-semibold">Lesson Planning Assistant Powered by AI</h1>
               <p className="text-sm text-muted-foreground">
-                Generate personalized lesson plans powered by AI
+                Generate planning lesson powered by AI
               </p>
             </div>
           </div>
@@ -153,18 +153,17 @@ export function AILessonPlanning() {
 
       <main className="max-w-6xl mx-auto px-4 py-8 space-y-6">
         {/* Input Form */}
-        <Card className="border-2 border-purple-200">
-          <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50">
+        <Card className="border-2 border-yellow-200">
+          <CardHeader className="bg-gradient-to-r from-yellow-100 to-green-100">
             <CardTitle className="flex items-center gap-2">
-              <Lightbulb className="h-5 w-5 text-purple-600" />
+              <Lightbulb className="h-5 w-5 text-pink-600" />
               Lesson Plan Generator
             </CardTitle>
             <CardDescription>
-              Tell us about your lesson and we'll create a comprehensive plan
-            </CardDescription>
+              Key in the lesson and Ai will assist generate lesson planning</CardDescription>
           </CardHeader>
-          <CardContent className="pt-6 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <CardContent className="pt-1 space-y-3">
+            <div className="grid grid-cols-10 md:grid-cols-1 gap-5">
               <div className="space-y-2">
                 <Label htmlFor="ageGroup">Age Group</Label>
                 <Select value={ageGroup} onValueChange={setAgeGroup}>
@@ -172,8 +171,6 @@ export function AILessonPlanning() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="3-4">3-4 years old</SelectItem>
-                    <SelectItem value="4-5">4-5 years old</SelectItem>
                     <SelectItem value="5-6">5-6 years old</SelectItem>
                   </SelectContent>
                 </Select>
@@ -204,6 +201,7 @@ export function AILessonPlanning() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="15">15 minutes</SelectItem>
+                    <SelectItem value="20">20 minutes</SelectItem>
                     <SelectItem value="30">30 minutes</SelectItem>
                     <SelectItem value="45">45 minutes</SelectItem>
                     <SelectItem value="60">60 minutes</SelectItem>
@@ -260,7 +258,7 @@ export function AILessonPlanning() {
           <div className="space-y-6 animate-in fade-in duration-500">
             {/* Header */}
             <Card>
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50">
+              <CardHeader className="bg-gradient-to-r from-yellow-50 to-green-50">
                 <div className="flex items-start justify-between">
                   <div>
                     <CardTitle className="text-2xl">{lessonPlan.title}</CardTitle>
@@ -289,7 +287,7 @@ export function AILessonPlanning() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5 text-blue-600" />
+                  <Target className="h-5 w-5 text-green-600" />
                   Learning Objectives
                 </CardTitle>
               </CardHeader>
@@ -297,7 +295,7 @@ export function AILessonPlanning() {
                 <ul className="space-y-2">
                   {lessonPlan.objectives.map((obj, index) => (
                     <li key={index} className="flex items-start gap-2">
-                      <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-medium shrink-0 mt-0.5">
+                      <div className="w-6 h-6 rounded-full bg-green-100 text-green-800 flex items-center justify-center text-sm font-medium shrink-0 mt-0.5">
                         {index + 1}
                       </div>
                       <span>{obj}</span>
@@ -306,24 +304,6 @@ export function AILessonPlanning() {
                 </ul>
               </CardContent>
             </Card>
-
-            {/* Materials */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Materials Needed</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {lessonPlan.materials.map((material, index) => (
-                    <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
-                      <div className="w-2 h-2 rounded-full bg-purple-600" />
-                      <span className="text-sm">{material}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Activity Steps */}
             <Card>
               <CardHeader>
@@ -332,8 +312,8 @@ export function AILessonPlanning() {
               <CardContent>
                 <div className="space-y-4">
                   {lessonPlan.activities.map((activity) => (
-                    <div key={activity.step} className="flex gap-4 p-4 border-2 rounded-lg">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 text-white flex items-center justify-center text-xl font-bold shrink-0">
+                    <div key={activity.step} className="flex gap-1 p-1 border-1 rounded-lg">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-300 to-green-200 text-white flex items-center justify-center text-xl font-bold shrink-0">
                         {activity.step}
                       </div>
                       <div className="flex-1">
@@ -365,7 +345,7 @@ export function AILessonPlanning() {
             {/* Adaptations */}
             <Card>
               <CardHeader>
-                <CardTitle>Differentiation & Adaptations</CardTitle>
+                <CardTitle>Adaptations</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">

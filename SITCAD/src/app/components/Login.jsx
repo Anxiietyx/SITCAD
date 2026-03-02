@@ -64,9 +64,9 @@ export function Login() {
           <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
             <GraduationCap className="w-8 h-8 text-white" />
           </div>
-          <CardTitle className="text-2xl">Kindergarten LMS</CardTitle>
+          <CardTitle className="text-2xl">SabahSprout</CardTitle>
           <CardDescription>
-            AI-Powered Learning Management System
+            Kindergarten Learning Management System
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -69,10 +69,10 @@ export function Interventions() {
         {/* Recommended Actions */}
         <div>
           <p className="text-sm font-medium mb-3">Recommended Actions:</p>
-          <ul className="space-y-2">
+          <ul className="space-y-3">
             {intervention.recommendedActions.map((action, index) => (
               <li key={index} className="flex items-start gap-2 text-sm">
-                <div className="w-5 h-5 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xs font-medium shrink-0 mt-0.5">
+                <div className="w-5 h-5 rounded-full bg-green-300 text-black-600 flex items-center justify-center text-xs font-medium shrink-1 mt-1.15">
                   {index + 1}
                 </div>
                 <span>{action}</span>
@@ -97,17 +97,17 @@ export function Interventions() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-green-300 via-green-200 to-green-100">
       {/* Header */}
       <header className="bg-white border-b shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+        <div className="max-w-6xl mx-auto px-4 py-4">
           <Button variant="ghost" onClick={handleBack} className="mb-4">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Dashboard
           </Button>
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-lg flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6 text-black"/>
             </div>
             <div>
               <h1 className="text-2xl font-semibold">Early Intervention Support</h1>
@@ -128,7 +128,7 @@ export function Interventions() {
               <CardTitle className="text-3xl">{pendingInterventions.length}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center text-sm text-orange-600">
+              <div className="flex items-center text-sm text-red-600">
                 <Clock className="mr-2 h-4 w-4" />
                 Requires attention
               </div>
@@ -141,7 +141,7 @@ export function Interventions() {
               <CardTitle className="text-3xl">{inProgressInterventions.length}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center text-sm text-blue-600">
+              <div className="flex items-center text-sm text-orange-600">
                 <Target className="mr-2 h-4 w-4" />
                 Active interventions
               </div>
@@ -163,16 +163,16 @@ export function Interventions() {
         </div>
 
         {/* AI Insights Banner */}
-        <Card className="border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50">
+        <Card className="border-2 border-yellow-200 bg-gradient-to-r from-yellow-100 to-yellow-100">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
-                <Target className="h-4 w-4 text-white" />
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-500 to-red-600 flex items-center justify-center">
+                <Target className="h-4 w-4 text-black"/>
               </div>
-              AI-Powered Early Intervention System
+              Early Intervention System Powered by AI
             </CardTitle>
             <CardDescription>
-              Our system analyzes student performance data across multiple developmental areas to identify learning gaps early.
+              AI analyzes student performance data across multiple developmental areas to identify learning gaps early.
               Interventions are prioritized based on severity, frequency, and impact on overall development.
             </CardDescription>
           </CardHeader>

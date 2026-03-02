@@ -77,12 +77,12 @@ function NavigationContent({ onNavigate }: { onNavigate?: () => void }) {
     <>
       {/* Header */}
       <div className="p-4 border-b">
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-2 mb-2">
           <div className="w-10 h-10 bg-gradient-to-br from-[#55D6BE] to-[#ACFCD9] rounded-lg flex items-center justify-center">
-            <GraduationCap className="w-6 h-6 text-white" />
+            <GraduationCap className="w-6 h-6 text-black"/>
           </div>
           <div className="flex-1">
-            <h2 className="font-semibold text-sm">Sabah Sprout</h2>
+            <h2 className="font-semibold text-sm">SabahSprout</h2>
             <Badge variant="secondary" className="text-xs capitalize">
               {user.role}
             </Badge>
@@ -90,9 +90,9 @@ function NavigationContent({ onNavigate }: { onNavigate?: () => void }) {
         </div>
         
         {/* User Info */}
-        <div className="flex items-center gap-3 p-3 bg-gradient-to-br from-[#ACFCD9]/20 to-[#55D6BE]/20 rounded-lg">
+        <div className="flex items-center gap-3 p-3 bg-gradient-to-br from-[#ACFCD9]/50 to-[#55D6BE]/80 rounded-lg">
           <div className="w-10 h-10 bg-gradient-to-br from-[#55D6BE] to-[#ACFCD9] rounded-full flex items-center justify-center">
-            <User className="w-5 h-5 text-white" />
+            <User className="w-5 h-5 text-black" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-medium text-sm truncate">{user.name}</p>
@@ -102,7 +102,7 @@ function NavigationContent({ onNavigate }: { onNavigate?: () => void }) {
       </div>
 
       {/* Navigation Items */}
-      <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+      <nav className="flex-1 overflow-y-auto p-2 space-y-2">
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.path, item.exact);
@@ -113,7 +113,7 @@ function NavigationContent({ onNavigate }: { onNavigate?: () => void }) {
               variant={active ? 'secondary' : 'ghost'}
               className={cn(
                 'w-full justify-start gap-3',
-                active && 'bg-gradient-to-r from-[#ACFCD9]/30 to-[#55D6BE]/30 text-primary font-medium'
+                active && 'bg-gradient-to-r from-[#ACFCD9]/100 to-[#55D6BE]/100 text-primary font-medium'
               )}
               onClick={() => handleNavigation(item.path)}
             >
@@ -123,26 +123,12 @@ function NavigationContent({ onNavigate }: { onNavigate?: () => void }) {
           );
         })}
       </nav>
-
-      {/* Students List (Teachers Only) */}
-      {user.role === 'teacher' && (
-        <div className="p-3 border-t">
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
-            onClick={() => handleNavigation('/teacher')}
-          >
-            <Users className="h-4 w-4" />
-            <span>View All Students</span>
-          </Button>
-        </div>
-      )}
-
+      
       {/* Logout */}
       <div className="p-3 border-t">
         <Button
           variant="ghost"
-          className="w-full justify-start gap-3 text-red-600 hover:text-red-700 hover:bg-red-50"
+          className="w-full justify-start gap-3 text-red-600 hover:text-red-700 hover:bg-red-200"
           onClick={handleLogout}
         >
           <LogOut className="h-4 w-4" />
@@ -172,7 +158,7 @@ export function Navigation() {
           <div className="w-8 h-8 bg-gradient-to-br from-[#55D6BE] to-[#ACFCD9] rounded-lg flex items-center justify-center">
             <GraduationCap className="w-5 h-5 text-white" />
           </div>
-          <span className="font-semibold">Sabah Sprout</span>
+          <span className="font-semibold">SabahSprout</span>
         </div>
         
         <Sheet open={open} onOpenChange={setOpen}>

@@ -12,10 +12,10 @@ import { toast } from 'sonner';
 const classroomActivities = [
   {
     id: 'ca1',
-    title: 'Morning Circle Time',
+    title: 'Morning Session',
     type: 'social',
-    duration: 15,
-    description: 'Greeting, calendar, weather, and sharing time',
+    duration: 10,
+    description: 'Greeting, Sharing, Basic Exercise',
     icon: Users,
   },
   {
@@ -23,7 +23,7 @@ const classroomActivities = [
     title: 'Letter of the Day',
     type: 'literacy',
     duration: 20,
-    description: 'Interactive letter recognition and phonics',
+    description: 'Interactive letter recognition ',
     icon: Book,
   },
   {
@@ -31,7 +31,7 @@ const classroomActivities = [
     title: 'Counting & Numbers',
     type: 'numeracy',
     duration: 15,
-    description: 'Hands-on counting with manipulatives',
+    description: 'Hands-on counting with interactive',
     icon: Calculator,
   },
   {
@@ -39,7 +39,7 @@ const classroomActivities = [
     title: 'Creative Art Time',
     type: 'creative',
     duration: 25,
-    description: 'Guided art project with fine motor focus',
+    description: 'Guided art with motor skills',
     icon: Palette,
   },
 ];
@@ -98,8 +98,8 @@ export function ClassroomTeachingMode() {
           </Button>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
-                <Users className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-green-600 rounded-lg flex items-center justify-center">
+                <Users className="w-6 h-6 text-black" />
               </div>
               <div>
                 <h1 className="text-2xl font-semibold">Classroom Teaching Mode</h1>
@@ -119,7 +119,7 @@ export function ClassroomTeachingMode() {
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
         {/* Current Activity Display */}
         {activeActivity && (
-          <Card className="border-4 border-blue-500 bg-blue-50">
+          <Card className="border-3 border-yellow-200 bg-yellow-100">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -132,7 +132,7 @@ export function ClassroomTeachingMode() {
                   </CardDescription>
                 </div>
                 <div className="text-center">
-                  <div className="text-5xl font-bold text-blue-600 mb-2">
+                  <div className="text-5xl font-bold text-black-300 mb-2">
                     {formatTime(timer)}
                   </div>
                   <p className="text-sm text-muted-foreground">
@@ -185,22 +185,22 @@ export function ClassroomTeachingMode() {
               <Card
                 key={activity.id}
                 className={`border-2 ${
-                  isActive ? 'border-blue-500 bg-blue-50' : 
-                  isCompleted ? 'border-green-500 bg-green-50' : 
+                  isActive ? 'border-green-200 bg-green-100' : 
+                  isCompleted ? 'border-green-200 bg-green-100' : 
                   'border-gray-200'
                 }`}
               >
                 <CardHeader>
                   <div className="flex items-start gap-4">
                     <div className={`w-16 h-16 rounded-lg flex items-center justify-center ${
-                      isCompleted ? 'bg-green-500' :
-                      isActive ? 'bg-blue-500' : 
+                      isCompleted ? 'bg-yellow-500' :
+                      isActive ? 'bg-yellow-500' : 
                       'bg-gray-200'
                     }`}>
                       {isCompleted ? (
-                        <CheckCircle2 className="h-8 w-8 text-white" />
+                        <CheckCircle2 className="h-8 w-8 text-black" />
                       ) : (
-                        <Icon className={`h-8 w-8 ${isActive ? 'text-white' : 'text-gray-600'}`} />
+                        <Icon className={`h-8 w-8 ${isActive ? 'text-black' : 'text-black-600'}`} />
                       )}
                     </div>
                     <div className="flex-1">

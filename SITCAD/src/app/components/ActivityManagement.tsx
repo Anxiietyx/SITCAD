@@ -16,12 +16,12 @@ import { ArrowLeft, Plus, Calendar, Clock, Book, Calculator, Users, Activity as 
 import { toast } from 'sonner';
 
 const activityTypes = [
-  { value: 'literacy', label: 'Literacy', icon: Book, color: 'bg-[#55D6BE]/20 text-[#55D6BE] border-[#55D6BE]/30' },
-  { value: 'numeracy', label: 'Numeracy', icon: Calculator, color: 'bg-[#ACFCD9]/20 text-[#55D6BE] border-[#ACFCD9]/30' },
-  { value: 'social', label: 'Social Skills', icon: Users, color: 'bg-[#EFCA08]/20 text-[#EFCA08] border-[#EFCA08]/30' },
-  { value: 'motor', label: 'Motor Skills', icon: ActivityIcon, color: 'bg-[#F46197]/20 text-[#F46197] border-[#F46197]/30' },
-  { value: 'creative', label: 'Creative Arts', icon: Palette, color: 'bg-[#55D6BE]/20 text-[#55D6BE] border-[#55D6BE]/30' },
-  { value: 'cognitive', label: 'Cognitive', icon: Brain, color: 'bg-[#ACFCD9]/20 text-[#55D6BE] border-[#ACFCD9]/30' },
+  { value: 'literacy', label: 'Literacy', icon: Book, color: 'bg-[#f46197]/20 text-[#f46197] border-[#f46197]/30' },
+  { value: 'numeracy', label: 'Numeracy', icon: Calculator, color: 'bg-[#f46197]/20 text-[#f46197] border-[#f46197]/30' },
+  { value: 'social', label: 'Social Skills', icon: Users, color: 'bg-[#f46197]/20 text-[#f46197] border-[#f46197]/30' },
+  { value: 'motor', label: 'Motor Skills', icon: ActivityIcon, color: 'bg-[#f46197]/20 text-[#f46197] border-[#f46197]/30' },
+  { value: 'creative', label: 'Creative Arts', icon: Palette, color: 'bg-[#f46197]/20 text-[#f46197] border-[#f46197]/30' },
+  { value: 'cognitive', label: 'Cognitive', icon: Brain, color: 'bg-[#f46197]/20 text-[#f46197] border-[#f46197]/30' },
 ];
 
 export function ActivityManagement() {
@@ -88,10 +88,10 @@ export function ActivityManagement() {
       id: 'act1',
       studentId: 'all',
       type: 'literacy',
-      title: 'Letter Recognition: A-E',
-      description: 'Identify and trace uppercase letters A through E',
+      title: 'Letter Recognition: A-Z',
+      description: 'Identify and trace uppercase letters A through Z',
       date: '2026-02-19',
-      duration: 20,
+      duration: 30,
       completed: false,
       assignedTo: 'Whole Class',
     },
@@ -102,9 +102,9 @@ export function ActivityManagement() {
       title: 'Counting Practice 1-20',
       description: 'Count objects and match with numbers',
       date: '2026-02-19',
-      duration: 15,
+      duration: 30,
       completed: false,
-      assignedTo: 'Emma Wilson',
+      assignedTo: 'Whole Class',
     },
   ];
 
@@ -116,12 +116,12 @@ export function ActivityManagement() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-gradient-to-br from-[#55D6BE] to-[#ACFCD9] rounded-lg flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-white" />
+                <Calendar className="w-6 h-6 text-Black" />
               </div>
               <div>
                 <h1 className="text-2xl font-semibold">Activity Management</h1>
                 <p className="text-sm text-muted-foreground">
-                  Create and assign learning activities to students
+                  Create and assign learning activities to student
                 </p>
               </div>
             </div>

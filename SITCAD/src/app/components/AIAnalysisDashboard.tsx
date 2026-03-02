@@ -21,11 +21,11 @@ export function AIAnalysisDashboard() {
 
   // Mock AI analysis data
   const classAnalytics = {
-    overallPerformance: 76,
+    overallPerformance: 80,
     trend: 'improving' as const,
     atRiskStudents: students.filter(s => s.needsIntervention).length,
     excellingStudents: students.filter(s => s.developmentalStage === 'advanced' || s.developmentalStage === 'proficient').length,
-    engagementScore: 82,
+    engagementScore: 80,
   };
 
   const learningPatterns = [
@@ -155,13 +155,13 @@ export function AIAnalysisDashboard() {
             Back to Dashboard
           </Button>
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-br from-pink-500 rounded-lg flex items-center justify-center">
               <Brain className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-semibold">AI Student Development Analysis</h1>
+              <h1 className="text-2xl font-semibold">Student Development Analysis By AI</h1>
               <p className="text-sm text-muted-foreground">
-                Data-driven insights powered by artificial intelligence
+                Insight powered by Artificial intelligent
               </p>
             </div>
           </div>
@@ -213,7 +213,7 @@ export function AIAnalysisDashboard() {
               <CardTitle className="text-3xl">{classAnalytics.atRiskStudents}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center text-sm text-orange-600">
+              <div className="flex items-center text-sm text-red-600">
                 <AlertTriangle className="mr-1 h-4 w-4" />
                 Attention needed
               </div>
@@ -226,9 +226,9 @@ export function AIAnalysisDashboard() {
               <CardTitle className="text-3xl">{students.length}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center text-sm text-blue-600">
+              <div className="flex items-center text-sm text-green-600">
                 <Users className="mr-1 h-4 w-4" />
-                Active learners
+                Total Students
               </div>
             </CardContent>
           </Card>
@@ -237,17 +237,17 @@ export function AIAnalysisDashboard() {
         {/* Main Content Tabs */}
         <Tabs defaultValue="patterns" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="patterns">Learning Patterns</TabsTrigger>
-            <TabsTrigger value="developmental">Developmental Areas</TabsTrigger>
+            <TabsTrigger value="patterns">Learning Insight</TabsTrigger>
+            <TabsTrigger value="developmental">Developmental Progress</TabsTrigger>
             <TabsTrigger value="predictive">Predictive Insights</TabsTrigger>
           </TabsList>
 
           {/* Learning Patterns */}
           <TabsContent value="patterns" className="space-y-4">
-            <Card className="border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50">
+            <Card className="border-1 border-pink-300 bg-gradient-to-r from-pink-200 to-pink-100">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-purple-600" />
+                <CardTitle className="flex items-center gap-1">
+                  <Sparkles className="h-5 w-5 text-pink-600" />
                   AI-Detected Learning Patterns
                 </CardTitle>
                 <CardDescription>
@@ -270,11 +270,11 @@ export function AIAnalysisDashboard() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-start gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <TrendingUp className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-3 p-4 bg-pink-200 rounded-lg border border-pink-300">
+                    <TrendingUp className="h-5 w-5 text-black-300 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-medium text-blue-900 mb-1">AI Recommendation:</p>
-                      <p className="text-sm text-blue-700">{pattern.recommendation}</p>
+                      <p className="font-medium text-black-300 mb-1">AI Recommendation:</p>
+                      <p className="text-sm text-black-300">{pattern.recommendation}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -299,11 +299,11 @@ export function AIAnalysisDashboard() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Progress value={area.average} className="h-3" />
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <p className="font-medium text-sm">Key Insights:</p>
                     {area.insights.map((insight, i) => (
                       <div key={i} className="flex items-start gap-2 text-sm">
-                        <div className="w-1.5 h-1.5 rounded-full bg-purple-600 mt-2" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-pink-600 mt-2" />
                         <span>{insight}</span>
                       </div>
                     ))}
@@ -322,7 +322,7 @@ export function AIAnalysisDashboard() {
                   Predictive Analytics
                 </CardTitle>
                 <CardDescription>
-                  AI predictions based on current trends and historical data patterns
+                  AI predictions based on current development and data
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -334,7 +334,7 @@ export function AIAnalysisDashboard() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         {insight.type === 'opportunity' && <Target className="h-5 w-5 text-blue-600" />}
-                        {insight.type === 'concern' && <AlertTriangle className="h-5 w-5 text-orange-600" />}
+                        {insight.type === 'concern' && <AlertTriangle className="h-5 w-5 text-red-600" />}
                         {insight.type === 'success' && <TrendingUp className="h-5 w-5 text-green-600" />}
                         <CardTitle className="text-lg">{insight.title}</CardTitle>
                       </div>
@@ -354,9 +354,9 @@ export function AIAnalysisDashboard() {
                       ))}
                     </div>
                   </div>
-                  <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                    <p className="text-sm font-medium text-purple-900 mb-1">Recommended Action:</p>
-                    <p className="text-sm text-purple-700">{insight.action}</p>
+                  <div className="p-4 bg-pink-200 rounded-lg border border-pink-100">
+                    <p className="text-sm font-medium text-black-900 mb-1">Recommended Action:</p>
+                    <p className="text-sm text-black-700">{insight.action}</p>
                   </div>
                 </CardContent>
               </Card>
