@@ -1,4 +1,6 @@
 // Mock data for the kindergarten LMS
+import holdingBook3 from '../../assets/holding_book_3.png';
+
 export interface Student {
   id: string;
   name: string;
@@ -65,7 +67,7 @@ export const mockStudents: Student[] = [
     id: 'student1',
     name: 'Little Sprout1',
     age: 5,
-    avatar: 'SITCAD\SITCAD\src\images\holding_book_3.png',
+    avatar: holdingBook3,
     classroom: 'Class A',
     parentId: 'parent1',
     enrollmentDate: '2025-09-01',
@@ -78,7 +80,7 @@ export const mockStudents: Student[] = [
     id: 'student2',
     name: 'Little Sprout2',
     age: 5,
-    avatar: 'https://images.unsplash.com/photo-1601288496920-b6154fe3626a?w=200&h=200&fit=crop',
+    avatar: holdingBook3,
     classroom: 'Class A',
     enrollmentDate: '2025-09-01',
     developmentalStage: 'proficient',
@@ -90,7 +92,7 @@ export const mockStudents: Student[] = [
     id: 'student3',
     name: 'Little Sprout3',
     age: 6,
-    avatar: 'https://images.unsplash.com/photo-1542103749-8ef59b94f47e?w=200&h=200&fit=crop',
+    avatar: holdingBook3,
     classroom: 'Class A',
     enrollmentDate: '2025-09-01',
     developmentalStage: 'emerging',
@@ -102,7 +104,7 @@ export const mockStudents: Student[] = [
     id: 'student4',
     name: 'Little Sprout4',
     age: 6,
-    avatar: 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=200&h=200&fit=crop',
+    avatar: holdingBook3,
     classroom: 'Class A',
     enrollmentDate: '2025-09-01',
     developmentalStage: 'developing',
@@ -114,7 +116,7 @@ export const mockStudents: Student[] = [
     id: 'student5',
     name: 'Little Sprout5',
     age: 6,
-    avatar: 'https://images.unsplash.com/photo-1587691592099-24045742c181?w=200&h=200&fit=crop',
+    avatar: holdingBook3,
     classroom: 'Class A',
     enrollmentDate: '2025-09-01',
     developmentalStage: 'advanced',
