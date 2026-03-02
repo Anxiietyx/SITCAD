@@ -12,6 +12,12 @@ import { Progress } from './ui/progress';
 import { ArrowLeft, FileText, Download, Sparkles, Loader2, TrendingUp, Award, Target } from 'lucide-react';
 import { toast } from 'sonner';
 
+<<<<<<< Updated upstream
+=======
+// The interface GeneratedReport is removed as it's TypeScript specific.
+// The structure is implicitly defined by how the mock reports are created.
+
+>>>>>>> Stashed changes
 export function ReportGeneration() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -55,7 +61,11 @@ export function ReportGeneration() {
 
     // Mock AI-generated reports
     const newReports = selectedStudents.map(studentId => {
+<<<<<<< Updated upstream
       const student = students.find(s => s.id === studentId);
+=======
+      const student = students.find(s => s.id === studentId); // Removed '!' assertion
+>>>>>>> Stashed changes
       return {
         studentId,
         studentName: student.name,

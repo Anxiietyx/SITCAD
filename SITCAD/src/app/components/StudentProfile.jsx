@@ -9,7 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ArrowLeft, Calendar, MapPin, TrendingUp, Award, AlertCircle } from 'lucide-react';
 
 export function StudentProfile() {
+<<<<<<< Updated upstream
   const { studentId } = useParams();
+=======
+  const { studentId } = useParams(); // Removed type annotation
+>>>>>>> Stashed changes
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -30,7 +34,11 @@ export function StudentProfile() {
     navigate(user.role === 'teacher' ? '/teacher' : '/parent');
   };
 
+<<<<<<< Updated upstream
   const getCategoryColor = (category) => {
+=======
+  const getCategoryColor = (category) => { // Removed type annotation
+>>>>>>> Stashed changes
     const colors = {
       literacy: 'bg-blue-100 text-blue-700',
       numeracy: 'bg-green-100 text-green-700',
@@ -39,7 +47,11 @@ export function StudentProfile() {
       creative: 'bg-pink-100 text-pink-700',
       cognitive: 'bg-cyan-100 text-cyan-700',
     };
+<<<<<<< Updated upstream
     return colors[category] || 'bg-gray-100 text-gray-700';
+=======
+    return colors[category] || 'bg-gray-100 text-gray-700'; // Removed type assertion
+>>>>>>> Stashed changes
   };
 
   return (

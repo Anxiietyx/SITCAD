@@ -30,7 +30,11 @@ export function Interventions() {
       case 'high': return 'bg-red-100 text-red-700 border-red-200';
       case 'medium': return 'bg-orange-100 text-orange-700 border-orange-200';
       case 'low': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+<<<<<<< Updated upstream
       default: return ''; // Fallback
+=======
+      default: return 'bg-gray-100 text-gray-700 border-gray-200'; // Added default for safety
+>>>>>>> Stashed changes
     }
   };
 
@@ -39,7 +43,11 @@ export function Interventions() {
       case 'pending': return <Clock className="h-5 w-5 text-orange-600" />;
       case 'in-progress': return <Target className="h-5 w-5 text-blue-600" />;
       case 'resolved': return <CheckCircle className="h-5 w-5 text-green-600" />;
+<<<<<<< Updated upstream
       default: return null; // Fallback
+=======
+      default: return <AlertTriangle className="h-5 w-5 text-gray-600" />; // Added default for safety
+>>>>>>> Stashed changes
     }
   };
 

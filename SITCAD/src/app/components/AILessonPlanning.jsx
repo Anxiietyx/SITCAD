@@ -364,5 +364,9 @@ export function AILessonPlanning() {
       </main>
     </div>
   );
+<<<<<<< Updated upstream
 }
                        
+=======
+}
+>>>>>>> Stashed changes

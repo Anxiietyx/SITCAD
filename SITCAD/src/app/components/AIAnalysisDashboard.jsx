@@ -21,7 +21,11 @@ export function AIAnalysisDashboard() {
 
   // Mock AI analysis data
   const classAnalytics = {
+<<<<<<< Updated upstream
     overallPerformance: 76,
+=======
+    overallPerformance: 80,
+>>>>>>> Stashed changes
     trend: 'improving',
     atRiskStudents: students.filter(s => s.needsIntervention).length,
     excellingStudents: students.filter(s => s.developmentalStage === 'advanced' || s.developmentalStage === 'proficient').length,

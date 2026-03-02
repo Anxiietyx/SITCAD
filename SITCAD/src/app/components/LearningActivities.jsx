@@ -52,7 +52,11 @@ export function LearningActivities() {
   };
 
   const getScoreColor = (score) => {
+<<<<<<< Updated upstream
     if (!score) return 'text-gray-500';
+=======
+    if (score === undefined || score === null) return 'text-gray-500';
+>>>>>>> Stashed changes
     if (score >= 90) return 'text-green-600';
     if (score >= 75) return 'text-blue-600';
     if (score >= 60) return 'text-orange-600';

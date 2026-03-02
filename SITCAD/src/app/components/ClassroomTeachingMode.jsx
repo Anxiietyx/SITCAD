@@ -1,5 +1,9 @@
+<<<<<<< Updated upstream
 
 import { useState } from 'react';
+=======
+import { useState, useEffect } from 'react'; // Added useEffect for timer
+>>>>>>> Stashed changes
 import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { mockStudents } from '../data/mockData';
@@ -13,10 +17,17 @@ import { toast } from 'sonner';
 const classroomActivities = [
   {
     id: 'ca1',
+<<<<<<< Updated upstream
     title: 'Morning Circle Time',
     type: 'social',
     duration: 15,
     description: 'Greeting, calendar, weather, and sharing time',
+=======
+    title: 'Morning Session',
+    type: 'social',
+    duration: 10,
+    description: 'Greeting, Sharing, Basic Exercise',
+>>>>>>> Stashed changes
     icon: Users,
   },
   {
@@ -24,7 +35,11 @@ const classroomActivities = [
     title: 'Letter of the Day',
     type: 'literacy',
     duration: 20,
+<<<<<<< Updated upstream
     description: 'Interactive letter recognition and phonics',
+=======
+    description: 'Interactive letter recognition ',
+>>>>>>> Stashed changes
     icon: Book,
   },
   {
@@ -32,7 +47,11 @@ const classroomActivities = [
     title: 'Counting & Numbers',
     type: 'numeracy',
     duration: 15,
+<<<<<<< Updated upstream
     description: 'Hands-on counting with manipulatives',
+=======
+    description: 'Hands-on counting with interactive',
+>>>>>>> Stashed changes
     icon: Calculator,
   },
   {
@@ -40,7 +59,11 @@ const classroomActivities = [
     title: 'Creative Art Time',
     type: 'creative',
     duration: 25,
+<<<<<<< Updated upstream
     description: 'Guided art project with fine motor focus',
+=======
+    description: 'Guided art with motor skills',
+>>>>>>> Stashed changes
     icon: Palette,
   },
 ];
@@ -53,6 +76,22 @@ export function ClassroomTeachingMode() {
   const [timer, setTimer] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
 
+<<<<<<< Updated upstream
+=======
+  // Timer effect
+  useEffect(() => {
+    let interval = null;
+    if (isTimerRunning) {
+      interval = setInterval(() => {
+        setTimer(prevTime => prevTime + 1);
+      }, 1000);
+    } else if (!isTimerRunning && timer !== 0) {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [isTimerRunning, timer]);
+
+>>>>>>> Stashed changes
   if (!user || user.role !== 'teacher') {
     navigate('/');
     return null;
@@ -73,6 +112,7 @@ export function ClassroomTeachingMode() {
     toast.info('Activity paused');
   };
 
+<<<<<<< Updated upstream
   const completeActivity = () => {
     if (activeActivity) {
       setCompletedActivities([...completedActivities, activeActivity]);
@@ -292,3 +332,22 @@ export function ClassroomTeachingMode() {
     </div>
   );
 }
+=======
+    const completeActivity = () => {
+      if (activeActivity) {
+        setCompletedActivities([...completedActivities, activeActivity]);
+        setActiveActivity(null);
+        setIsTimerRunning(false);
+        setTimer(0);
+        toast.success('Activity completed!');
+      }
+    };
+  
+    // placeholder return so the component compiles; replace with real JSX later
+    return (
+      <div className="classroom-teaching-mode">
+        {/* TODO: render activities, students, timer, controls */}
+      </div>
+    );
+  }
+>>>>>>> Stashed changes
