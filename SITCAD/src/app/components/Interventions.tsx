@@ -175,6 +175,8 @@ export function Interventions() {
               AI analyzes student performance data across multiple developmental areas to identify learning gaps early.
               Interventions are prioritized based on severity, frequency, and impact on overall development.
             </CardDescription>
+            <div className="pb-3"></div>
+            {/* TO-DO: Find a better solution to the spacing instead of using this <div> */}
           </CardHeader>
         </Card>
 

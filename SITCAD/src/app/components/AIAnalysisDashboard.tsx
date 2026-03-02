@@ -253,6 +253,7 @@ export function AIAnalysisDashboard() {
                 <CardDescription>
                   Patterns identified through analysis of student interaction and performance data
                 </CardDescription>
+                <div className="pb-3"></div>
               </CardHeader>
             </Card>
 
@@ -324,6 +325,7 @@ export function AIAnalysisDashboard() {
                 <CardDescription>
                   AI predictions based on current development and data
                 </CardDescription>
+                <div className="pb-3"></div>
               </CardHeader>
             </Card>
 

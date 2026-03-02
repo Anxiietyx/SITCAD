@@ -243,7 +243,8 @@ export function LandingPage() {
              h-10 
              text-xl 
              font-semibold
-             shadow-lg 
+             shadow-lg
+             rounded-full
              hover:scale-105 
              transition-all duration-300 bg-white"
               onClick={() => navigate("/login")}

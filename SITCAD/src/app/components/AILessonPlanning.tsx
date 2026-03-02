@@ -160,7 +160,9 @@ export function AILessonPlanning() {
               Lesson Plan Generator
             </CardTitle>
             <CardDescription>
-              Key in the lesson and Ai will assist generate lesson planning</CardDescription>
+              Key in the lesson and AI will assist generate lesson planning
+            </CardDescription>
+            <div className="pb-3"></div>
           </CardHeader>
           <CardContent className="pt-1 space-y-3">
             <div className="grid grid-cols-10 md:grid-cols-1 gap-5">
