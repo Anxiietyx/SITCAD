@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, type CSSProperties } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "./ui/button";
 import {
@@ -56,9 +56,17 @@ function FloatingIcon({
   );
 }
 
-const TOTAL_SLIDES = 5;
+const TOTAL_SLIDES = 4;
 
-const slideLabels = ["Home", "Preview", "Features", "Benefits", "Join"];
+// const slideLabels = ["Home", "Preview", "Features", "Benefits", "Join"];
+const slideLabels = ["Home", "Preview", "Features", "Join"];
+
+const CYCLE_WORDS = [
+  { word: "Fun",         color: "#F46197" },
+  { word: "Technology",  color: "#55D6BE" },
+  { word: "Imagination", color: "#EFCA08" },
+  { word: "Growth",      color: "#4ADE80" },
+];
 
 export function LandingPage() {
   const navigate = useNavigate();
@@ -105,13 +113,21 @@ export function LandingPage() {
   const [isPaused, setIsPaused] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isPlaying, setIsPlaying] = useState(true);
+  const [wordIndex, setWordIndex] = useState(0);
+
+  useEffect(() => {
+    const wordInterval = setInterval(() => {
+      setWordIndex((prev) => (prev + 1) % CYCLE_WORDS.length);
+    }, 2500);
+    return () => clearInterval(wordInterval);
+  }, []);
 
   useEffect(() => {
     if (!isPlaying) return;
 
     const interval = setInterval(() => {
       setCurrent((prev) => (prev === TOTAL_SLIDES - 1 ? 0 : prev + 1));
-    }, 4000);
+    }, 10000);
 
     return () => clearInterval(interval);
   }, [isPlaying]);
@@ -121,57 +137,57 @@ export function LandingPage() {
       icon: Users,
       title: "User Management",
       description: "Secure role-based access for teachers and parents",
-      color: "bg-[#F46197]/15 text-[#F46197]",
-      border: "border-[#F46197]/30",
+      color: "bg-[#D46197]/15 text-[#D46197]",
+      border: "border-[#D46197]/30",
     },
     {
       icon: TrendingUp,
       title: "Progress Tracking",
       description: "Visual progress monitoring and student profiles",
-      color: "bg-[#55D6BE]/15 text-[#55D6BE]",
-      border: "border-[#55D6BE]/30",
+      color: "bg-[#D46197]/15 text-[#D46197]",
+      border: "border-[#D46197]/30",
     },
     {
       icon: Brain,
       title: "AI Analysis",
       description: "Identify learning patterns and intervention insights",
-      color: "bg-[#EFCA08]/15 text-[#EFCA08]",
-      border: "border-[#EFCA08]/30",
+      color: "bg-[#D46197]/15 text-[#D46197]",
+      border: "border-[#D46197]/30",
     },
     {
       icon: Calendar,
       title: "Activities",
       description: "Create and assign personalized learning activities",
-      color: "bg-[#F46197]/15 text-[#F46197]",
-      border: "border-[#F46197]/30",
+      color: "bg-[#D46197]/15 text-[#D46197]",
+      border: "border-[#D46197]/30",
     },
     {
       icon: Sparkles,
       title: "Lesson Planning",
       description: "AI-generated comprehensive lesson plans",
-      color: "bg-[#F46197]/15 text-[#F46197]",
-      border: "border-[#F46197]/30",
+      color: "bg-[#D46197]/15 text-[#D46197]",
+      border: "border-[#D46197]/30",
     },
     {
       icon: FileText,
       title: "Reports",
       description: "Automated report generation for parents",
-      color: "bg-[#55D6BE]/15 text-[#55D6BE]",
-      border: "border-[#55D6BE]/30",
+      color: "bg-[#D46197]/15 text-[#D46197]",
+      border: "border-[#D46197]/30",
     },
     {
       icon: MessageSquare,
       title: "Communication",
       description: "Seamless messaging between teachers and parents",
-      color: "bg-[#EFCA08]/15 text-[#EFCA08]",
-      border: "border-[#EFCA08]/30",
+      color: "bg-[#D46197]/15 text-[#D46197]",
+      border: "border-[#D46197]/30",
     },
     {
       icon: Monitor,
       title: "Classroom Mode",
       description: "Whole-class teaching tools for live instruction",
-      color: "bg-[#F46197]/15 text-[#F46197]",
-      border: "border-[#F46197]/30",
+      color: "bg-[#D46197]/15 text-[#D46197]",
+      border: "border-[#D46197]/30",
     },
   ];
 
@@ -203,6 +219,48 @@ export function LandingPage() {
   ];
 
   return (
+    <>
+    <style>{`
+      @keyframes wordBounceIn {
+        0%   { opacity: 0; transform: scale(0.2) rotate(-12deg); }
+        55%  { opacity: 1; transform: scale(1.22) rotate(4deg); }
+        72%  { transform: scale(0.92) rotate(-2deg); }
+        88%  { transform: scale(1.06) rotate(0.5deg); }
+        100% { opacity: 1; transform: scale(1) rotate(0deg); }
+      }
+      @keyframes wordWiggle {
+        0%, 100% { transform: rotate(-2.5deg); }
+        50%      { transform: rotate(2.5deg); }
+      }
+      @keyframes drawLine {
+        from { stroke-dashoffset: 210; }
+        to   { stroke-dashoffset: 0; }
+      }
+      @keyframes starPop {
+        0%   { opacity: 0; transform: scale(0) translate(0px, 0px); }
+        40%  { opacity: 1; }
+        100% { opacity: 0; transform: scale(1.1) translate(var(--tx), var(--ty)); }
+      }
+      .word-cycle {
+        display: inline-block;
+        animation:
+          wordBounceIn 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+          wordWiggle 0.25s ease-in-out 0.56s 3 alternate;
+        transform-origin: center bottom;
+      }
+      .word-underline {
+        stroke-dasharray: 210;
+        stroke-dashoffset: 210;
+        animation: drawLine 0.45s ease-out 0.2s forwards;
+      }
+      .star-particle {
+        position: absolute;
+        pointer-events: none;
+        font-size: 1rem;
+        line-height: 1;
+        animation: starPop 0.65s ease-out forwards;
+      }
+    `}</style>
     <div
       className={`h-screen w-screen overflow-hidden relative bg-white ${
         !isPlaying ? "cursor-pointer" : "cursor-default"
@@ -221,10 +279,10 @@ export function LandingPage() {
             <img
               src="/logo/logo.png"
               alt="Sabah Sprout Logo"
-              className="w-14 h-14 object-contain"
+              className="w-16 h-16 object-contain"
             />
             <span
-              className="font-bold text-xl font-serif tracking-wide
+              className="font-bold text-3xl font-serif tracking-wide
                  bg-gradient-to-r 
                  from-[#2FBFA5] 
                  to-[#1E3A8A] 
@@ -239,7 +297,7 @@ export function LandingPage() {
             <Button
               variant="ghost"
               size="lg"
-              className="text-[#F46197] hover:bg-[#F4F4F4F4]/10 px-5 
+              className="text-[#3090A0] hover:bg-[#F4F4F4F4]/10 px-5 
              h-10 
              text-xl 
              font-semibold
@@ -253,7 +311,7 @@ export function LandingPage() {
             </Button>
             <Button
               size="lg"
-              className="bg-[#F46197] hover:bg-[#e0507f] 
+              className="bg-[#3090A0] hover:bg-[#55B0A0]
              text-white 
              rounded-full 
              px-5 
@@ -285,7 +343,7 @@ export function LandingPage() {
           className="w-screen h-screen flex-shrink-0 flex items-center justify-center relative px-8 pt-14"
           style={{
             background:
-              "linear-gradient(160deg, #ACFCD9 0%, #ffffff 35%, #FFF5F9 65%, #FFFDE7 100%)",
+              "linear-gradient(160deg, #ACFCD9 0%, #ffffff 65%, #FFF5F9 80%, #FFFDE7 100%)",
           }}
         >
           <FloatingIcon
@@ -322,26 +380,58 @@ export function LandingPage() {
 
           <div className="text-center max-w-3xl mx-auto space-y-7 animate-fade-in-up">
             <h1 className="text-5xl lg:text-7xl font-bold leading-[1.1] font-serif tracking-tight">
-              Where{" "}
-              <span className="text-[#F46197] relative">
-                Learning
-                <svg
-                  className="absolute -bottom-2 left-0 w-full"
-                  viewBox="0 0 200 12"
-                  fill="none"
+              Where Learning
+              Meets{" "}
+              <span className="relative inline-block">
+                {[
+                  { tx: "-32px", ty: "-24px", d: "0ms"  },
+                  { tx: "30px",  ty: "-20px", d: "55ms" },
+                  { tx: "-26px", ty: "22px",  d: "25ms" },
+                  { tx: "28px",  ty: "20px",  d: "80ms" },
+                  { tx: "2px",   ty: "-32px", d: "40ms" },
+                ].map((s, i) => (
+                  <span
+                    key={`star-${wordIndex}-${i}`}
+                    className="star-particle"
+                    style={{
+                      "--tx": s.tx,
+                      "--ty": s.ty,
+                      color: CYCLE_WORDS[wordIndex].color,
+                      top: "40%",
+                      left: "50%",
+                      animationDelay: s.d,
+                    } as CSSProperties}
+                  >
+                    ★
+                  </span>
+                ))}
+                <span
+                  key={wordIndex}
+                  className="word-cycle relative"
+                  style={{
+                    color: "#FFFFFF",
+                    textShadow: `3px 3px 0 ${CYCLE_WORDS[wordIndex].color}, -3px 3px 0 ${CYCLE_WORDS[wordIndex].color}, 3px -3px 0 ${CYCLE_WORDS[wordIndex].color}, -3px -3px 0 ${CYCLE_WORDS[wordIndex].color}`,
+                    filter: `drop-shadow(0 0 4px ${CYCLE_WORDS[wordIndex].color}99)`,
+                  }}
                 >
-                  <path
-                    d="M2 8c40-6 80-6 196-2"
-                    stroke="#F46197"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    opacity="0.4"
-                  />
-                </svg>
-              </span>{" "}
-              Meets <span className="text-[#55D6BE]">Fun</span>
+                  {CYCLE_WORDS[wordIndex].word}
+                  <svg
+                    className="absolute -bottom-2 left-0 w-full"
+                    viewBox="0 0 200 12"
+                    fill="none"
+                  >
+                    <path
+                      d="M2 8c40-6 80-6 196-2"
+                      stroke={CYCLE_WORDS[wordIndex].color}
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                      className="word-underline"
+                    />
+                  </svg>
+                </span>
+              </span>
             </h1>
-            <p className="text-lg lg:text-2xl font-bold text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+            <p className="text-xl xl:text-2xl font-bold text-muted-foreground leading-relaxed max-w-2xl mx-auto">
               Empower teachers with intelligent insights and connect parents to
               their child's learning journey. Personalized support for every
               young learner.
@@ -366,7 +456,7 @@ export function LandingPage() {
 
               <p className="text-muted-foreground text-2xl font-medium">
                 Track progress, plan lessons, and receive AI-powered
-                recommendations in one place.
+                recommendations in one place. WE WILL PUT SCREENSHOTS OF THE ACTUAL DASHBOARD HERE LATER
               </p>
             </div>
 
@@ -506,7 +596,7 @@ export function LandingPage() {
           className="w-screen h-screen flex-shrink-0 flex items-center justify-center relative px-8 pt-14"
           style={{
             background:
-              "linear-gradient(180deg, #fff 0%, #FFFDE7 50%, #fff 100%)",
+              "linear-gradient(160deg, #ACFCD9 0%, #ffffff 65%, #FFF5F9 80%, #FFFDE7 100%)",
           }}
         >
           <FloatingIcon
@@ -553,7 +643,7 @@ export function LandingPage() {
                       {/* Icon + Title Row */}
                       <div className="flex items-center gap-3">
                         <div
-                          className={`w-14 h-14 rounded-2xl ${feature.color} flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3`}
+                          className={`w-14 h-14 rounded-2xl ${feature.color} flex items-center justify-center transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 border-2`}
                         >
                           <Icon className="h-7 w-7" />
                         </div>
@@ -576,7 +666,7 @@ export function LandingPage() {
         </section>
 
         {/* ===== SLIDE 4 — Benefits ===== */}
-        <section
+        {/* <section
           className="w-screen h-screen flex-shrink-0 flex items-center justify-center relative px-8 pt-14"
           style={{
             background:
@@ -592,14 +682,12 @@ export function LandingPage() {
             className="w-8 h-8 text-[#F46197]/12 bottom-14 right-12 animate-float-slow"
           />
 
-          {/* Mascot — thumbs up */}
           <img
             src="/mascot/thumbs_up_1.png"
             alt="Mascot thumbs up"
             className="absolute top-40 right-[8%] w-32 lg:w-40 drop-shadow-lg animate-float pointer-events-none select-none"
           />
           <div className="max-w-4xl w-full mx-auto">
-            {/* ===== Section Header ===== */}
             <div className="text-center mb-8">
               <h2 className="text-3xl lg:text-4xl font-bold font-serif mb-3 leading-tight">
                 Teaching Smarter. Parenting Informed.
@@ -610,9 +698,7 @@ export function LandingPage() {
               </p>
             </div>
 
-            {/* ===== Cards Grid ===== */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* ================= TEACHERS ================= */}
               <Card className="border-2 border-[#55D6BE]/30 rounded-2xl overflow-hidden hover:shadow-xl transition-shadow">
                 <CardHeader className="bg-gradient-to-r from-[#34cdb1] to-[#8aebc1] text-white py-2.5">
                   <div className="flex items-center gap-2.5">
@@ -620,7 +706,7 @@ export function LandingPage() {
                       <Award className="h-8 w-8 text-white" />
                     </div>
                     <div>
-                      <CardTitle className="text-white text-xl font-serif leading-tight">
+                      <CardTitle className="text-xl font-serif leading-tight">
                         For Teachers
                       </CardTitle>
                       <CardDescription className="text-white/90 text-lg leading-snug">
@@ -673,9 +759,8 @@ export function LandingPage() {
                 </CardContent>
               </Card>
 
-              {/* ================= PARENTS ================= */}
-              <Card className="border-2 border-[#F46197]/30 rounded-2xl overflow-hidden hover:shadow-xl transition-shadow">
-                <CardHeader className="bg-gradient-to-r from-[#F46197] to-[#EFCA08] text-white py-2.5">
+              <Card className="border-2 border-[#55D6BE]/30 rounded-2xl overflow-hidden hover:shadow-xl transition-shadow">
+                <CardHeader className="bg-gradient-to-r from-[#34cdb1] to-[#8aebc1] text-white py-2.5">
                   <div className="flex items-center gap-2.5">
                     <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
                       <Heart className="h-8 w-8 text-white" />
@@ -735,7 +820,7 @@ export function LandingPage() {
               </Card>
             </div>
           </div>
-        </section>
+        </section> */}
 
         {/* ===== SLIDE 5 — CTA + Footer ===== */}
         <section className="w-screen h-screen flex-shrink-0 flex flex-col ">
@@ -744,7 +829,7 @@ export function LandingPage() {
             className="flex-1 flex items-center justify-center relative overflow-hidden px-10"
             style={{
               background:
-                "radial-gradient(circle at center, #F46197 0%, #F89CBC 70%, transparent 100%)",
+              "linear-gradient(160deg, #ACFCD9 0%, #ffffff 80%, #FFF5F9 90%, #FFFDE7 100%)",
             }}
           >
             <FloatingIcon
@@ -766,11 +851,11 @@ export function LandingPage() {
             <div className="flex flex-col items-center justify-center text-center space-y-8 relative z-10">
               {/* Text */}
               <div className="space-y-4">
-                <h2 className="text-4xl lg:text-6xl font-bold text-white font-serif">
+                <h2 className="text-4xl lg:text-6xl font-bold text-[#333333] font-serif">
                   Ready to Transform Your Classroom?
                 </h2>
 
-                <p className="text-2xl text-white/90 font-medium text-center">
+                <p className="text-2xl text-[#333333]/90 font-medium text-center">
                   Hello Parents and Educators! Join us on Sabah Sprout
                   experience the personalized learning powered by AI.
                 </p>
@@ -852,7 +937,7 @@ export function LandingPage() {
             <div
               className={`rounded-full transition-all duration-300 ${
                 i === current
-                  ? "w-8 h-3 bg-gradient-to-r from-[#F46197] to-[#55D6BE]"
+                  ? "w-8 h-3 bg-gradient-to-r from-[#55D6BE] to-[#55D6BE]"
                   : "w-3 h-3 bg-[#E3E3E3] hover:bg-[#ACFCD9]"
               }`}
             />
@@ -871,7 +956,7 @@ export function LandingPage() {
           className="hover:scale-110 transition-transform"
         >
           {isPlaying ? (
-            <Pause className="h-4 w-4 text-[#F46197]" />
+            <Pause className="h-4 w-4 text-[#55D6BE]" />
           ) : (
             <Play className="h-4 w-4 text-[#55D6BE]" />
           )}
@@ -882,5 +967,6 @@ export function LandingPage() {
         </span>
       </div>
     </div>
+    </>
   );
 }
