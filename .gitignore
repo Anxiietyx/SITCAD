@@ -1,2 +1,38 @@
-SITCAD/src/firebase/firebase.js
-.env
+# --- General/OS ---
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.log
+
+# --- Environment & Secrets ---
+# Wildcards remain effective regardless of depth
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Specific Firebase credentials inside the nested path
+SITCAD/frontend/src/firebase/firebase.js
+.firebase.js
+
+# --- Frontend (React/Vite/Node) ---
+# Updated to match the SITCAD/frontend path
+SITCAD/frontend/node_modules/
+SITCAD/frontend/dist/
+SITCAD/frontend/dist-ssr/
+SITCAD/frontend/package-lock.json
+
+# --- Backend (Python/FastAPI/PgSQL) ---
+# Updated to match the SITCAD/backend path
+SITCAD/backend/__pycache__/
+SITCAD/backend/*.py[cod]
+SITCAD/backend/*$py.class
+SITCAD/backend/.venv/
+SITCAD/backend/env/
+SITCAD/backend/venv/
+SITCAD/backend/ENV/
+SITCAD/backend/.pytest_cache/
+
+# --- Database ---
+*.sqlite
+*.db
