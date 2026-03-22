@@ -66,13 +66,54 @@ export function AuthProvider({ children }) {
     setLoading(true);
     try {
       const result = await signInWithPopup(auth, googleProvider);
-      return result.user;
+      const firebaseUser = result.user;
+      const idToken = await firebaseUser.getIdToken();
+
+      const response = await fetch('http://localhost:8000/auth/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id_token: idToken,
+          full_name: firebaseUser.displayName || 'User'
+        })
+      });
+
+      if (!response.ok) throw new Error('Backend sync failed');
+
+      const dbUser = await response.json();
+      setUser({
+        id: dbUser.id,
+        name: dbUser.full_name,
+        email: dbUser.email,
+        photo: firebaseUser.photoURL,
+        role: dbUser.role,
+      });
+
+      return dbUser;
     } catch (error) {
-      console.error("Google Sign-In Error:", error);
+      console.error('Google Sign-In Error:', error);
       throw error;
     } finally {
       setLoading(false);
     }
+  };
+
+  const updateRole = async (role) => {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) throw new Error('No authenticated user');
+
+    const idToken = await firebaseUser.getIdToken();
+    const response = await fetch('http://localhost:8000/auth/update-role', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id_token: idToken, role })
+    });
+
+    if (!response.ok) throw new Error('Failed to update role');
+
+    const dbUser = await response.json();
+    setUser((prev) => ({ ...prev, role: dbUser.role }));
+    return dbUser.role;
   };
 
   const logout = async () => {
@@ -151,7 +192,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, googleLogin, logout, register }}>
+    <AuthContext.Provider value={{ user, loading, login, googleLogin, updateRole, logout, register }}>
       {children}
     </AuthContext.Provider>
   );

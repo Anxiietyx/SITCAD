@@ -112,4 +112,44 @@ async def sync_user(request: AuthRequest, db: Session = Depends(get_db)):
             status_code=500, 
             detail=f"Database sync failed: {str(e)}"
         )
+
+
+class RoleUpdateRequest(BaseModel):
+    id_token: str
+    role: str
+
+@app.patch("/auth/update-role")
+async def update_role(request: RoleUpdateRequest, db: Session = Depends(get_db)):
+    try:
+        decoded_token = auth.verify_id_token(request.id_token)
+    except Exception as e:
+        print(f"Token verification error: {e}")
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+
+    if request.role not in ("teacher", "parent"):
+        raise HTTPException(status_code=400, detail="Role must be 'teacher' or 'parent'")
+
+    try:
+        uid = decoded_token['uid']
+        user = db.query(models.User).filter(models.User.id == uid).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        user.role = request.role
+        db.commit()
+        db.refresh(user)
+
+        return {
+            "id": user.id,
+            "email": user.email,
+            "full_name": user.full_name,
+            "role": user.role
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        print(f"Role update error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to update role: {str(e)}")
     

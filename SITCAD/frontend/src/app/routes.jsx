@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router";
 import { LandingPage } from "./components/LandingPage";
 import { Login } from "./components/Login";
 import { Register } from "./components/Register";
+import { Onboarding } from "./components/Onboarding";
 import { TeacherDashboard } from "./components/TeacherDashboard";
 import { ParentDashboard } from "./components/ParentDashboard";
 import { StudentProfile } from "./components/StudentProfile";
@@ -30,6 +31,10 @@ export const router = createBrowserRouter([
   {
     path: "/register",
     Component: Register,
+  },
+  {
+    path: "/onboarding",
+    Component: Onboarding,
   },
   {
     path: "/auth-test",

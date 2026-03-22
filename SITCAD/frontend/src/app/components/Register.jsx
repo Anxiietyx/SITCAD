@@ -21,30 +21,22 @@ export function Register() {
   const { googleLogin, register: manualRegister } = useAuth();
   const navigate = useNavigate();
 
-  // Handle Google sign up
+  // Handle Google sign up — role is null, onboarding page will handle it
   const handleGoogleSignUp = async () => {
-      if (!acceptTerms) {
-        return setError('Please accept the terms and conditions');
-      }
-      
-      setLoading(true);
-      setError('');
-      
-      try {
-        const firebaseUser = await googleLogin();
-        const idToken = await firebaseUser.getIdToken();
-
-        // Sync with FastAPI and pass the selected role
-        await syncWithBackend(idToken, role, firebaseUser.displayName || fullName);
-        
-        navigate(`/${role}/dashboard`);
-      } catch (err) {
-        console.error(err);
-        setError('Google Sign-up failed. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
+    setLoading(true);
+    setError('');
+    try {
+      await googleLogin();
+      // googleLogin in AuthContext syncs with backend (role=null) and sets user state.
+      // ProtectedRoute will redirect to /onboarding when role is null.
+      navigate('/onboarding');
+    } catch (err) {
+      console.error(err);
+      setError('Google Sign-up failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Handle manual email+password sign up
   const handleSubmit = async (e) => {
