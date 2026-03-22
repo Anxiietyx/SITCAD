@@ -14,7 +14,9 @@ export function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, user } = useAuth();
+
+  // Add googleLogin to the destructuring list
+  const { login, googleLogin, user } = useAuth();
   const navigate = useNavigate();
 
   // Redirect if already logged in
@@ -23,9 +25,20 @@ export function Login() {
     return null;
   }
 
-  const handleGoogleLogin = () => {
-    // Mock Google OAuth - in production, this would use Supabase Auth
-    setError('Google Sign-in would be implemented with Supabase Auth');
+  const handleGoogleLogin = async () => {
+    setLoading(true); // Start loading state
+    try {
+      setError(''); // Clear previous errors
+      await googleLogin();
+      // Navigation is often handled by a useEffect watching 'user'
+      // in the AuthContext, but manual navigation here works too.
+      navigate('/dashboard')
+    } catch (err) {
+      console.err(err);
+      setError('Failed to sign in with Google. Please try again.');
+    } finally {
+      setLoading(false); // End loading state
+    }
   };
 
   const handleSubmit = async () => {
