@@ -19,8 +19,18 @@ export function ProtectedRoute({ allowedRoles }) {
     return <Navigate to="/login" replace />;
   }
 
+  if (!user.role) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
   if (!allowedRoles.includes(user.role)) {
-    return <Navigate to="/login" replace />;
+    // Redirect to the correct dashboard based on actual role
+    const roleRedirects = {
+      teacher: '/teacher/dashboard',
+      parent: '/parent/dashboard',
+      admin: '/admin/dashboard',
+    };
+    return <Navigate to={roleRedirects[user.role] || '/login'} replace />;
   }
 
   return (

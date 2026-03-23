@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router";
 import { LandingPage } from "./components/LandingPage";
 import { Login } from "./components/Login";
 import { Register } from "./components/Register";
+import { Onboarding } from "./components/Onboarding";
 import { TeacherDashboard } from "./components/TeacherDashboard";
 import { ParentDashboard } from "./components/ParentDashboard";
 import { StudentProfile } from "./components/StudentProfile";
@@ -16,7 +17,9 @@ import { ClassroomTeachingMode } from "./components/ClassroomTeachingMode";
 import { AIAnalysisDashboard } from "./components/AIAnalysisDashboard";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { NotFound } from "./components/NotFound";
-import { AuthTest } from "./components/AuthTest"; 
+import { AuthTest } from "./components/AuthTest";
+import { AdminDashboard } from "./components/AdminDashboard";
+import { AdminRegister } from "./components/AdminRegister"; 
 
 export const router = createBrowserRouter([
   {
@@ -32,14 +35,31 @@ export const router = createBrowserRouter([
     Component: Register,
   },
   {
+    path: "/onboarding",
+    Component: Onboarding,
+  },
+  {
     path: "/auth-test",
     Component: AuthTest,
+  },
+  {
+    path: "/admin/register",
+    Component: AdminRegister,
+  },
+  {
+    path: "/admin",
+    element: <ProtectedRoute allowedRoles={["admin"]} />,
+    children: [
+      { index: true, Component: AdminDashboard },
+      { path: "dashboard", Component: AdminDashboard },
+    ],
   },
   {
     path: "/teacher",
     element: <ProtectedRoute allowedRoles={["teacher"]} />,
     children: [
       { index: true, Component: TeacherDashboard },
+      { path: "dashboard", Component: TeacherDashboard },
       { path: "student/:studentId", Component: StudentProfile },
       { path: "student/:studentId/activities", Component: LearningActivities },
       { path: "student/:studentId/progress", Component: ProgressTracking },
@@ -57,6 +77,7 @@ export const router = createBrowserRouter([
     element: <ProtectedRoute allowedRoles={["parent"]} />,
     children: [
       { index: true, Component: ParentDashboard },
+      { path: "dashboard", Component: ParentDashboard },
       { path: "student/:studentId", Component: StudentProfile },
       { path: "student/:studentId/activities", Component: LearningActivities },
       { path: "student/:studentId/progress", Component: ProgressTracking },

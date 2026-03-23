@@ -14,41 +14,64 @@ export function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [role, setRole] = useState('teacher'); // Removed type annotation
+  const [role, setRole] = useState('teacher');
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const { googleLogin, register: manualRegister } = useAuth();
   const navigate = useNavigate();
 
-  const handleGoogleSignUp = () => {
-    // Mock Google OAuth - in production, this would use Supabase Auth
-    setError('Google Sign-in would be implemented with Supabase Auth');
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!acceptTerms) {
-      setError('Please accept the terms of the agreement');
-      return;
-    }
-    setError('');
+  // Handle Google sign up — role is null, onboarding page will handle it
+  const handleGoogleSignUp = async () => {
     setLoading(true);
-
+    setError('');
     try {
-      // In a real app with Supabase, this would call supabase.auth.signUp
-      const success = await register(email, password, fullName, role);
-      if (success) {
-        navigate(role === 'teacher' ? '/teacher' : '/parent');
-      } else {
-        setError('Registration failed. Please try again.');
-      }
+      await googleLogin();
+      // googleLogin in AuthContext syncs with backend (role=null) and sets user state.
+      // ProtectedRoute will redirect to /onboarding when role is null.
+      navigate('/onboarding');
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      console.error(err);
+      setError('Google Sign-up failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
+
+  // Handle manual email+password sign up
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!acceptTerms) return setError('Please accept the terms');
+    
+    setLoading(true);
+    setError('');
+
+    try {
+      const registeredRole = await manualRegister(email, password, fullName, role);
+      navigate(`/${registeredRole}/dashboard`);
+    } catch (err) {
+      setError(err.message || 'Registration failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Helper function to talk to the FastAPI backend
+  const syncWithBackend = async (idToken, selectedRole, name) => {
+    const response = await fetch('http://localhost:8000/auth/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        id_token: idToken,
+        role: selectedRole, // Explicitly send the role picked in the UI
+        full_name: name 
+      })
+    });
+
+    if (!response.ok) throw new Error('Backend sync failed');
+    return response.json();
+  };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 sm:p-6 lg:p-8">

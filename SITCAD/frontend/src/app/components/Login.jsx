@@ -14,32 +14,62 @@ export function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, user } = useAuth();
+
+  // Add googleLogin to the destructuring list
+  const { login, googleLogin, user } = useAuth();
   const navigate = useNavigate();
 
   // Redirect if already logged in
   if (user) {
-    navigate(user.role === 'teacher' ? '/teacher' : '/parent');
+    const redirects = { teacher: '/teacher/dashboard', parent: '/parent/dashboard', admin: '/admin/dashboard' };
+    navigate(redirects[user.role] || '/onboarding');
     return null;
   }
 
-  const handleGoogleLogin = () => {
-    // Mock Google OAuth - in production, this would use Supabase Auth
-    setError('Google Sign-in would be implemented with Supabase Auth');
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const firebaseUser = await googleLogin();
+      const idToken = await firebaseUser.getIdToken();
+
+      const response = await fetch('http://localhost:8000/auth/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_token: idToken })
+      });
+
+      if (!response.ok) throw new Error('Backend sync failed');
+
+      const dbUser = await response.json();
+      navigate(dbUser.role === 'teacher' ? '/teacher/dashboard' : '/parent/dashboard');
+    } catch (err) {
+      console.error(err);
+      setError('Failed to sign in with Google. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      const success = await login(email, password);
-      if (!success) {
-        setError('Invalid credentials. Try teacher@school.edu or parent@email.com with password: password');
-      }
+      const role = await login(email, password);
+      navigate(role === 'teacher' ? '/teacher/dashboard' : '/parent/dashboard');
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      const code = err.code;
+      if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
+        setError('Incorrect email or password. If you previously signed in with Google, please use "Continue with Google" instead.');
+      } else if (code === 'auth/too-many-requests') {
+        setError('Too many failed attempts. Please try again later or reset your password.');
+      } else if (code === 'auth/user-disabled') {
+        setError('This account has been disabled. Please contact support.');
+      } else {
+        setError('An error occurred. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -190,16 +220,6 @@ export function Login() {
                 </svg>
                 Continue with Google
               </Button>
-
-              {/* Demo credentials hint */}
-              <div className="pt-4 border-t border-muted/50 space-y-2 text-xs text-muted-foreground/80 text-center">
-                <p className="font-semibold uppercase tracking-wider text-[10px] mb-1">Demo Access</p>
-                <div className="flex justify-center gap-4 flex-wrap">
-                  <span>Teacher: <span className="font-mono text-foreground/70">teacher@school.edu</span></span>
-                  <span>Parent: <span className="font-mono text-foreground/70">parent@email.com</span></span>
-                </div>
-                <p>Password: <span className="font-mono text-foreground/70">password</span></p>
-              </div>
             </form>
           </div>
         </div>

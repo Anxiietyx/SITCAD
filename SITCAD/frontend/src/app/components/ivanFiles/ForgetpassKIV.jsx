@@ -1,5 +1,5 @@
 import { sendPasswordResetEmail } from "firebase/auth";
-import { db } from "../../../firebase/firebase";
+import { db } from "../../../lib/firebase";
 
 
 function ForgotPassword(){

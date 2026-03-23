@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { signOut } from 'firebase/auth';
-import { auth } from "../../firebase/firebase"
+import { auth } from "../../lib/firebase"
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet';
@@ -19,7 +19,8 @@ import {
   LogOut,
   Home,
   User,
-  Menu
+  Menu,
+  ShieldCheck
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useState } from 'react';
@@ -40,6 +41,10 @@ const parentNavItems = [
   { path: '/parent/communication', icon: MessageSquare, label: 'Messages' },
 ];
 
+const adminNavItems = [
+  { path: '/admin', icon: LayoutDashboard, label: 'Dashboard', exact: true },
+];
+
 function NavigationContent({ onNavigate }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -47,7 +52,7 @@ function NavigationContent({ onNavigate }) {
 
   if (!user) return null;
 
-  const navItems = user.role === 'teacher' ? teacherNavItems : parentNavItems;
+  const navItems = user.role === 'teacher' ? teacherNavItems : user.role === 'admin' ? adminNavItems : parentNavItems;
 
   const isActive = (path, exact) => {
     if (exact) {
@@ -62,11 +67,11 @@ function NavigationContent({ onNavigate }) {
   };
 
   const handleLogout = async () => {
-    // logout(); // This was commented out in the original TSX, keeping it commented
-    // navigate('/login'); // This was commented out in the original TSX, keeping it commented
-    // onNavigate?.(); // This was commented out in the original TSX, keeping it commented
     try {
       await signOut(auth);
+      logout();
+      navigate('/login');
+      onNavigate?.();
       console.log("User logged out successfully.");
     } catch (error) {
       console.error("Error logging out:", error);

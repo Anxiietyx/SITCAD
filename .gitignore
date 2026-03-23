@@ -13,6 +13,7 @@
 
 # Specific Firebase credentials inside the nested path
 SITCAD/frontend/src/firebase/firebase.js
+SITCAD/frontend/src/lib/firebase.js
 .firebase.js
 
 # --- Frontend (React/Vite/Node) ---
@@ -32,7 +33,9 @@ SITCAD/backend/env/
 SITCAD/backend/venv/
 SITCAD/backend/ENV/
 SITCAD/backend/.pytest_cache/
+SITCAD/backend/routers/__pycache__
 
 # --- Database ---
 *.sqlite
 *.db
+SITCAD/backend/sitcad-sabahsprout-firebase-adminsdk.json

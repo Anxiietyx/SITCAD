@@ -1,0 +1,10 @@
+langchain
+langchain-community
+langchain-google-genai
+python-dotenv
+fastapi[standard]
+uvicorn[standard]
+sqlalchemy
+psycopg2
+cloud-sql-python-connector[pg8000]
+pg8000
