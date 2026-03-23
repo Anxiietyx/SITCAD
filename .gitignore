@@ -33,6 +33,7 @@ SITCAD/backend/env/
 SITCAD/backend/venv/
 SITCAD/backend/ENV/
 SITCAD/backend/.pytest_cache/
+SITCAD/backend/routers/__pycache__
 
 # --- Database ---
 *.sqlite

@@ -23,15 +23,15 @@ DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NA
 # connector = Connector()
 
 # Define the connection function
-def getconn():
-  conn = connector.connect(
-    INSTANCE_CONNECTION_NAME,
-    "pg8000",
-    user=DB_USER,
-    password=DB_PASSWORD,
-    db=DB_NAME
-  )
-  return conn
+# def getconn():
+#   conn = connector.connect(
+#     INSTANCE_CONNECTION_NAME,
+#     "pg8000",
+#     user=DB_USER,
+#     password=DB_PASSWORD,
+#     db=DB_NAME
+#   )
+#   return conn
 
 # Create the engine
 engine = create_engine(DATABASE_URL)
