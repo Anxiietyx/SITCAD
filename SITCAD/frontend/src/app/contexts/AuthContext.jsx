@@ -7,7 +7,14 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword
 } from 'firebase/auth';
-import { auth } from '../../lib/firebase';
+import { auth } from '../lib/firebase';
+
+// ─── DEV BYPASS ──────────────────────────────────────────────────────────────
+// Set to true to skip Firebase + backend auth entirely.
+// Useful when the backend is not running locally.
+const DEV_BYPASS_AUTH = true;
+const DEV_BYPASS_USER = { id: 'dev-teacher', name: 'Dev Teacher', email: 'teacher@school.edu', role: 'teacher' };
+// ─────────────────────────────────────────────────────────────────────────────
 
 const AuthContext = createContext(undefined);
 
@@ -19,6 +26,12 @@ export function AuthProvider({ children }) {
   const googleProvider = new GoogleAuthProvider();
 
   useEffect(() => {
+    if (DEV_BYPASS_AUTH) {
+      setUser(DEV_BYPASS_USER);
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
@@ -126,6 +139,11 @@ export function AuthProvider({ children }) {
   };
 
   const login = async (email, password) => {
+    if (DEV_BYPASS_AUTH) {
+      setUser(DEV_BYPASS_USER);
+      return DEV_BYPASS_USER.role;
+    }
+
     setLoading(true);
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);

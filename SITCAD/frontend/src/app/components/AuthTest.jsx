@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { auth } from "../../lib/firebase";
+import { auth } from "../lib/firebase";
 
 export function AuthTest() {
   const [currentUser, setCurrentUser] = useState(null);
