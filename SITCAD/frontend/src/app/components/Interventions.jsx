@@ -1,45 +1,71 @@
-import { useNavigate } from 'react-router';
-import { useAuth } from '../contexts/AuthContext';
-import { getAllInterventions } from '../data/mockData';
-import { Button } from './ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { ArrowLeft, AlertTriangle, CheckCircle, Clock, Target } from 'lucide-react';
+import { useNavigate } from "react-router";
+import { useAuth } from "../contexts/AuthContext";
+import { getAllInterventions } from "../data/mockData";
+import { Button } from "./ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
+import { Badge } from "./ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import {
+  ArrowLeft,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Target,
+} from "lucide-react";
 
 export function Interventions() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  if (!user || user.role !== 'teacher') {
-    navigate('/');
+  if (!user || user.role !== "teacher") {
+    navigate("/");
     return null;
   }
 
   const interventions = getAllInterventions();
-  const pendingInterventions = interventions.filter(i => i.status === 'pending');
-  const inProgressInterventions = interventions.filter(i => i.status === 'in-progress');
-  const resolvedInterventions = interventions.filter(i => i.status === 'resolved');
+  const pendingInterventions = interventions.filter(
+    (i) => i.status === "pending",
+  );
+  const inProgressInterventions = interventions.filter(
+    (i) => i.status === "in-progress",
+  );
+  const resolvedInterventions = interventions.filter(
+    (i) => i.status === "resolved",
+  );
 
   const handleBack = () => {
-    navigate('/teacher');
+    navigate("/teacher");
   };
 
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case 'high': return 'bg-red-100 text-red-700 border-red-200';
-      case 'medium': return 'bg-orange-100 text-orange-700 border-orange-200';
-      case 'low': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      default: return 'bg-gray-100 text-gray-700 border-gray-200'; // Added default for safety
+      case "high":
+        return "text-base px-8 py-1 bg-red-100 text-red-700 border-red-200";
+      case "medium":
+        return "text-base px-8 py-1 bg-orange-100 text-orange-700 border-orange-200";
+      case "low":
+        return "text-base px-8 py-1 bg-yellow-100 text-yellow-700 border-yellow-200";
+      default:
+        return "text-base px-8 py-1 bg-gray-100 text-gray-700 border-gray-200"; // Added default for safety
     }
   };
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'pending': return <Clock className="h-5 w-5 text-orange-600" />;
-      case 'in-progress': return <Target className="h-5 w-5 text-blue-600" />;
-      case 'resolved': return <CheckCircle className="h-5 w-5 text-green-600" />;
-      default: return <AlertTriangle className="h-5 w-5 text-gray-600" />; // Added default for safety
+      case "pending":
+        return <Clock className="h-5 w-5 text-orange-600" />;
+      case "in-progress":
+        return <Target className="h-5 w-5 text-blue-600" />;
+      case "resolved":
+        return <CheckCircle className="h-5 w-5 text-green-600" />;
+      default:
+        return <AlertTriangle className="h-5 w-5 text-gray-600" />; // Added default for safety
     }
   };
 
@@ -50,30 +76,38 @@ export function Interventions() {
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               {getStatusIcon(intervention.status)}
-              <CardTitle className="text-lg">{intervention.studentName}</CardTitle>
+              <CardTitle className="text-xl font-bold">
+                {intervention.studentName}
+              </CardTitle>
             </div>
-            <CardDescription className="text-base font-medium">
+            <CardDescription className="mt-2 text-lg leading-relaxed">
               {intervention.area}
             </CardDescription>
           </div>
-          <Badge className={`${getPriorityColor(intervention.priority)} border`}>
+          <Badge
+            className={`${getPriorityColor(intervention.priority)} border`}
+          >
             {intervention.priority} priority
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Concern */}
-        <div className="p-4 bg-orange-50 rounded-lg border border-orange-100">
-          <p className="text-sm font-medium text-orange-900 mb-1">Concern Identified:</p>
-          <p className="text-sm text-muted-foreground">{intervention.concern}</p>
+        <div className="p-4 bg-orange-50 rounded-lg border-2 border-orange-200">
+          <p className="text-lg font-medium text-orange-900 mb-1">
+            Concern Identified:
+          </p>
+          <p className="text-base text-muted-foreground">
+            {intervention.concern}
+          </p>
         </div>
 
         {/* Recommended Actions */}
         <div>
-          <p className="text-sm font-medium mb-3">Recommended Actions:</p>
+          <p className="text-lg font-medium mb-3">Recommended Actions:</p>
           <ul className="space-y-3">
             {intervention.recommendedActions.map((action, index) => (
-              <li key={index} className="flex items-start gap-2 text-sm">
+              <li key={index} className="flex items-start gap-2 text-base">
                 <div className="w-5 h-5 rounded-full bg-green-300 text-black-600 flex items-center justify-center text-xs font-medium shrink-1 mt-1.15">
                   {index + 1}
                 </div>
@@ -85,11 +119,15 @@ export function Interventions() {
 
         {/* Status and Date */}
         <div className="flex items-center justify-between pt-4 border-t text-sm text-muted-foreground">
-          <span>Created: {new Date(intervention.createdDate).toLocaleDateString()}</span>
+          <span>
+            Created: {new Date(intervention.createdDate).toLocaleDateString()}
+          </span>
           <Button
             variant="outline"
-            size="sm"
-            onClick={() => navigate(`/teacher/student/${intervention.studentId}`)}
+            size="sm" className="px-3 border-2"
+            onClick={() =>
+              navigate(`/teacher/student/${intervention.studentId}`)
+            }
           >
             View Student
           </Button>
@@ -99,22 +137,26 @@ export function Interventions() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-300 via-green-200 to-green-100">
+    <div className="min-h-screen bg-gradient-to-br from-[#66D0BC]-30 via-[#66D0BC]-20 to-[#66D0BC]-10">
       {/* Header */}
       <header className="bg-white border-b shadow-sm sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-4">
+        <div className="max-w-7xl mx-auto px-4 py-4">
           <Button variant="ghost" onClick={handleBack} className="mb-4">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Dashboard
           </Button>
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-black"/>
+            <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-300 rounded-lg flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6 text-black" />
             </div>
             <div>
-              <h1 className="text-2xl font-semibold">Early Intervention Support</h1>
+              <h1 className="text-2xl font-semibold">
+                AI-Powered Student Interventions
+              </h1>
               <p className="text-sm text-muted-foreground">
-                Data-driven insights and recommendations for students needing additional support
+                Identify, review, and take action on students who need extra
+                support based on AI-detected learning gaps and developmental
+                needs.
               </p>
             </div>
           </div>
@@ -122,60 +164,80 @@ export function Interventions() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold mb-2">Intervention Overview</h2>
+          <p className="text-lg text-muted-foreground mb-4 font-medium">
+            A quick summary of students who need attention, ongoing support, and
+            successfully completed interventions.
+          </p>
+        </div>
         {/* Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardDescription>Pending Review</CardDescription>
-              <CardTitle className="text-3xl">{pendingInterventions.length}</CardTitle>
+          <Card className="pb-2">
+            <CardHeader className="pb-2">
+              <CardDescription className="text-lg font-medium">
+                Pending Review
+              </CardDescription>
+              <CardTitle className="text-5xl font-medium">
+                {pendingInterventions.length}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center text-sm text-red-600">
-                <Clock className="mr-2 h-4 w-4" />
-                Requires attention
+              <div className="flex items-center text-lg text-red-600">
+                <Clock className="mr-2 h-5 w-5" />
+                Needs teacher review
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardDescription>In Progress</CardDescription>
-              <CardTitle className="text-3xl">{inProgressInterventions.length}</CardTitle>
+          <Card className="pb-2">
+            <CardHeader className="pb-2">
+              <CardDescription className="text-lg font-medium">
+                Active Interventions
+              </CardDescription>
+              <CardTitle className="text-5xl font-medium">
+                {inProgressInterventions.length}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center text-sm text-orange-600">
-                <Target className="mr-2 h-4 w-4" />
-                Active interventions
+              <div className="flex items-center text-lg text-orange-600">
+                <Target className="mr-2 h-5 w-5" />
+                Support currently ongoing
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardDescription>Resolved</CardDescription>
-              <CardTitle className="text-3xl">{resolvedInterventions.length}</CardTitle>
+          <Card className="pb-2">
+            <CardHeader className="pb-2">
+              <CardDescription className="text-lg font-medium">
+                Successful Interventions
+              </CardDescription>
+              <CardTitle className="text-5xl font-medium">
+                {resolvedInterventions.length}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center text-sm text-green-600">
-                <CheckCircle className="mr-2 h-4 w-4" />
-                Successfully addressed
+              <div className="flex items-center text-lg text-green-600">
+                <CheckCircle className="mr-2 h-5 w-5" />
+                Student progress improved
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* AI Insights Banner */}
-        <Card className="border-2 border-yellow-200 bg-gradient-to-r from-yellow-100 to-yellow-100">
+        <Card className="border-2 border-yellow-300 bg-gradient-to-r from-yellow-100 to-yellow-100">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-500 to-red-600 flex items-center justify-center">
-                <Target className="h-4 w-4 text-black"/>
-              </div>
-              Early Intervention System Powered by AI
+            <CardTitle className="flex items-center gap-2 text-lg font-bold">
+              <Target className="h-5 w-5 text-amber-600" />
+              AI Intervention Insights
             </CardTitle>
-            <CardDescription>
-              AI analyzes student performance data across multiple developmental areas to identify learning gaps early.
-              Interventions are prioritized based on severity, frequency, and impact on overall development.
+
+            <CardDescription className="mb-4 font-medium text-base">
+              The system analyzes student performance and behavior to detect
+              learning gaps early and generate targeted intervention plans. Each
+              intervention is prioritized to help you focus on students who need
+              the most support.
             </CardDescription>
             <div className="pb-3"></div>
             {/* TO-DO: Find a better solution to the spacing instead of using this <div> */}
@@ -184,18 +246,18 @@ export function Interventions() {
 
         {/* Interventions Tabs */}
         <Tabs defaultValue="in-progress" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="in-progress" className="gap-2">
+          <TabsList className="grid w-full grid-cols-3 h-12">
+            <TabsTrigger value="in-progress" className="text-base gap-2">
               <Target className="h-4 w-4" />
-              In Progress ({inProgressInterventions.length})
+              Active Support ({inProgressInterventions.length})
             </TabsTrigger>
-            <TabsTrigger value="pending" className="gap-2">
+            <TabsTrigger value="pending" className="text-base gap-2">
               <Clock className="h-4 w-4" />
-              Pending ({pendingInterventions.length})
+              Needs Review ({pendingInterventions.length})
             </TabsTrigger>
-            <TabsTrigger value="resolved" className="gap-2">
+            <TabsTrigger value="resolved" className="text-base gap-2">
               <CheckCircle className="h-4 w-4" />
-              Resolved ({resolvedInterventions.length})
+              Completed ({resolvedInterventions.length})
             </TabsTrigger>
           </TabsList>
 
