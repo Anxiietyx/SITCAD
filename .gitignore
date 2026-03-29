@@ -14,6 +14,7 @@
 # Specific Firebase credentials inside the nested path
 SITCAD/frontend/src/firebase/firebase.js
 SITCAD/frontend/src/lib/firebase.js
+SITCAD/frontend/src/app/lib/firebase.js
 .firebase.js
 
 # --- Frontend (React/Vite/Node) ---
