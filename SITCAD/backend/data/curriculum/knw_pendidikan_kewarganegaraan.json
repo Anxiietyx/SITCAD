@@ -1,0 +1,223 @@
+{
+  "overview": {
+    "domain": "Kerohanian, Nilai dan Kewarganegaraan - Pendidikan Kewarganegaraan",
+    "domain_identifier": "KW",
+    "description": {
+      "kandungan_pembelajaran": "Subbidang pembelajaran Pendidikan Kewarganegaraan bertujuan memupuk kesedaran murid terhadap hak dan tanggungjawab mereka sebagai seorang warganegara yang memiliki semangat patriotisme serta dapat menyumbang kepada kesejahteraan keluarga dan komuniti.",
+      "skills": [
+        {
+          "kn_code": "KEMAHIRAN 1",
+          "kn_title": "Memahami"
+        },
+        {
+          "kn_code": "KEMAHIRAN 2",
+          "kn_title": "Mengamalkan"
+        }
+      ],
+      "dimensions": [
+        "diri dan keluarga",
+        "diri dan komuniti",
+        "diri dan negara"
+      ],
+      "focus": [
+        "1. Memahami hak dan tanggungjawab terhadap diri sendiri, keluarga, komuniti dan negara.",
+        "2. Melaksanakan tanggungjawab terhadap diri, keluarga, komuniti dan negara."
+      ]
+    }
+  },
+  "domain_content": [
+    {
+      "kn_code": "KEMAHIRAN 1",
+      "kn_title": "MEMAHAMI",
+      "kn_component_sks": [
+        {
+          "sk_code": "KW 1.1",
+          "sk_title": "Memahami hak dan tanggungjawab terhadap diri sendiri.",
+          "sk_component_spes": [
+            {
+              "spe_code": "KW 1.1.1",
+              "spe_title": "Membezakan keperluan dan kehendak.",
+              "spe_note": "Contoh: Keperluan: 'Kita perlukan kasut untuk berjalan.' Kehendak: 'Saya mahu kasut yang ada lampu-lampu!'"
+            },
+            {
+              "spe_code": "KW 1.1.2",
+              "spe_title": "Mengetahui hak yang perlu dilindungi dan dipenuhi.",
+              "spe_note": "Hak merupakan keperluan atau perkara asas yang perlu kanak-kanak miliki seperti makanan, tempat tinggal dan pendidikan."
+            },
+            {
+              "spe_code": "KW 1.1.3",
+              "spe_title": "Menyatakan tanggungjawab terhadap diri.",
+              "spe_note": "Contoh: Jaga kebersihan diri, Cuci tangan sebelum dan selepas makan, Guna peralatan sendiri dengan baik, Kemas mainan sendiri."
+            }
+          ]
+        },
+        {
+          "sk_code": "KW 1.2",
+          "sk_title": "Memahami tanggungjawab terhadap keluarga.",
+          "sk_component_spes": [
+            {
+              "spe_code": "KW 1.2.1",
+              "spe_title": "Menceritakan peranan anggota keluarga.",
+              "spe_note": null
+            },
+            {
+              "spe_code": "KW 1.2.2",
+              "spe_title": "Menyatakan tanggungjawab diri terhadap ahli keluarga.",
+              "spe_note": "Contoh: Bantu ibu membuang sampah, Patuhi peraturan yang telah ditetapkan di rumah, Ucap terima kasih dan hargai bantuan yang diberikan."
+            }
+          ]
+        },
+        {
+          "sk_code": "KW 1.3",
+          "sk_title": "Memahami hubungan diri dengan komuniti.",
+          "sk_component_spes": [
+            {
+              "spe_code": "KW 1.3.1",
+              "spe_title": "Mengetahui tanggungjawab sebagai warga sekolah.",
+              "spe_note": "Contoh: Patuh peraturan sekolah dan jaga kebersihan persekitaran sekolah, Hormat rakan dan guru."
+            },
+            {
+              "spe_code": "KW 1.3.2",
+              "spe_title": "Mengenali kemudahan awam dan tahu cara menjaga kemudahan awam tersebut.",
+              "spe_note": null
+            },
+            {
+              "spe_code": "KW 1.3.3",
+              "spe_title": "Memerihalkan tentang kejiranan.",
+              "spe_note": "Contoh: Hubungan sesama jiran: Saling membantu dan hormat-menghormati; Aktiviti kejiranan: Gotong-royong dan sambutan hari raya"
+            }
+          ]
+        },
+        {
+          "sk_code": "KW 1.4",
+          "sk_title": "Memahami dan mengetahui negara Malaysia.",
+          "sk_component_spes": [
+            {
+              "spe_code": "KW 1.4.1",
+              "spe_title": "Mengenali Malaysia.",
+              "spe_note": "Contoh: Negeri di Malaysia dan ketua negara."
+            },
+            {
+              "spe_code": "KW 1.4.2",
+              "spe_title": "Mengenali identiti dan lambang negara.",
+              "spe_note": "Contoh: Lagu Negaraku, Jalur Gemilang, Rukun Negara, bunga kebangsaan, Jata Negara serta lagu dan bendera negeri tempat tinggal."
+            },
+            {
+              "spe_code": "KW 1.4.3",
+              "spe_title": "Mengenali mercu tanda di Malaysia.",
+              "spe_note": "Contoh: Menara Berkembar Petronas, Menara Kuala Lumpur, Tugu Negara, Jambatan Pulau Pinang dan Bangunan Sultan Abdul Samad."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kn_code": "KEMAHIRAN 2",
+      "kn_title": "MENGAMALKAN",
+      "kn_component_sks": [
+        {
+          "sk_code": "KW 2.1",
+          "sk_title": "Melaksanakan tanggungjawab terhadap keluarga.",
+          "sk_component_spes": [
+            {
+              "spe_code": "KW 2.1.1",
+              "spe_title": "Menghormati dan menghargai ahli keluarga.",
+              "spe_note": "Contoh: Mematuhi peraturan yang telah ditetapkan dalam keluarga."
+            },
+            {
+              "spe_code": "KW 2.1.2",
+              "spe_title": "Melibatkan diri dalam tugasan di rumah.",
+              "spe_note": "Contoh: Simpan alat mainan selepas bermain, bantu ibu memasak dan menghidang makanan serta siram tanaman."
+            }
+          ]
+        },
+        {
+          "sk_code": "KW 2.2",
+          "sk_title": "Melaksanakan tanggungjawab terhadap komuniti.",
+          "sk_component_spes": [
+            {
+              "spe_code": "KW 2.2.1",
+              "spe_title": "Menghargai dan menggunakan kemudahan awam dengan baik.",
+              "spe_note": null
+            },
+            {
+              "spe_code": "KW 2.2.2",
+              "spe_title": "Menghormati dan menghargai warga setempat.",
+              "spe_note": null
+            }
+          ]
+        },
+        {
+          "sk_code": "KW 2.3",
+          "sk_title": "Melaksanakan tanggungjawab terhadap negara.",
+          "sk_component_spes": [
+            {
+              "spe_code": "KW 2.3.1",
+              "spe_title": "Mempamerkan sikap hormat terhadap lambang dan identiti negara.",
+              "spe_note": "Contoh: Berdiri ketika menyanyikan lagu Negaraku, Menghormati Jalur Gemilang."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "performance_metrics": [
+    {
+      "spr_code": "KW 1",
+      "spr_title": "Mengetahui dan melaksanakan tanggungjawab terhadap keluarga.",
+      "spr_component_sks": ["KW 1.2", "KW 2.1"],
+      "spr_rubric": [
+        {
+          "level": 1,
+          "explanation": "Murid boleh menyatakan tanggungjawab terhadap keluarga."
+        },
+        {
+          "level": 2,
+          "explanation": "Murid boleh melaksanakan tanggungjawab terhadap keluarga dengan rangsangan yang sesuai."
+        },
+        {
+          "level": 3,
+          "explanation": "Murid boleh melaksanakan tanggungjawab terhadap keluarga."
+        }
+      ]
+    },
+    {
+      "spr_code": "KW 2",
+      "spr_title": "Mengetahui dan melaksanakan tanggungjawab terhadap komuniti.",
+      "spr_component_sks": ["KW 1.3", "KW 2.2"],
+      "spr_rubric": [
+        {
+          "level": 1,
+          "explanation": "Murid boleh menyatakan cara menjaga kemudahan awam dan cara menghormati warga setempat."
+        },
+        {
+          "level": 2,
+          "explanation": "Murid boleh menggunakan kemudahan awam dengan bertanggungjawab dan menghormati warga setempat dengan bimbingan."
+        },
+        {
+          "level": 3,
+          "explanation": "Murid boleh menggunakan kemudahan awam dengan bertanggungjawab dan menghormati warga setempat."
+        }
+      ]
+    },
+    {
+      "spr_code": "KW 3",
+      "spr_title": "Mengetahui dan melaksanakan tanggungjawab terhadap negara.",
+      "spr_component_sks": ["KW 1.4", "KW 2.3"],
+      "spr_rubric": [
+        {
+          "level": 1,
+          "explanation": "Murid boleh menyatakan tanggungjawab terhadap negara."
+        },
+        {
+          "level": 2,
+          "explanation": "Murid boleh menunjukkan sikap menghormati lambang dan identiti negara dengan rangsangan yang sesuai."
+        },
+        {
+          "level": 3,
+          "explanation": "Murid boleh menunjukkan sikap menghormati lambang dan identiti negara dalam pelbagai situasi."
+        }
+      ]
+    }
+  ]
+}

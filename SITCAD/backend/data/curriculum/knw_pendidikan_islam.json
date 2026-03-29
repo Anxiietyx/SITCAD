@@ -1,0 +1,256 @@
+{
+  "overview": {
+    "domain": "Kerohanian, Nilai dan Kewarganegaraan - Pendidikan Islam",
+    "domain_identifier": "PI",
+    "description": {
+      "kandungan_pembelajaran": "Subbidang pembelajaran Pendidikan Islam berhasrat untuk mendidik murid menjadi insan yang berakhlak mulia, baik hati, beriman dan bertaqwa kepada Allah. Subbidang pembelajaran ini memberi penekanan dalam aspek asas pengetahuan, sikap dan nilai serta amalan ajaran agama Islam dalam kehidupan. Di samping itu, Pendidikan Islam juga memberi peluang kepada murid mempelajari asas tulisan jawi.",
+      "skills": [
+        {
+          "kn_code": "KN 1",
+          "kn_title": "Mengetahui dan memahami"
+        },
+        {
+          "kn_code": "KN 2",
+          "kn_title": "Mengamalkan"
+        }
+      ],
+      "dimensions": [
+        "Asas Al-Quran",
+        "Akidah",
+        "Ibadah",
+        "Sirah",
+        "Akhlak",
+        "Tulisan jawi"
+      ],
+      "focus": [
+        "1. Menguasai kemahiran asas Al-Quran.",
+        "2. Memupuk adab dan akhlak mulia dalam kehidupan harian.",
+        "3. Mengaplikasikan ajaran agama Islam."
+      ]
+    }
+  },
+  "domain_content": [
+    {
+      "kn_code": "KEMAHIRAN 1",
+      "kn_title": "MENGETAHUI DAN MEMAHAMI",
+      "kn_component_sks": [
+        {
+          "sk_code": "PI 1.1",
+          "sk_title": "Mengetahui asas Al-Quran.",
+          "sk_component_spes": [
+            {
+              "spe_code": "PI 1.1.1",
+              "spe_title": "Menyebut huruf hijaiyah tunggal.",
+              "spe_note": null
+            },
+            {
+              "spe_code": "PI 1.1.2",
+              "spe_title": "Mengenal dan menyebut bunyi huruf hijaiyah berbaris satu.",
+              "spe_note": "Bunyi huruf berbaris: atas (fathah), bawah (kasrah), hadapan (dhommah)"
+            },
+            {
+              "spe_code": "PI 1.1.3",
+              "spe_title": "Menghafaz surah daripada Juz Amma dengan betul.",
+              "spe_note": "Juz Amma terpilih adalah: Surah Al-Fatihah, Surah An-Nas, Surah Al-Ikhlas. Maksud setiap surah terpilih diterangkan secara ringkas."
+            }
+          ]
+        },
+        {
+          "sk_code": "PI 1.2",
+          "sk_title": "Mengetahui Rukun Iman dan Rukun Islam.",
+          "sk_component_spes": [
+            {
+              "spe_code": "PI 1.2.1",
+              "spe_title": "Menyatakan Rukun Iman.",
+              "spe_note": null
+            },
+            {
+              "spe_code": "PI 1.2.2",
+              "spe_title": "Menyatakan Rukun Islam.",
+              "spe_note": null
+            }
+          ]
+        },
+        {
+          "sk_code": "PI 1.3",
+          "sk_title": "Mengetahui dan memahami ibadah dalam kehidupan harian.",
+          "sk_component_spes": [
+            {
+              "spe_code": "PI 1.3.1",
+              "spe_title": "Melakukan wuduk dengan betul dan tertib.",
+              "spe_note": "Niat dan anggota wuduk."
+            },
+            {
+              "spe_code": "PI 1.3.2",
+              "spe_title": "Melakukan perlakuan solat dengan betul dan tertib.",
+              "spe_note": "Perlakuan solat iaitu berdiri tegak, takbiratulihram, rukuk, iktidal, sujud, duduk antara dua sujud, duduk tahiyat dan salam. Perkenalkan niat solat dan bacaan asas dalam solat."
+            },
+            {
+              "spe_code": "PI 1.3.3",
+              "spe_title": "Memahami ibadah puasa.",
+              "spe_note": "Pengertian puasa, Niat, Perkara berkaitan bersahur dan berbuka, Perkara yang membatalkan puasa"
+            }
+          ]
+        },
+        {
+          "sk_code": "PI 1.4",
+          "sk_title": "Mengetahui latar belakang dan keluarga Nabi Muhammad SAW.",
+          "sk_component_spes": [
+            {
+              "spe_code": "PI 1.4.1",
+              "spe_title": "Bercerita tentang Nabi Muhammad SAW.",
+              "spe_note": "Nama penuh, tempat kelahiran, tarikh dan hari lahir. Memberitahu irhas Nabi Muhammad SAW semasa kelahirannya."
+            },
+            {
+              "spe_code": "PI 1.4.2",
+              "spe_title": "Menyatakan nama ahli keluarga terdekat Nabi Muhammad SAW.",
+              "spe_note": "Ibu, bapa, datuk, anak dan bapa saudara."
+            }
+          ]
+        },
+        {
+          "sk_code": "PI 1.5",
+          "sk_title": "Mengetahui asas tulisan jawi.",
+          "sk_component_spes": [
+            {
+              "spe_code": "PI 1.5.1",
+              "spe_title": "Mengecam dan menyebut huruf jawi.",
+              "spe_note": null
+            },
+            {
+              "spe_code": "PI 1.5.2",
+              "spe_title": "Membaca perkataan yang mengandungi dua suku kata terbuka.",
+              "spe_note": null
+            },
+            {
+              "spe_code": "PI 1.5.3",
+              "spe_title": "Menyalin perkataan.",
+              "spe_note": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kn_code": "KEMAHIRAN 2",
+      "kn_title": "MENGAMALKAN",
+      "kn_component_sks": [
+        {
+          "sk_code": "PI 2.1",
+          "sk_title": "Mengamalkan cara beriman kepada Allah SWT dan Nabi Muhammad SAW dalam kehidupan harian.",
+          "sk_component_spes": [
+            {
+              "spe_code": "PI 2.1.1",
+              "spe_title": "Melafazkan kalimah syahadah.",
+              "spe_note": null
+            },
+            {
+              "spe_code": "PI 2.1.2",
+              "spe_title": "Melafaz kalimah bagi memuji keesaan dan kebesaran Allah SWT.",
+              "spe_note": "Subhanallah, Alhamdulillah dan Allahuakbar"
+            },
+            {
+              "spe_code": "PI 2.1.3",
+              "spe_title": "Melafaz sifat wajib bagi Nabi Muhammad SAW.",
+              "spe_note": "Siddiq (jujur), Amanah, Tabligh (menyampaikan), Fatanah (bijaksana)"
+            }
+          ]
+        },
+        {
+          "sk_code": "PI 2.2",
+          "sk_title": "Mengamalkan adab dalam kehidupan seharian.",
+          "sk_component_spes": [
+            {
+              "spe_code": "PI 2.2.1",
+              "spe_title": "Mempamerkan adab dalam aktiviti harian.",
+              "spe_note": "Contoh: Adab makan dan minum, adab pergaulan (ibu bapa, ahli keluarga, guru dan rakan)."
+            },
+            {
+              "spe_code": "PI 2.2.2",
+              "spe_title": "Melafazkan doa dalam aktiviti harian.",
+              "spe_note": "Contoh: Doa sebelum belajar, doa makan dan minum, doa masuk dan keluar tandas, doa ibu bapa, doa tidur dan doa naik kenderaan"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "performance_metrics": [
+    {
+      "spr_code": "PI 1",
+      "spr_title": "Menghafaz surah terpilih Juz Amma.",
+      "spr_component_sks": ["PI 1.1"],
+      "spr_rubric": [
+        {
+          "level": 1,
+          "explanation": "Murid boleh mengulang bacaan surah terpilih Juz Amma mengikut guru."
+        },
+        {
+          "level": 2,
+          "explanation": "Murid boleh menghafaz surah terpilih daripada Juz Amma tetapi tidak lancar."
+        },
+        {
+          "level": 3,
+          "explanation": "Murid boleh menghafaz surah terpilih daripada Juz Amma dengan betul dan lancar."
+        }
+      ]
+    },
+    {
+      "spr_code": "PI 2",
+      "spr_title": "Melakukan ibadah dalam kehidupan harian.",
+      "spr_component_sks": ["PI 1.3"],
+      "spr_rubric": [
+        {
+          "level": 1,
+          "explanation": "Murid boleh melakukan wuduk dan perlakuan solat dengan bimbingan."
+        },
+        {
+          "level": 2,
+          "explanation": "Murid boleh melakukan wuduk dan perlakuan solat dengan betul."
+        },
+        {
+          "level": 3,
+          "explanation": "Murid boleh melakukan wuduk dan perlakuan solat dengan betul dan tertib."
+        }
+      ]
+    },
+    {
+      "spr_code": "PI 3",
+      "spr_title": "Menunjukkan cara beriman kepada Allah SWT dan Nabi Muhammad SAW.",
+      "spr_component_sks": ["PI 2.1"],
+      "spr_rubric": [
+        {
+          "level": 1,
+          "explanation": "Murid boleh melafazkan dua kalimah syahadah mengikut guru."
+        },
+        {
+          "level": 2,
+          "explanation": "Murid boleh melafazkan dua kalimah syahadah tetapi tidak lancar."
+        },
+        {
+          "level": 3,
+          "explanation": "Murid boleh melafazkan dua kalimah syahadah dengan betul dan lancar."
+        }
+      ]
+    },
+    {
+      "spr_code": "PI 4",
+      "spr_title": "Mengetahui dan menunjukkan adab yang baik dalam kehidupan.",
+      "spr_component_sks": ["PI 2.2"],
+      "spr_rubric": [
+        {
+          "level": 1,
+          "explanation": "Murid boleh menyatakan contoh adab yang baik dalam kehidupan harian."
+        },
+        {
+          "level": 2,
+          "explanation": "Murid boleh menunjukkan adab baik dalam kehidupan harian dengan rangsangan yang sesuai."
+        },
+        {
+          "level": 3,
+          "explanation": "Murid boleh menunjukkan adab baik dalam kehidupan harian."
+        }
+      ]
+    }
+  ]
+}

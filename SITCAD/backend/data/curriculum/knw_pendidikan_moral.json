@@ -1,0 +1,227 @@
+{
+  "overview": {
+    "domain": "Kerohanian, Nilai dan Kewarganegaraan - Pendidikan Moral",
+    "domain_identifier": "PM",
+    "description": {
+      "kandungan_pembelajaran": "Subbidang pembelajaran Pendidikan Moral di prasekolah merupakan asas penting dalam pembentukan nilai seperti kasih sayang, kejujuran, hormat dan kerajinan melalui pendekatan yang menyeronokkan. Bidang ini bertujuan untuk mengembangkan kesedaran moral dan tingkah laku positif dalam kehidupan seharian.",
+      "skills": [
+        {
+          "kn_code": "KN 1",
+          "kn_title": "Mengetahui dan memahami"
+        },
+        {
+          "kn_code": "KN 2",
+          "kn_title": "Mengamalkan"
+        }
+      ],
+      "dimensions": ["diri sendiri", "diri dengan orang lain", "persekitaran"],
+      "focus": [
+        "1. Memupuk kesedaran moral dalam kehidupan.",
+        "2. Mengamalkan nilai yang baik dan sikap positif dalam kehidupan harian."
+      ]
+    }
+  },
+  "domain_content": [
+    {
+      "kn_code": "KEMAHIRAN 1",
+      "kn_title": "MENGETAHUI DAN MEMAHAMI",
+      "kn_component_sks": [
+        {
+          "sk_code": "PM 1.1",
+          "sk_title": "Mengetahui nilai murni yang perlu ada dalam diri sendiri.",
+          "sk_component_spes": [
+            {
+              "spe_code": "PM 1.1.1",
+              "spe_title": "Menyatakan cara menyayangi diri.",
+              "spe_note": "Contoh: Menjaga kebersihan dan keselamatan diri, Mengambil makanan berkhasiat."
+            },
+            {
+              "spe_code": "PM 1.1.2",
+              "spe_title": "Memberikan contoh sikap rajin.",
+              "spe_note": null
+            },
+            {
+              "spe_code": "PM 1.1.3",
+              "spe_title": "Menceritakan tentang perlakuan dan kebaikan bersikap jujur.",
+              "spe_note": "Contoh: Bersikap jujur boleh meningkatkan kepercayaan orang lain terhadap diri, menjadi teladan yang baik dan memupuk rasa tanggungjawab."
+            }
+          ]
+        },
+        {
+          "sk_code": "PM 1.2",
+          "sk_title": "Memahami nilai murni dalam interaksi dengan orang lain.",
+          "sk_component_spes": [
+            {
+              "spe_code": "PM 1.2.1",
+              "spe_title": "Menceritakan cara menunjukkan kasih sayang kepada orang lain.",
+              "spe_note": "Contoh: Peluk ibu, bantu nenek kemas rumah dan berkongsi alat tulis dengan rakan."
+            },
+            {
+              "spe_code": "PM 1.2.2",
+              "spe_title": "Menyatakan keperluan orang lain.",
+              "spe_note": "Contoh: Pujuk kawan yang sedang menangis dan bantu rakan yang memerlukan."
+            },
+            {
+              "spe_code": "PM 1.2.3",
+              "spe_title": "Memberi contoh cara menunjukkan sikap hormat kepada orang lain dalam pelbagai situasi.",
+              "spe_note": null
+            }
+          ]
+        },
+        {
+          "sk_code": "PM 1.3",
+          "sk_title": "Memahami nilai kasih sayang dalam penjagaan alam sekitar.",
+          "sk_component_spes": [
+            {
+              "spe_code": "PM 1.3.1",
+              "spe_title": "Menyatakan kepentingan menyayangi alam sekitar.",
+              "spe_note": "Contoh: Sayangi alam sekitar dapat mengelak pencemaran dan bencana alam serta risiko penyakit."
+            },
+            {
+              "spe_code": "PM 1.3.2",
+              "spe_title": "Menceritakan cara menyayangi alam sekitar.",
+              "spe_note": "Contoh: Tutup suis lampu selepas digunakan, Tidak memetik bunga di taman, Buang sampah ke dalam tong sampah."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kn_code": "KEMAHIRAN 2",
+      "kn_title": "MENGAMALKAN",
+      "kn_component_sks": [
+        {
+          "sk_code": "PM 2.1",
+          "sk_title": "Mengamalkan nilai murni dalam diri sendiri.",
+          "sk_component_spes": [
+            {
+              "spe_code": "PM 2.1.1",
+              "spe_title": "Mengamalkan perlakuan sayang kepada diri sendiri.",
+              "spe_note": null
+            },
+            {
+              "spe_code": "PM 2.1.2",
+              "spe_title": "Bercakap benar dalam pertuturan.",
+              "spe_note": "Perlakuan untuk menyatakan perkara sebenar yang telah dilakukan tidak kira sama ada perkara baik atau sebaliknya."
+            },
+            {
+              "spe_code": "PM 2.1.3",
+              "spe_title": "Melaksanakan tugasan dengan rajin.",
+              "spe_note": null
+            }
+          ]
+        },
+        {
+          "sk_code": "PM 2.2",
+          "sk_title": "Mengamalkan nilai murni terhadap orang lain.",
+          "sk_component_spes": [
+            {
+              "spe_code": "PM 2.2.1",
+              "spe_title": "Mendengar dan menghargai pendapat orang lain.",
+              "spe_note": null
+            },
+            {
+              "spe_code": "PM 2.2.2",
+              "spe_title": "Menunjukkan keprihatinan terhadap orang lain.",
+              "spe_note": "Contoh: Bersedia dan mengambil tindakan yang sesuai kepada rakan yang menghadapi kesukaran atau kesedihan."
+            },
+            {
+              "spe_code": "PM 2.2.3",
+              "spe_title": "Menunjukkan percakapan dan perlakuan yang sopan terhadap orang lain.",
+              "spe_note": null
+            }
+          ]
+        },
+        {
+          "sk_code": "PM 2.3",
+          "sk_title": "Mengamalkan penjagaan alam sekitar.",
+          "sk_component_spes": [
+            {
+              "spe_code": "PM 2.3.1",
+              "spe_title": "Melaksanakan aktiviti memelihara dan memulihara alam sekitar.",
+              "spe_note": "Contoh: Buang sampah di tempat yang betul, menanam pokok dan gotong royong."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "performance_metrics": [
+    {
+      "spr_code": "PM 1",
+      "spr_title": "Mengamalkan nilai kasih sayang.",
+      "spr_component_sks": ["PM 1.1", "PM 1.2", "PM 2.1"],
+      "spr_rubric": [
+        {
+          "level": 1,
+          "explanation": "Murid boleh menyatakan cara menyayangi diri sendiri."
+        },
+        {
+          "level": 2,
+          "explanation": "Murid boleh menunjukkan sikap prihatin terhadap orang lain."
+        },
+        {
+          "level": 3,
+          "explanation": "Murid boleh memberi bantuan kepada yang memerlukan."
+        }
+      ]
+    },
+    {
+      "spr_code": "PM 2",
+      "spr_title": "Menghormati orang lain.",
+      "spr_component_sks": ["PM 1.2"],
+      "spr_rubric": [
+        {
+          "level": 1,
+          "explanation": "Murid boleh mempamerkan sikap hormat kepada orang lain dengan bimbingan."
+        },
+        {
+          "level": 2,
+          "explanation": "Murid boleh mempamerkan sikap hormat kepada orang lain secara terhad."
+        },
+        {
+          "level": 3,
+          "explanation": "Murid boleh mempamerkan sikap hormat kepada orang lain dalam pelbagai situasi."
+        }
+      ]
+    },
+    {
+      "spr_code": "PM 3",
+      "spr_title": "Bersikap jujur dalam pergaulan seharian.",
+      "spr_component_sks": ["PM 1.1", "PM 2.1"],
+      "spr_rubric": [
+        {
+          "level": 1,
+          "explanation": "Murid boleh bercerita tentang kejujuran."
+        },
+        {
+          "level": 2,
+          "explanation": "Murid boleh menentukan perkara yang betul atau salah dengan bimbingan."
+        },
+        {
+          "level": 3,
+          "explanation": "Murid boleh memilih dan melaksanakan perkara yang betul dalam pelbagai situasi."
+        }
+      ]
+    },
+    {
+      "spr_code": "PM 4",
+      "spr_title": "Mengamalkan sikap rajin dalam menyelesaikan tugasan yang diberi.",
+      "spr_component_sks": ["PM 1.1", "PM 2.1"],
+      "spr_rubric": [
+        {
+          "level": 1,
+          "explanation": "Murid boleh menyiapkan tugasan apabila disuruh."
+        },
+        {
+          "level": 2,
+          "explanation": "Murid boleh menyiapkan tugasan apabila diingatkan atau secara terhad."
+        },
+        {
+          "level": 3,
+          "explanation": "Murid boleh menyiapkan tugasan tanpa disuruh dengan konsisten dan bersungguh-sungguh."
+        }
+      ]
+    }
+  ]
+}

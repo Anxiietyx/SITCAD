@@ -44,7 +44,6 @@ Analyze the provided "DSKP KSPK 2026" PDF (specifically the 'Sosioemosi' domain)
             {
               "spe_code": "String",
               "spe_title": "String",
-              "age_group": "4+ or 5+",
               "spe_note": "String or null"
             }
           ]
