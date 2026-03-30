@@ -108,9 +108,9 @@ export function Login() {
           </div>
 
           <div className="relative z-10 flex flex-col items-center">
-            <div className="w-full aspect-square max-w-[280px] mb-8">
+            <div className="w-full aspect-square mb-8">
               <ImageWithFallback
-                src="/holding_book_3.png"
+                src="/mascot/holding_book_3.png"
                 alt="Kindergarten Learning"
                 className="w-full h-full object-cover rounded-xl"
               />

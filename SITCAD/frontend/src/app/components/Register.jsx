@@ -99,15 +99,16 @@ export function Register() {
             <div className="space-y-4">
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Create account</h1>
               <p className="text-lg opacity-90 max-w-xs">
-                Fill in the details below to get started.
+                Fill in the details to get started.
               </p>
+              <br />
             </div>
           </div>
 
           <div className="relative z-10 flex flex-col items-center">
-            <div className="w-full aspect-square max-w-[280px] mb-8">
+            <div className="w-full aspect-square mb-8">
               <ImageWithFallback
-                src="https://images.unsplash.com/photo-1748691661032-97e9ec7c6ff5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxraW5kZXJnYXJ0ZW4lMjBpbGx1c3RyYXRpb24lMjBzY2hvb2wlMjBraWRzfGVufDF8fHx8MTc3MjYwMzM4Nnww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
+                src="/mascot/writing_1.png"
                 alt="Kindergarten Illustration"
                 className="w-full h-full object-contain rounded-xl"
               />
