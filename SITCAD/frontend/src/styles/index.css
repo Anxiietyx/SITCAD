@@ -87,7 +87,8 @@ h1, h2, h3, h4, h5, h6,
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: #eb520b; /* main location for all buttons */
+  --card-foreground: #000000;
+  --primary: #000000;
   --primary-foreground: #ffffff;
   --secondary: #EFCA08;
   --secondary-foreground: #030213;

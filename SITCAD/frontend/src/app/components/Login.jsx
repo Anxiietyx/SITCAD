@@ -110,7 +110,7 @@ export function Login() {
           <div className="relative z-10 flex flex-col items-center">
             <div className="w-full aspect-square max-w-[280px] mb-8">
               <ImageWithFallback
-                src="https://images.unsplash.com/photo-1564429238817-393bd4286b2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxraW5kZXJnYXJ0ZW4lMjBjaGlsZHJlbiUyMGxlYXJuaW5nJTIwY2xhc3Nyb29tJTIwY29sb3JmdWx8ZW58MXx8fHwxNzcyNjAzOTA5fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
+                src="/holding_book_3.png"
                 alt="Kindergarten Learning"
                 className="w-full h-full object-cover rounded-xl"
               />

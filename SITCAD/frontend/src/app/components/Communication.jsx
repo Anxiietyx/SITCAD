@@ -10,6 +10,7 @@ import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ArrowLeft, MessageSquare, Send, Inbox, Mail, Bell } from 'lucide-react';
 import { toast } from 'sonner';
+import Duckpit from './Duckpit';
 
 export function Communication() {
   const { user } = useAuth();
@@ -68,23 +69,31 @@ export function Communication() {
   const unreadCount = mockMessages.filter(m => !m.read).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-      <header className="bg-white border-b shadow-sm sticky top-1 z-1">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <Button variant="ghost" onClick={() => navigate(isTeacher ? '/teacher' : '/parent')} className="mb-4">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
-          </Button>
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-lg flex items-center justify-center">
-              <MessageSquare className="w-6 h-6 text-white" />
+    <div className="relative min-h-screen overflow-hidden bg-slate-50">
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <Duckpit count={24} gravity={0.5} friction={0.9975} wallBounce={0.9} className="h-full w-full opacity-100" />
+      </div>
+      <div className="absolute inset-0 z-0 bg-gradient-to-b from-white/72 via-white/58 to-emerald-50/72" />
+
+      <div className="relative z-10">
+      <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-lg flex items-center justify-center">
+                <MessageSquare className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-semibold">Communication Center</h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {isTeacher ? 'Connect with parents' : 'Connect with teachers'}
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-semibold">Communication Center</h1>
-              <p className="text-sm text-muted-foreground">
-                {isTeacher ? 'Connect with parents' : 'Connect with teachers'}
-              </p>
-            </div>
+            <Button variant="ghost" onClick={() => navigate(isTeacher ? '/teacher' : '/parent')}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Dashboard
+            </Button>
           </div>
         </div>
       </header>
@@ -294,6 +303,7 @@ export function Communication() {
           </TabsContent>
         </Tabs>
       </main>
+      </div>
     </div>
   );
 }

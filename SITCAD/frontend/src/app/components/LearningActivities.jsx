@@ -63,19 +63,25 @@ export function LearningActivities() {
     <div className="min-h-screen">
       {/* Header */}
       <header className="bg-white border-b shadow-sm sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <img
-              src={student.avatar}
-              alt={student.name}
-              className="w-12 h-12 rounded-full object-cover"
-            />
-            <div>
-              <h1 className="text-xl font-semibold">{student.name}'s Learning Activities</h1>
-              <p className="text-sm text-muted-foreground">
-                Track daily activities and learning progress
-              </p>
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <img
+                src={student.avatar}
+                alt={student.name}
+                className="w-10 h-10 rounded-full object-cover"
+              />
+              <div>
+                <h1 className="text-xl font-semibold">{student.name}'s Learning Activities</h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Track daily activities and learning progress
+                </p>
+              </div>
             </div>
+            <Button variant="ghost" onClick={handleBack}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Dashboard
+            </Button>
           </div>
         </div>
       </header>
