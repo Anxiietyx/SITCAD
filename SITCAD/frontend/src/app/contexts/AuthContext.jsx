@@ -12,7 +12,7 @@ import { auth } from '../lib/firebase';
 // ─── DEV BYPASS ──────────────────────────────────────────────────────────────
 // Set to true to skip Firebase + backend auth entirely.
 // Useful when the backend is not running locally.
-const DEV_BYPASS_AUTH = true;
+const DEV_BYPASS_AUTH = false;
 const DEV_BYPASS_USER = { id: 'dev-teacher', name: 'Dev Teacher', email: 'teacher@school.edu', role: 'teacher' };
 // ─────────────────────────────────────────────────────────────────────────────
 

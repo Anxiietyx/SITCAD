@@ -8,3 +8,4 @@ sqlalchemy
 psycopg2
 cloud-sql-python-connector[pg8000]
 pg8000
+firebase_admin
