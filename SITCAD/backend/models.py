@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Boolean, DateTime, ForeignKey, Date, UniqueConstraint
+from sqlalchemy import Column, String, Integer, Boolean, DateTime, ForeignKey, Date, UniqueConstraint, Text, JSON
 from datetime import datetime, timezone, date
 from database import Base
 
@@ -43,4 +43,68 @@ class StudentProgress(Base):
   level = Column(Integer, nullable=False)
   scored_by = Column(String, ForeignKey("users.id"), nullable=False)
   scored_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class LessonPlan(Base):
+  __tablename__ = "lesson_plans"
+
+  id = Column(String, primary_key=True, index=True)
+  teacher_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+  title = Column(String, nullable=False)
+  age_group = Column(String, nullable=False)
+  learning_area = Column(String, nullable=False)
+  duration_minutes = Column(Integer, nullable=False)
+  topic = Column(String, nullable=False)
+  additional_notes = Column(Text, nullable=True)
+  objectives = Column(JSON, nullable=True)
+  materials = Column(JSON, nullable=True)
+  activities = Column(JSON, nullable=True)       # [{step, title, description, duration}]
+  assessment = Column(Text, nullable=True)
+  adaptations = Column(JSON, nullable=True)
+  created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class Activity(Base):
+  __tablename__ = "activities"
+
+  id = Column(String, primary_key=True, index=True)
+  teacher_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+  lesson_plan_id = Column(String, ForeignKey("lesson_plans.id"), nullable=True)
+  source = Column(String, nullable=False, default="manual")  # "manual" | "lesson_plan"
+  title = Column(String, nullable=False)
+  description = Column(Text, nullable=True)
+  learning_area = Column(String, nullable=True)
+  duration_minutes = Column(Integer, nullable=True)
+  assigned_to = Column(String, nullable=False, default="class")  # "class" | "individual"
+  status = Column(String, nullable=False, default="pending")     # "pending" | "in_progress" | "completed"
+  created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+  completed_at = Column(DateTime, nullable=True)
+
+
+class ActivityStudent(Base):
+  __tablename__ = "activity_students"
+
+  id = Column(Integer, primary_key=True, autoincrement=True)
+  activity_id = Column(String, ForeignKey("activities.id"), nullable=False, index=True)
+  student_id = Column(String, ForeignKey("students.id"), nullable=False, index=True)
+
+
+class Report(Base):
+  __tablename__ = "reports"
+
+  id = Column(String, primary_key=True, index=True)
+  teacher_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+  activity_id = Column(String, ForeignKey("activities.id"), nullable=False)
+  title = Column(String, nullable=False)
+  summary = Column(Text, nullable=True)
+  details = Column(JSON, nullable=True)
+  created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class ReportStudent(Base):
+  __tablename__ = "report_students"
+
+  id = Column(Integer, primary_key=True, autoincrement=True)
+  report_id = Column(String, ForeignKey("reports.id"), nullable=False, index=True)
+  student_id = Column(String, ForeignKey("students.id"), nullable=False, index=True)
   

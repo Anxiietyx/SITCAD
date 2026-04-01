@@ -11,8 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { LogOut, Heart, Calendar, TrendingUp, MessageSquare, UserPlus } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { LogOut, Heart, Calendar, TrendingUp, MessageSquare, UserPlus, FileText, Clock } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
 
 export function ParentDashboard() {
   const { user, logout } = useAuth();
@@ -25,6 +25,8 @@ export function ParentDashboard() {
   const [addChildOpen, setAddChildOpen] = useState(false);
   const [newChild, setNewChild] = useState({ name: '', age: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [reports, setReports] = useState([]);
+  const [isLoadingReports, setIsLoadingReports] = useState(true);
 
   // Fetch children from API on mount
   useEffect(() => {
@@ -46,6 +48,26 @@ export function ParentDashboard() {
     };
 
     fetchChildren();
+  }, []);
+
+  // Fetch reports for parent
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        const idToken = await auth.currentUser.getIdToken();
+        const res = await fetch('http://localhost:8000/reports/for-parent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id_token: idToken }),
+        });
+        if (res.ok) setReports(await res.json());
+      } catch (error) {
+        console.error('Error fetching reports:', error);
+      } finally {
+        setIsLoadingReports(false);
+      }
+    };
+    fetchReports();
   }, []);
 
   const handleAddChild = async () => {
@@ -213,6 +235,54 @@ export function ParentDashboard() {
             ))}
           </div>
         )}
+
+        {/* Reports Section */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <FileText className="h-5 w-5 text-green-600" />
+            Reports
+          </h2>
+          {isLoadingReports ? (
+            <Card>
+              <CardContent className="py-8 text-center">
+                <p className="text-muted-foreground">Loading reports...</p>
+              </CardContent>
+            </Card>
+          ) : reports.length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center">
+                <p className="text-muted-foreground">No reports available yet.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {reports.map(report => (
+                <Card key={report.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-medium">{report.title}</p>
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{report.summary}</p>
+                        <div className="flex items-center gap-3 mt-2">
+                          {report.activity_learning_area && (
+                            <Badge variant="outline" className="text-xs capitalize">{report.activity_learning_area}</Badge>
+                          )}
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {new Date(report.created_at).toLocaleDateString()}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {report.students?.length || 0} student(s)
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Tips for Parents */}
         {/* KIV: An AI integration might be implement-able here. */}

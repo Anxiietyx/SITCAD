@@ -1,345 +1,347 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
-import { mockStudents } from '../data/mockData';
+import { auth } from '../lib/firebase';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Label } from './ui/label';
-import { Checkbox } from './ui/checkbox';
 import { Badge } from './ui/badge';
-import { Progress } from './ui/progress';
-import { ArrowLeft, FileText, Download, Sparkles, Loader2, TrendingUp, Award, Target } from 'lucide-react';
+import { ArrowLeft, FileText, Sparkles, Loader2, CheckCircle2, Clock, Users, Printer } from 'lucide-react';
 import { toast } from 'sonner';
-import Duckpit from './Duckpit';
 
-// The interface GeneratedReport is removed as it's TypeScript specific.
-// The structure is implicitly defined by how the mock reports are created.
+const API_BASE = 'http://localhost:8000';
+
+async function getIdToken() {
+  const firebaseUser = auth.currentUser;
+  if (!firebaseUser) throw new Error('Not authenticated');
+  return firebaseUser.getIdToken();
+}
 
 export function ReportGeneration() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [reportType, setReportType] = useState('comprehensive');
-  const [reportPeriod, setReportPeriod] = useState('term1');
-  const [selectedStudents, setSelectedStudents] = useState([]);
-  const [generating, setGenerating] = useState(false);
+  const [completedActivities, setCompletedActivities] = useState([]);
   const [reports, setReports] = useState([]);
+  const [generating, setGenerating] = useState(null); // activity id being generated
+  const [viewingReport, setViewingReport] = useState(null);
+
+  const fetchCompletedActivities = useCallback(async () => {
+    try {
+      const idToken = await getIdToken();
+      const res = await fetch(`${API_BASE}/activities/my-activities`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_token: idToken }),
+      });
+      if (res.ok) {
+        const all = await res.json();
+        setCompletedActivities(all.filter(a => a.status === 'completed'));
+      }
+    } catch (err) {
+      console.error('Failed to fetch activities:', err);
+    }
+  }, []);
+
+  const fetchReports = useCallback(async () => {
+    try {
+      const idToken = await getIdToken();
+      const res = await fetch(`${API_BASE}/reports/my-reports`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_token: idToken }),
+      });
+      if (res.ok) setReports(await res.json());
+    } catch (err) {
+      console.error('Failed to fetch reports:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user?.role === 'teacher') {
+      fetchCompletedActivities();
+      fetchReports();
+    }
+  }, [user, fetchCompletedActivities, fetchReports]);
 
   if (!user || user.role !== 'teacher') {
     navigate('/');
     return null;
   }
 
-  const students = mockStudents;
+  const generateReport = async (activityId) => {
+    setGenerating(activityId);
+    try {
+      const idToken = await getIdToken();
+      const res = await fetch(`${API_BASE}/reports/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_token: idToken, activity_id: activityId }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || 'Failed to generate report');
+      }
+      const report = await res.json();
+      toast.success('Report generated successfully!');
+      setViewingReport(report);
+      fetchReports();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setGenerating(null);
+    }
+  };
 
-  const handleStudentToggle = (studentId) => {
-    setSelectedStudents(prev =>
-      prev.includes(studentId)
-        ? prev.filter(id => id !== studentId)
-        : [...prev, studentId]
+  const handlePrint = () => {
+    window.print();
+  };
+
+  // Check which completed activities already have a report
+  const reportedActivityIds = new Set(reports.map(r => r.activity_id));
+
+  if (viewingReport) {
+    return (
+      <div className="min-h-screen bg-white">
+        {/* Print-friendly report view */}
+        <div className="max-w-3xl mx-auto px-8 py-8 print:p-0">
+          <div className="print:hidden mb-6 flex items-center gap-3">
+            <Button variant="ghost" onClick={() => setViewingReport(null)}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Reports
+            </Button>
+            <Button onClick={handlePrint}>
+              <Printer className="mr-2 h-4 w-4" />
+              Print / Save as PDF
+            </Button>
+          </div>
+
+          <div className="space-y-6">
+            <div className="text-center border-b pb-6">
+              <h1 className="text-3xl font-bold">{viewingReport.title}</h1>
+              <p className="text-muted-foreground mt-2">
+                Generated on {new Date(viewingReport.created_at).toLocaleDateString('en-MY', {
+                  year: 'numeric', month: 'long', day: 'numeric',
+                })}
+              </p>
+            </div>
+
+            {/* Summary */}
+            <div>
+              <h2 className="text-xl font-semibold mb-3">Summary</h2>
+              <p className="text-gray-700 leading-relaxed">{viewingReport.summary}</p>
+            </div>
+
+            {/* Activity Details */}
+            {viewingReport.details && (
+              <div className="bg-gray-50 rounded-lg p-5 space-y-2 print:bg-white print:border">
+                <h2 className="text-xl font-semibold mb-3">Activity Details</h2>
+                <p><strong>Activity:</strong> {viewingReport.details.activity_title}</p>
+                {viewingReport.details.activity_description && (
+                  <p><strong>Description:</strong> {viewingReport.details.activity_description}</p>
+                )}
+                <p><strong>Learning Area:</strong> <span className="capitalize">{viewingReport.details.learning_area}</span></p>
+                <p><strong>Duration:</strong> {viewingReport.details.duration_minutes} minutes</p>
+                <p><strong>Assigned To:</strong> {viewingReport.details.assigned_to === 'class' ? 'Whole Class' : 'Individual'}</p>
+                <p><strong>Students Involved:</strong> {viewingReport.details.student_count}</p>
+                {viewingReport.details.completed_at && (
+                  <p><strong>Completed:</strong> {new Date(viewingReport.details.completed_at).toLocaleString()}</p>
+                )}
+              </div>
+            )}
+
+            {/* Student Summaries */}
+            {viewingReport.details?.student_summaries?.length > 0 && (
+              <div>
+                <h2 className="text-xl font-semibold mb-3">Student Participation</h2>
+                <div className="space-y-3">
+                  {viewingReport.details.student_summaries.map((ss, i) => (
+                    <div key={i} className="flex items-start gap-3 p-3 border rounded-lg">
+                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-sm font-semibold text-slate-600 shrink-0">
+                        {ss.student_name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-medium">{ss.student_name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Participation: <Badge variant="secondary">{ss.participation}</Badge>
+                        </p>
+                        <p className="text-sm mt-1">{ss.notes}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Students list */}
+            {viewingReport.students?.length > 0 && (
+              <div>
+                <h2 className="text-xl font-semibold mb-3">Students Involved</h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {viewingReport.students.map(s => (
+                    <div key={s.id} className="flex items-center gap-2 p-2 border rounded">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs font-semibold text-blue-600">
+                        {s.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{s.name}</p>
+                        <p className="text-xs text-muted-foreground">Age {s.age}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     );
-  };
-
-  const selectAllStudents = () => {
-    if (selectedStudents.length === students.length) {
-      setSelectedStudents([]);
-    } else {
-      setSelectedStudents(students.map(s => s.id));
-    }
-  };
-
-  const generateReports = async () => {
-    if (selectedStudents.length === 0) {
-      toast.error('Please select at least one student');
-      return;
-    }
-
-    setGenerating(true);
-    await new Promise(resolve => setTimeout(resolve, 2500));
-
-    // Mock AI-generated reports
-    const newReports = selectedStudents.map(studentId => {
-      const student = students.find(s => s.id === studentId); // Removed '!' assertion
-      return {
-        studentId,
-        studentName: student.name,
-        reportPeriod: reportPeriod === 'term1' ? 'Term 1 (Sep - Dec 2025)' : 'Term 2 (Jan - Apr 2026)',
-        summary: `${student.name} has shown ${student.developmentalStage === 'advanced' || student.developmentalStage === 'proficient' ? 'excellent' : 'steady'} progress throughout the reporting period. ${student.name} demonstrates ${student.developmentalStage === 'advanced' ? 'exceptional curiosity and advanced skills' : student.developmentalStage === 'proficient' ? 'strong engagement and growing independence' : student.developmentalStage === 'developing' ? 'positive growth and increasing confidence' : 'emerging skills with supportive guidance'}. Overall progress is tracking well with age-appropriate developmental milestones.`,
-        strengths: [
-          'Shows enthusiasm for learning activities',
-          'Demonstrates good social interaction with peers',
-          'Follows classroom routines and instructions well',
-          student.overallProgress > 75 ? 'Excels in problem-solving activities' : 'Making consistent progress in all areas',
-        ],
-        areasForGrowth: [
-          'Continue practicing letter recognition at home',
-          'Develop fine motor skills through drawing and crafts',
-          'Increase independence in self-help tasks',
-        ],
-        recommendations: [
-          'Read together for 15-20 minutes daily',
-          'Practice counting objects during everyday activities',
-          'Encourage creative play and imagination',
-          'Maintain consistent routines at home',
-        ],
-        progressData: [
-          { area: 'Literacy Skills', progress: student.overallProgress, comment: 'Making good progress with letter recognition' },
-          { area: 'Numeracy Skills', progress: student.overallProgress + 5, comment: 'Strong counting and number sense' },
-          { area: 'Social-Emotional', progress: student.overallProgress - 5, comment: 'Growing confidence in group settings' },
-          { area: 'Physical Development', progress: student.overallProgress, comment: 'Developing fine and gross motor skills' },
-        ],
-      };
-    });
-
-    setReports(newReports);
-    setGenerating(false);
-    toast.success(`Generated ${newReports.length} report(s) successfully!`);
-  };
-
-  const downloadReport = (report) => {
-    toast.success(`Report for ${report.studentName} downloaded!`);
-  };
-
-  const downloadAllReports = () => {
-    toast.success(`Downloaded ${reports.length} reports as PDF bundle!`);
-  };
+  }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-50">
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <Duckpit count={24} gravity={0.5} friction={0.9975} wallBounce={0.9} className="h-full w-full opacity-100" />
-      </div>
-      <div className="absolute inset-0 z-0 bg-gradient-to-b from-white/72 via-white/58 to-emerald-50/72" />
-
-      <div className="relative z-10">
-      <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-blue-600 rounded-lg flex items-center justify-center">
-                <FileText className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-semibold">AI Progress Report Generation</h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Automatically generate comprehensive student reports
-                </p>
-              </div>
+    <div className="min-h-screen">
+      {/* Header */}
+      <header className="bg-white border-b shadow-sm sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <Button variant="ghost" onClick={() => navigate('/teacher')} className="mb-4">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Dashboard
+          </Button>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-[#bafde0] rounded-lg flex items-center justify-center">
+              <FileText className="w-6 h-6 text-black" />
             </div>
-            <Button variant="ghost" onClick={() => navigate('/teacher')}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
-            </Button>
+            <div>
+              <h1 className="text-2xl font-semibold">Report Generation</h1>
+              <p className="text-sm text-muted-foreground">
+                Generate reports from completed activities
+              </p>
+            </div>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
-        {/* Configuration Card */}
-        <Card className="border-2 border-green-200">
-          <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50">
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-green-600" />
-              Configure Report Generation
-            </CardTitle>
-            <CardDescription>
-              Select students and report parameters
-            </CardDescription>
-            <div className="pb-3"></div>
-          </CardHeader>
-          <CardContent className="pt-6 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="reportType">Report Type</Label>
-                <Select value={reportType} onValueChange={setReportType}>
-                  <SelectTrigger id="reportType">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="comprehensive">Comprehensive Report</SelectItem>
-                    <SelectItem value="progress">Progress Summary</SelectItem>
-                    <SelectItem value="brief">Brief Overview</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="reportPeriod">Reporting Period</Label>
-                <Select value={reportPeriod} onValueChange={setReportPeriod}>
-                  <SelectTrigger id="reportPeriod">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="term1">Term 1 (Sep - Dec)</SelectItem>
-                    <SelectItem value="term2">Term 2 (Jan - Apr)</SelectItem>
-                    <SelectItem value="term3">Term 3 (May - Aug)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label>Select Students</Label>
-                <Button variant="outline" size="sm" onClick={selectAllStudents}>
-                  {selectedStudents.length === students.length ? 'Deselect All' : 'Select All'}
-                </Button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-64 overflow-y-auto border rounded-lg p-3">
-                {students.map((student) => (
-                  <div key={student.id} className="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded border">
-                    <Checkbox
-                      id={student.id}
-                      checked={selectedStudents.includes(student.id)}
-                      onCheckedChange={() => handleStudentToggle(student.id)}
-                    />
-                    <Label htmlFor={student.id} className="flex-1 cursor-pointer flex items-center gap-3">
-                      <img
-                        src={student.avatar}
-                        alt={student.name}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                      <div>
-                        <p className="font-medium">{student.name}</p>
-                        <p className="text-xs text-muted-foreground">{student.classroom}</p>
-                      </div>
-                    </Label>
-                  </div>
-                ))}
-              </div>
-              {selectedStudents.length > 0 && (
-                <p className="text-sm text-green-600">
-                  {selectedStudents.length} student(s) selected for report generation
+          {/* Completed Activities – Generate Reports */}
+          <Card className="border-2 border-[#bafde0] shadow-md">
+            <CardHeader className="bg-[#edfff8] rounded-t-lg pb-5">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                <Sparkles className="h-5 w-5 text-green-600" />
+                Completed Activities
+              </CardTitle>
+              <CardDescription>
+                Select a completed activity to generate a report
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              {completedActivities.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  No completed activities yet. Complete an activity in Classroom Mode to generate a report.
                 </p>
-              )}
-            </div>
-
-            <Button
-              onClick={generateReports}
-              disabled={generating || selectedStudents.length === 0}
-              size="lg"
-              className="w-full"
-            >
-              {generating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating AI Reports...
-                </>
               ) : (
-                <>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Generate Reports ({selectedStudents.length})
-                </>
+                <div className="space-y-3">
+                  {completedActivities.map(activity => {
+                    const hasReport = reportedActivityIds.has(activity.id);
+                    return (
+                      <div
+                        key={activity.id}
+                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                            <CheckCircle2 className="h-5 w-5 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{activity.title}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant="outline" className="text-xs capitalize">
+                                {activity.learning_area}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Clock className="h-3 w-3" /> {activity.duration_minutes} min
+                              </span>
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Users className="h-3 w-3" /> {activity.student_names?.length || 0} students
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        {hasReport ? (
+                          <Badge variant="secondary" className="bg-green-100 text-green-700">
+                            Report Generated
+                          </Badge>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => generateReport(activity.id)}
+                            disabled={generating === activity.id}
+                          >
+                            {generating === activity.id ? (
+                              <>
+                                <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                                Generating...
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="mr-2 h-3 w-3" />
+                                Generate Report
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               )}
-            </Button>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Generated Reports */}
-        {reports.length > 0 && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Generated Reports ({reports.length})</h2>
-              <Button onClick={downloadAllReports}>
-                <Download className="mr-2 h-4 w-4" />
-                Download All as PDF
-              </Button>
-            </div>
-
-            {reports.map((report) => (
-              <Card key={report.studentId} className="border-2">
-                <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>{report.studentName}</CardTitle>
-                      <CardDescription className="mt-1">{report.reportPeriod}</CardDescription>
-                    </div>
-                    <Button variant="outline" onClick={() => downloadReport(report)}>
-                      <Download className="mr-2 h-4 w-4" />
-                      Download PDF
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-6 space-y-6">
-                  {/* Summary */}
-                  <div>
-                    <h3 className="font-semibold mb-2">Overall Summary</h3>
-                    <p className="text-sm text-muted-foreground">{report.summary}</p>
-                  </div>
-
-                  {/* Progress Data */}
-                  <div>
-                    <h3 className="font-semibold mb-3">Developmental Progress</h3>
-                    <div className="space-y-3">
-                      {report.progressData.map((data, index) => (
-                        <div key={index} className="space-y-2">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="font-medium">{data.area}</span>
-                            <span className="text-blue-600 font-semibold">{data.progress}%</span>
-                          </div>
-                          <Progress value={data.progress} />
-                          <p className="text-xs text-muted-foreground">{data.comment}</p>
+          {/* Past Reports */}
+          {reports.length > 0 && (
+            <Card className="bg-white/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-blue-600" />
+                  Generated Reports ({reports.length})
+                </CardTitle>
+                <CardDescription>View and print past reports</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {reports.map(report => (
+                    <div
+                      key={report.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                      onClick={() => setViewingReport(report)}
+                    >
+                      <div>
+                        <p className="font-medium">{report.title}</p>
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
+                          {report.summary}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          {report.activity_learning_area && (
+                            <Badge variant="outline" className="text-xs capitalize">
+                              {report.activity_learning_area}
+                            </Badge>
+                          )}
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(report.created_at).toLocaleDateString()}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {report.students?.length || 0} students
+                          </span>
                         </div>
-                      ))}
+                      </div>
+                      <Button variant="outline" size="sm">
+                        View
+                      </Button>
                     </div>
-                  </div>
-
-                  {/* Strengths */}
-                  <div>
-                    <h3 className="font-semibold mb-3 flex items-center gap-2">
-                      <Award className="h-5 w-5 text-green-600" />
-                      Strengths
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {report.strengths.map((strength, index) => (
-                        <div key={index} className="flex items-start gap-2 p-2 bg-green-50 rounded text-sm">
-                          <div className="w-2 h-2 rounded-full bg-green-600 mt-1.5" />
-                          <span>{strength}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Areas for Growth */}
-                  <div>
-                    <h3 className="font-semibold mb-3 flex items-center gap-2">
-                      <Target className="h-5 w-5 text-blue-600" />
-                      Areas for Growth
-                    </h3>
-                    <ul className="space-y-2">
-                      {report.areasForGrowth.map((area, index) => (
-                        <li key={index} className="flex items-start gap-2 text-sm">
-                          <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-medium shrink-0 mt-0.5">
-                            {index + 1}
-                          </div>
-                          <span>{area}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Recommendations */}
-                  <div>
-                    <h3 className="font-semibold mb-3 flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5 text-purple-600" />
-                      Recommendations for Parents
-                    </h3>
-                    <div className="space-y-2">
-                      {report.recommendations.map((rec, index) => (
-                        <div key={index} className="flex items-start gap-2 p-3 bg-purple-50 rounded-lg border border-purple-200">
-                          <span className="text-purple-600">•</span>
-                          <p className="text-sm">{rec}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </main>
-      </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </main>
     </div>
   );
 }

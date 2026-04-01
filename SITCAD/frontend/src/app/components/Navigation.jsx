@@ -118,7 +118,7 @@ function NavigationContent({ onNavigate }) {
               key={item.path}
               variant={active ? 'secondary' : 'ghost'}
               className={cn(
-                'w-full justify-start gap-3',
+                'w-full justify-start gap-3 cursor-pointer',
                 active && 'bg-gradient-to-r from-[#ACFCD9]/100 to-[#ACFCD9]/100 text-primary font-medium'
               )}
               onClick={() => handleNavigation(item.path)}
@@ -134,7 +134,7 @@ function NavigationContent({ onNavigate }) {
       <div className="p-3 border-t">
         <Button
           variant="ghost"
-          className="w-full justify-start gap-3 text-yellow-600 hover:text-yellow-700 hover:bg-yellow-200"
+          className="w-full justify-start gap-3 text-red-600 hover:text-red-700 hover:bg-red-200 cursor-pointer"
           onClick={handleLogout}
         >
           <LogOut className="h-4 w-4" />

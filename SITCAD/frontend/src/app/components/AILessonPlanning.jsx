@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
+import { auth } from "../lib/firebase";
 import { Button } from "./ui/button";
 import {
   Card,
@@ -19,6 +20,7 @@ import {
 } from "./ui/select";
 import { Textarea } from "./ui/textarea";
 import { Badge } from "./ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import {
   ArrowLeft,
   Sparkles,
@@ -27,25 +29,49 @@ import {
   Clock,
   Users,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+
+const API_BASE = "http://localhost:8000";
+
+async function getIdToken() {
+  const firebaseUser = auth.currentUser;
+  if (!firebaseUser) throw new Error("Not authenticated");
+  return firebaseUser.getIdToken();
+}
 
 export function AILessonPlanning() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [lessonPlan, setLessonPlan] = useState(null);
+  const [savedPlans, setSavedPlans] = useState([]);
+  const [activeTab, setActiveTab] = useState("generator");
 
-  const [showSavedMsg, setShowSavedMsg] = useState(false);
-
-  const [targetScore, setTargetScore] = useState("70");
-  const [scoringType, setScoringType] = useState("percentage");
-
-  const [ageGroup, setAgeGroup] = useState("4-5");
+  const [ageGroup, setAgeGroup] = useState("5");
   const [learningArea, setLearningArea] = useState("literacy");
   const [topic, setTopic] = useState("");
   const [duration, setDuration] = useState("30");
   const [additionalNotes, setAdditionalNotes] = useState("");
+
+  const fetchSavedPlans = useCallback(async () => {
+    try {
+      const idToken = await getIdToken();
+      const res = await fetch(`${API_BASE}/lesson-plans/my-plans`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_token: idToken }),
+      });
+      if (res.ok) setSavedPlans(await res.json());
+    } catch (err) {
+      console.error("Failed to fetch lesson plans:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user?.role === "teacher") fetchSavedPlans();
+  }, [user, fetchSavedPlans]);
 
   if (!user || user.role !== "teacher") {
     navigate("/");
@@ -59,127 +85,97 @@ export function AILessonPlanning() {
     }
 
     setLoading(true);
+    try {
+      const idToken = await getIdToken();
+      const res = await fetch(`${API_BASE}/lesson-plans/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_token: idToken,
+          title: `${topic}`,
+          age_group: ageGroup,
+          learning_area: learningArea,
+          duration_minutes: parseInt(duration),
+          topic,
+          additional_notes: additionalNotes || null,
+        }),
+      });
 
-    // Simulate AI generation with a delay
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    // Mock AI-generated lesson plan
-    const mockLessonPlan = {
-      id: `lesson_${Date.now()}`,
-      title: `${topic} Exploration`,
-      ageGroup,
-      learningArea,
-      duration: `${duration} minutes`,
-      targetScore,
-      scoringType,
-      objectives: [
-        `Introduce basic concepts of ${topic}`,
-        "Develop fine motor skills through hands-on activities",
-        "Encourage verbal expression and communication",
-        "Foster curiosity and exploration",
-      ],
-      materials: [
-        "Visual aids and picture cards",
-        "Hands-on manipulatives",
-        "Art supplies (crayons, paper, scissors)",
-        "Interactive storybooks",
-        "Music player for transitions",
-      ],
-      activities: [
-        {
-          step: 1,
-          title: "Circle Time Introduction",
-          description: `Gather students in a circle and introduce the topic of ${topic}. Use visual aids and encourage students to share what they know.`,
-          duration: "5-7 minutes",
-        },
-        {
-          step: 2,
-          title: "Interactive Story",
-          description: `Read an engaging story related to ${topic}. Pause to ask questions and encourage predictions.`,
-          duration: "8-10 minutes",
-        },
-        {
-          step: 3,
-          title: "Hands-On Activity",
-          description: `Students explore ${topic} through a structured activity with manipulatives. Teacher circulates to provide support.`,
-          duration: "10-12 minutes",
-        },
-        {
-          step: 4,
-          title: "Creative Expression",
-          description:
-            "Students create artwork or crafts related to the lesson topic, reinforcing concepts learned.",
-          duration: "8-10 minutes",
-        },
-        {
-          step: 5,
-          title: "Closing & Review",
-          description:
-            "Gather students to review what they learned. Sing a related song and preview upcoming activities.",
-          duration: "3-5 minutes",
-        },
-      ],
-      assessment:
-        "Observe student participation, listen to verbal responses, and review completed activities. Note students who may need additional support or enrichment.",
-      adaptations: [
-        "For visual learners: Provide extra visual supports and diagrams",
-        "For kinesthetic learners: Include more movement-based activities",
-        "For advanced students: Offer extension activities with increased complexity",
-        "For students needing support: Provide one-on-one assistance and simplified instructions",
-        "For English language learners: Use visual cues and gestures to support understanding",
-      ],
-    };
-
-    setLessonPlan(mockLessonPlan);
-    setLoading(false);
-    toast.success("Lesson plan generated successfully!");
+      if (!res.ok) throw new Error("Failed to generate lesson plan");
+      const plan = await res.json();
+      setLessonPlan(plan);
+      toast.success("Lesson plan generated and saved!");
+      fetchSavedPlans();
+      setActiveTab("list");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate lesson plan");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const saveLessonPlan = () => {
-    toast.success("Lesson plan saved to your library!");
-
-    setShowSavedMsg(true);
-
-    setTimeout(() => {
-      setShowSavedMsg(false);
-    }, 2000); // disappears after 2s
+  const deletePlan = async (planId) => {
+    if (!window.confirm("Delete this lesson plan?")) return;
+    try {
+      const idToken = await getIdToken();
+      const res = await fetch(`${API_BASE}/lesson-plans/${planId}/delete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_token: idToken }),
+      });
+      if (res.ok) {
+        toast.success("Lesson plan deleted");
+        if (lessonPlan?.id === planId) setLessonPlan(null);
+        fetchSavedPlans();
+      }
+    } catch (err) {
+      toast.error("Failed to delete");
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#66D0BC]-30 via-[#66D0BC]-20 to-[#66D0BC]-10">
+    <div className="min-h-screen">
       {/* Header */}
       <header className="bg-white border-b shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/teacher")}
-            className="mb-4"
-          >
+          <Button variant="ghost" onClick={() => navigate("/teacher")} className="mb-4">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Dashboard
           </Button>
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-white" />
+            <div className="w-12 h-12 bg-[#bafde0] rounded-lg flex items-center justify-center">
+              <Sparkles className="w-6 h-6 text-black" />
             </div>
             <div>
               <h1 className="text-2xl font-semibold">
-                Lesson Planning Assistant Powered by AI
+                Lesson Planning Assistant
               </h1>
               <p className="text-sm text-muted-foreground">
-                Generate planning lesson powered by AI
+                Generate lesson plans powered by AI
               </p>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-8 space-y-6">
-        {/* Input Form */}
-        <Card className="border-2 border-indigo-200 shadow-md">
-          <CardHeader className="bg-gradient-to-r from-indigo-100 to-purple-100">
+      <main className="mx-auto px-4 py-8">
+        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v === "generator") setLessonPlan(null); }}>
+          {/* Tab Navigation */}
+
+          <div className="mb-6 flex justify-center">
+            <TabsList className="grid w-full grid-cols-2 max-w-sm">
+              <TabsTrigger value="generator">Generator</TabsTrigger>
+              <TabsTrigger value="list">My Plans {savedPlans.length > 0 && `(${savedPlans.length})`}</TabsTrigger>
+            </TabsList>
+          </div>
+
+          {/* ── Tab 1: Generator ── */}
+          <TabsContent value="generator" className="space-y-6">
+        <Card className="border-2 border-[#bafde0] shadow-md">
+          <CardHeader className="bg-[#edfff8] rounded-t-lg">
             <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-              <Lightbulb className="h-5 w-5 text-indigo-600" />
+              <Lightbulb className="h-5 w-5 text-[#3090A0]" />
               Lesson Plan Generator
             </CardTitle>
             <CardDescription className="text-sm text-gray-700">
@@ -190,7 +186,7 @@ export function AILessonPlanning() {
           </CardHeader>
 
           <CardContent className="pt-2 space-y-4 text-base">
-            <div className="grid grid-cols-10 md:grid-cols-1 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div className="space-y-2">
                 <Label className="text-sm font-semibold">Age Group</Label>
                 <Select value={ageGroup} onValueChange={setAgeGroup}>
@@ -198,7 +194,9 @@ export function AILessonPlanning() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="5-6">5-6 years old</SelectItem>
+                    <SelectItem value="4">4 years old</SelectItem>
+                    <SelectItem value="5">5 years old</SelectItem>
+                    <SelectItem value="6">6 years old</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -242,37 +240,6 @@ export function AILessonPlanning() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-semibold">
-                Activity Target (%)
-              </Label>
-              <Select value={targetScore} onValueChange={setTargetScore}>
-                <SelectTrigger className="text-sm font-medium">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="50">50%</SelectItem>
-                  <SelectItem value="60">60%</SelectItem>
-                  <SelectItem value="70">70%</SelectItem>
-                  <SelectItem value="80">80%</SelectItem>
-                  <SelectItem value="90">90%</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold">Scoring Method</Label>
-              <Select value={scoringType} onValueChange={setScoringType}>
-                <SelectTrigger className="text-sm font-medium">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="percentage">Percentage (%)</SelectItem>
-                  <SelectItem value="points">Points Based</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
               <Label className="text-sm font-semibold">Lesson Topic *</Label>
               <Textarea
                 className="text-sm"
@@ -300,7 +267,7 @@ export function AILessonPlanning() {
               onClick={generateLessonPlan}
               disabled={loading}
               size="lg"
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-base"
+              className="w-full bg-[#3090A0] hover:bg-[#2FBFA5] text-white font-semibold text-base"
             >
               {loading ? (
                 <>
@@ -316,15 +283,67 @@ export function AILessonPlanning() {
             </Button>
           </CardContent>
         </Card>
+          </TabsContent>
 
-        {/* Generated Lesson Plan */}
+          {/* ── Tab 2: My Plans ── */}
+          <TabsContent value="list" className="space-y-6">
+
+        {/* Saved Lesson Plans Library */}
+        {!lessonPlan && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Saved Lesson Plans</CardTitle>
+              <CardDescription>Click a plan to view details</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {savedPlans.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  No lesson plans yet. Go to the Generator tab to create one.
+                </p>
+              ) : (
+              <div className="space-y-3">
+                {savedPlans.map((plan) => (
+                  <div
+                    key={plan.id}
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                    onClick={() => setLessonPlan(plan)}
+                  >
+                    <div>
+                      <p className="font-medium">{plan.title}</p>
+                      <div className="flex gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs capitalize">{plan.learning_area}</Badge>
+                        <Badge variant="outline" className="text-xs">{plan.duration_minutes} min</Badge>
+                        <Badge variant="outline" className="text-xs">Ages {plan.age_group}</Badge>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {plan.created_at ? new Date(plan.created_at).toLocaleDateString() : ""}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:text-red-700 h-8 w-8 p-0"
+                        onClick={(e) => { e.stopPropagation(); deletePlan(plan.id); }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Generated / Viewed Lesson Plan */}
         {lessonPlan && (
           <div className="space-y-6 animate-in fade-in duration-500">
             {/* Header */}
             <Card className="shadow-md border border-indigo-200">
               <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50">
                 <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  {/* Left Section */}
                   <div className="space-y-2">
                     <CardTitle className="text-2xl md:text-3xl font-bold text-gray-800 leading-tight">
                       {lessonPlan.title}
@@ -333,35 +352,26 @@ export function AILessonPlanning() {
                     <div className="flex flex-wrap gap-2 mt-2 text-xs md:text-sm">
                       <Badge className="bg-indigo-100 text-indigo-700 font-medium">
                         <Users className="h-3 w-3 mr-1" />
-                        Ages {lessonPlan.ageGroup}
+                        Ages {lessonPlan.age_group}
                       </Badge>
 
                       <Badge className="bg-blue-100 text-blue-700 font-medium">
                         <Clock className="h-3 w-3 mr-1" />
-                        {lessonPlan.duration}
+                        {lessonPlan.duration_minutes} minutes
                       </Badge>
 
                       <Badge className="bg-purple-100 text-purple-700 capitalize font-medium">
-                        {lessonPlan.learningArea}
-                      </Badge>
-
-                      <Badge className="bg-green-100 text-green-700 font-medium">
-                        🎯 Target: {lessonPlan.targetScore}%
-                      </Badge>
-
-                      <Badge className="bg-orange-100 text-orange-700 font-medium">
-                        📊 {lessonPlan.scoringType}
+                        {lessonPlan.learning_area}
                       </Badge>
                     </div>
                   </div>
 
-                  {/* Right Section */}
-                  <div className="flex justify-end md:justify-start">
+                  <div className="flex gap-2">
                     <Button
-                      onClick={saveLessonPlan}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2"
+                      variant="outline"
+                      onClick={() => setLessonPlan(null)}
                     >
-                      Save Plan
+                      Back to List
                     </Button>
                   </div>
                 </div>
@@ -379,7 +389,7 @@ export function AILessonPlanning() {
 
               <CardContent>
                 <ul className="space-y-3 text-base">
-                  {lessonPlan.objectives.map((obj, index) => (
+                  {lessonPlan.objectives?.map((obj, index) => (
                     <li key={index} className="flex items-start gap-3">
                       <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-semibold shrink-0 mt-0.5">
                         {index + 1}
@@ -401,7 +411,7 @@ export function AILessonPlanning() {
 
               <CardContent>
                 <div className="space-y-4">
-                  {lessonPlan.activities.map((activity) => (
+                  {lessonPlan.activities?.map((activity) => (
                     <div
                       key={activity.step}
                       className="flex gap-3 p-3 border rounded-lg bg-gray-50"
@@ -459,7 +469,7 @@ export function AILessonPlanning() {
 
               <CardContent>
                 <div className="space-y-3">
-                  {lessonPlan.adaptations.map((adaptation, index) => (
+                  {lessonPlan.adaptations?.map((adaptation, index) => (
                     <div
                       key={index}
                       className="flex items-start gap-3 p-3 bg-indigo-50 rounded-lg border border-indigo-200"
@@ -475,6 +485,9 @@ export function AILessonPlanning() {
             </Card>
           </div>
         )}
+
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
