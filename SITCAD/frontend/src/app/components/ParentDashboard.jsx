@@ -2,17 +2,16 @@
 import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { auth } from '../lib/firebase';
-import { getStudentsByRole } from '../data/mockData';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Progress } from './ui/progress';
 import { Badge } from './ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { LogOut, Heart, Calendar, TrendingUp, MessageSquare, UserPlus, FileText, Clock } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
+import { Heart, TrendingUp, MessageSquare, UserPlus, FileText, Clock, CheckCircle2, AlertTriangle, Users } from 'lucide-react';
+import Duckpit from './Duckpit';
+import { useState, useEffect } from 'react';
 
 export function ParentDashboard() {
   const { user, logout } = useAuth();
@@ -98,220 +97,272 @@ export function ParentDashboard() {
     navigate('/login');
   };
 
+  const assignedCount = children.filter(c => c.teacher_id).length;
+
+  const statsCardShadeStyle = { backgroundColor: 'rgb(255 255 255 / 0.92)' };
+  const dashboardCardShadeStyle = { backgroundColor: 'rgb(255 255 255 / 0.88)' };
+  const statsLabelStyle = { color: '#374151', fontSize: '1rem', fontWeight: 600 };
+
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <header className="bg-white border-b shadow-sm sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold">Parent Dashboard</h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Welcome back, {user.name}!
-              </p>
+    <div className="relative min-h-screen overflow-hidden bg-slate-50">
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <Duckpit
+          count={32}
+          gravity={0.5}
+          friction={0.9975}
+          wallBounce={0.9}
+          className="h-full w-full opacity-100"
+        />
+      </div>
+      <div className="absolute inset-0 z-0 bg-linear-to-b from-white/72 via-white/58 to-emerald-50/72" />
+
+      <div className="relative z-10">
+        {/* Header */}
+        <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
+          <div className="max-w-7xl mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-semibold">Parent Dashboard</h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Welcome back, {user.name}!
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-8 space-y-8">
-        {/* Welcome Message */}
-        <Card className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0">
-          <CardHeader>
-            <CardTitle className="text-white">Your Child's Learning Journey</CardTitle>
-            <CardDescription className="text-white/90">
-              Track progress, view activities, and celebrate achievements together
-            </CardDescription>
-            <div className="pb-3"></div>
-          </CardHeader>
-        </Card>
+        <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+          {/* Quick Action Cards */}
+          {/* <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <Card
+              className="cursor-pointer border-white shadow-md hover:shadow-lg transition-shadow transform-gpu"
+              style={dashboardCardShadeStyle}
+              onClick={() => navigate('/parent/communication')}
+            >
+              <CardContent className="pt-6 text-center">
+                <MessageSquare className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                <p className="text-sm font-medium">Messages</p>
+              </CardContent>
+            </Card>
+            <Card
+              className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu"
+              style={dashboardCardShadeStyle}
+              onClick={() => children.length > 0 && navigate(`/parent/student/${children[0].id}/progress`)}
+            >
+              <CardContent className="pt-6 text-center">
+                <TrendingUp className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                <p className="text-sm font-medium">Progress</p>
+              </CardContent>
+            </Card>
+            <Card
+              className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu"
+              style={dashboardCardShadeStyle}
+              onClick={() => children.length > 0 && navigate(`/parent/student/${children[0].id}`)}
+            >
+              <CardContent className="pt-6 text-center">
+                <Users className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                <p className="text-sm font-medium">Child Profile</p>
+              </CardContent>
+            </Card>
+          </div> */}
 
-        {/* Children */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">My Children</h2>
-          <Dialog open={addChildOpen} onOpenChange={setAddChildOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-[#3090A0] hover:bg-[#2FBFA5] text-white gap-2 cursor-pointer">
-                <UserPlus className="h-4 w-4" />
-                Add Child
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Register Your Child</DialogTitle>
-                <DialogDescription>
-                  Enter your child's details. Their teacher will be able to assign them to a classroom afterwards.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="child-name">Full Name</Label>
-                  <Input
-                    id="child-name"
-                    placeholder="e.g. Ahmad Ibrahim"
-                    value={newChild.name}
-                    onChange={(e) => setNewChild({ ...newChild, name: e.target.value })}
-                  />
+          {/* Statistics Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={statsCardShadeStyle}>
+              <CardHeader className="pb-1">
+                <CardDescription style={statsLabelStyle}>My Children</CardDescription>
+                <CardTitle className="text-6xl">{children.length}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center text-sm text-green-600">
+                  <Heart className="mr-5 h-10 w-10" />
+                  Registered learners
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="child-age">Age</Label>
-                  <Select
-                    value={newChild.age}
-                    onValueChange={(value) => setNewChild({ ...newChild, age: value })}
-                  >
-                    <SelectTrigger id="child-age">
-                      <SelectValue placeholder="Select age" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="4">4</SelectItem>
-                      <SelectItem value="5">5</SelectItem>
-                      <SelectItem value="6">6</SelectItem>
-                      <SelectItem value="7">7</SelectItem>
-                    </SelectContent>
-                  </Select>
+              </CardContent>
+            </Card>
+
+            <Card className="border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={statsCardShadeStyle}>
+              <CardHeader className="pb-1">
+                <CardDescription style={statsLabelStyle}>Assigned to Teacher</CardDescription>
+                <CardTitle className="text-6xl">{assignedCount}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center text-sm text-green-600">
+                  <CheckCircle2 className="mr-5 h-10 w-10" />
+                  In classroom
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={statsCardShadeStyle}>
+              <CardHeader className="pb-1">
+                <CardDescription style={statsLabelStyle}>Reports</CardDescription>
+                <CardTitle className="text-6xl">{reports.length}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center text-sm text-green-600">
+                  <FileText className="mr-5 h-10 w-10" />
+                  Activity reports
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* My Children */}
+          <Card className="border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle}>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>My Children</CardTitle>
+                <CardDescription>
+                  Click on a child to view their profile and learning progress
+                </CardDescription>
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setAddChildOpen(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  className="bg-purple-600 hover:bg-purple-700 text-white"
-                  onClick={handleAddChild}
-                  disabled={isSubmitting || !newChild.name || !newChild.age}
-                >
-                  {isSubmitting ? 'Registering...' : 'Register Child'}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-
-        {isLoadingChildren ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">Loading your children...</p>
-            </CardContent>
-          </Card>
-        ) : children.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">No children linked to your account.</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
-            {children.map(child => (
-              <Card 
-                key={child.id} 
-                className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => navigate(`/parent/student/${child.id}`)}
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-14 h-14 rounded-full bg-purple-200 flex items-center justify-center text-xl font-bold text-purple-700">
-                        {child.name.charAt(0)}
-                      </div>
-                      <div>
-                        <CardTitle className="text-base">{child.name}</CardTitle>
-                        <p className="text-sm text-muted-foreground">Age {child.age}{child.classroom && ` • ${child.classroom}`}</p>
-                      </div>
+              <Dialog open={addChildOpen} onOpenChange={setAddChildOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-[#3090A0] hover:bg-[#2FBFA5] text-white gap-2 cursor-pointer">
+                    <UserPlus className="h-4 w-4" />
+                    Add Child
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Register Your Child</DialogTitle>
+                    <DialogDescription>
+                      Enter your child's details. Their teacher will be able to assign them to a classroom afterwards.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="child-name">Full Name</Label>
+                      <Input
+                        id="child-name"
+                        placeholder="e.g. Ahmad Ibrahim"
+                        value={newChild.name}
+                        onChange={(e) => setNewChild({ ...newChild, name: e.target.value })}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="child-age">Age</Label>
+                      <Select
+                        value={newChild.age}
+                        onValueChange={(value) => setNewChild({ ...newChild, age: value })}
+                      >
+                        <SelectTrigger id="child-age">
+                          <SelectValue placeholder="Select age" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="4">4</SelectItem>
+                          <SelectItem value="5">5</SelectItem>
+                          <SelectItem value="6">6</SelectItem>
+                          <SelectItem value="7">7</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {child.teacher_id ? (
-                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <p className="text-sm text-green-700 font-medium">✓ Assigned to a teacher</p>
-                    </div>
-                  ) : (
-                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-sm text-yellow-700 font-medium">Awaiting teacher assignment</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        {/* Reports Section */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <FileText className="h-5 w-5 text-green-600" />
-            Reports
-          </h2>
-          {isLoadingReports ? (
-            <Card>
-              <CardContent className="py-8 text-center">
-                <p className="text-muted-foreground">Loading reports...</p>
-              </CardContent>
-            </Card>
-          ) : reports.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center">
-                <p className="text-muted-foreground">No reports available yet.</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {reports.map(report => (
-                <Card key={report.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-medium">{report.title}</p>
-                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{report.summary}</p>
-                        <div className="flex items-center gap-3 mt-2">
-                          {report.activity_learning_area && (
-                            <Badge variant="outline" className="text-xs capitalize">{report.activity_learning_area}</Badge>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setAddChildOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      className="bg-[#3090A0] hover:bg-[#2FBFA5] text-white"
+                      onClick={handleAddChild}
+                      disabled={isSubmitting || !newChild.name || !newChild.age}
+                    >
+                      {isSubmitting ? 'Registering...' : 'Register Child'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent>
+              {isLoadingChildren ? (
+                <p className="text-sm text-muted-foreground text-center py-8">Loading your children...</p>
+              ) : children.length === 0 ? (
+                <div className="text-center py-8 space-y-2">
+                  <Heart className="h-8 w-8 mx-auto text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">No children linked to your account.</p>
+                  <p className="text-xs text-muted-foreground">Click "Add Child" to register your child and connect with their teacher.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {children.map(child => (
+                    <Card
+                      key={child.id}
+                      className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu pb-4"
+                      style={dashboardCardShadeStyle}
+                      onClick={() => navigate(`/parent/student/${child.id}`)}
+                    >
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-14 h-14 rounded-full bg-green-200 flex items-center justify-center text-xl font-bold text-green-700">
+                              {child.name.charAt(0)}
+                            </div>
+                            <div>
+                              <CardTitle className="text-base">{child.name}</CardTitle>
+                              <p className="text-sm text-muted-foreground">Age {child.age}{child.classroom && ` • ${child.classroom}`}</p>
+                            </div>
+                          </div>
+                          {child.teacher_id ? (
+                            <CheckCircle2 className="h-5 w-5 text-green-500" />
+                          ) : (
+                            <AlertTriangle className="h-5 w-5 text-yellow-400" />
                           )}
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {new Date(report.created_at).toLocaleDateString()}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {report.students?.length || 0} student(s)
-                          </span>
                         </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
+                      </CardHeader>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-        {/* Tips for Parents */}
-        {/* KIV: An AI integration might be implement-able here. */}
-        {/* <Card className="border-purple-200 bg-purple-50/50">
-          <CardHeader>
-            <CardTitle>Tips for Supporting Learning at Home</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 text-sm">
-              <li className="flex items-start gap-2">
-                <span className="text-purple-600">•</span>
-                <span>Read together for at least 15 minutes each day</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-purple-600">•</span>
-                <span>Practice counting objects during everyday activities</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-purple-600">•</span>
-                <span>Encourage drawing and creative expression</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-purple-600">•</span>
-                <span>Celebrate small achievements and effort</span>
-              </li>
-            </ul>
-          </CardContent>
-        </Card> */}
-      </main>
+          {/* Reports */}
+          <Card className="border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle}>
+            <CardHeader>
+              <CardTitle>Reports</CardTitle>
+              <CardDescription>Activity performance reports from your child's teacher</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingReports ? (
+                <p className="text-sm text-muted-foreground text-center py-8">Loading reports...</p>
+              ) : reports.length === 0 ? (
+                <div className="text-center py-8 space-y-2">
+                  <FileText className="h-8 w-8 mx-auto text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">No reports available yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {reports.map(report => (
+                    <Card key={report.id} className="border-white/70 shadow-sm hover:shadow-md transition-shadow" style={dashboardCardShadeStyle}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="font-medium">{report.title}</p>
+                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{report.summary}</p>
+                            <div className="flex items-center gap-3 mt-2">
+                              {report.activity_learning_area && (
+                                <Badge variant="outline" className="text-xs capitalize">{report.activity_learning_area}</Badge>
+                              )}
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {new Date(report.created_at).toLocaleDateString()}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {report.students?.length || 0} student(s)
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </main>
+      </div>
     </div>
   );
 }

@@ -154,10 +154,10 @@ export function StudentProfile() {
 
         {/* Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="activities" onClick={() => navigate(`/${user.role}/student/${studentId}/activities`)}>Learning Activities</TabsTrigger>
-            <TabsTrigger value="progress" onClick={() => navigate(`/${user.role}/student/${studentId}/progress`)}>Progress Report</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="overview" className="cursor-pointer">Overview</TabsTrigger>
+            {/* <TabsTrigger value="activities" onClick={() => navigate(`/${user.role}/student/${studentId}/activities`)}>Learning Activities</TabsTrigger> */}
+            <TabsTrigger value="progress" className="cursor-pointer" onClick={() => navigate(`/${user.role}/student/${studentId}/progress`)}>Progress Report</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
