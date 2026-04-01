@@ -1,9 +1,11 @@
 export const initialReportState = {
   reportType: 'comprehensive',
   reportPeriod: 'term1',
+  language: 'en',
   selectedStudents: [],
   generating: false,
   reports: [],
+  error: null,
 };
 
 export function reportReducer(state, action) {
@@ -34,6 +36,13 @@ export function reportReducer(state, action) {
       return {
         ...state,
         reports: action.payload,
+        error: null,
+      };
+    case 'SET_ERROR':
+      return {
+        ...state,
+        error: action.payload,
+        generating: false,
       };
     default:
       return state;

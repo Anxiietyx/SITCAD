@@ -1,7 +1,7 @@
 import { useReducer } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
-import { mockStudents } from '../data/mockData';
+import { mockStudents, getActivitiesByStudent } from '../data/mockData';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
@@ -9,7 +9,7 @@ import { Label } from './ui/label';
 import { Checkbox } from './ui/checkbox';
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
-import { ArrowLeft, FileText, Download, Sparkles, Loader2, TrendingUp, Award, Target } from 'lucide-react';
+import { ArrowLeft, FileText, Download, Sparkles, Loader2, TrendingUp, Award, Target, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import Duckpit from './Duckpit';
 import { reportReducer, initialReportState } from '../reducers/reportReducer';
@@ -18,7 +18,7 @@ export function ReportGeneration() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [state, dispatch] = useReducer(reportReducer, initialReportState);
-  const { reportType, reportPeriod, selectedStudents, generating, reports } = state;
+  const { reportType, reportPeriod, language, selectedStudents, generating, reports, error } = state;
 
   if (!user || user.role !== 'teacher') {
     navigate('/');
@@ -46,45 +46,70 @@ export function ReportGeneration() {
     }
 
     dispatch({ type: 'SET_GENERATING', payload: true });
-    await new Promise(resolve => setTimeout(resolve, 2500));
 
-    // Mock AI-generated reports
-    const newReports = selectedStudents.map(studentId => {
-      const student = students.find(s => s.id === studentId);
-      return {
-        studentId,
-        studentName: student.name,
-        reportPeriod: reportPeriod === 'term1' ? 'Term 1 (Sep - Dec 2025)' : 'Term 2 (Jan - Apr 2026)',
-        summary: `${student.name} has shown ${student.developmentalStage === 'advanced' || student.developmentalStage === 'proficient' ? 'excellent' : 'steady'} progress throughout the reporting period. ${student.name} demonstrates ${student.developmentalStage === 'advanced' ? 'exceptional curiosity and advanced skills' : student.developmentalStage === 'proficient' ? 'strong engagement and growing independence' : student.developmentalStage === 'developing' ? 'positive growth and increasing confidence' : 'emerging skills with supportive guidance'}. Overall progress is tracking well with age-appropriate developmental milestones.`,
-        strengths: [
-          'Shows enthusiasm for learning activities',
-          'Demonstrates good social interaction with peers',
-          'Follows classroom routines and instructions well',
-          student.overallProgress > 75 ? 'Excels in problem-solving activities' : 'Making consistent progress in all areas',
-        ],
-        areasForGrowth: [
-          'Continue practicing letter recognition at home',
-          'Develop fine motor skills through drawing and crafts',
-          'Increase independence in self-help tasks',
-        ],
-        recommendations: [
-          'Read together for 15-20 minutes daily',
-          'Practice counting objects during everyday activities',
-          'Encourage creative play and imagination',
-          'Maintain consistent routines at home',
-        ],
-        progressData: [
-          { area: 'Literacy Skills', progress: student.overallProgress, comment: 'Making good progress with letter recognition' },
-          { area: 'Numeracy Skills', progress: student.overallProgress + 5, comment: 'Strong counting and number sense' },
-          { area: 'Social-Emotional', progress: student.overallProgress - 5, comment: 'Growing confidence in group settings' },
-          { area: 'Physical Development', progress: student.overallProgress, comment: 'Developing fine and gross motor skills' },
-        ],
-      };
-    });
+    const studentsToGenerate = students
+      .filter(s => selectedStudents.includes(s.id))
+      .map(student => ({
+        student_id: student.id,
+        student_name: student.name,
+        age: student.age,
+        classroom: student.classroom,
+        developmental_stage: student.developmentalStage,
+        overall_progress: student.overallProgress,
+        needs_intervention: student.needsIntervention || false,
+        report_period: reportPeriod === 'term1' ? 'Term 1 (Sep - Dec 2025)' : reportPeriod === 'term2' ? 'Term 2 (Jan - Apr 2026)' : 'Term 3 (May - Aug 2026)',
+        recent_activities: getActivitiesByStudent(student.id).map(a => ({
+          type: a.type,
+          title: a.title,
+          score: a.score,
+          feedback: a.feedback
+        }))
+      }));
 
-    dispatch({ type: 'SET_REPORTS', payload: newReports });
-    dispatch({ type: 'SET_GENERATING', payload: false });
-    toast.success(`Generated ${newReports.length} report(s) successfully!`);
+    try {
+      const response = await fetch('http://localhost:8000/ai/generate-report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          students: studentsToGenerate,
+          report_type: reportType,
+          language: language,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to generate reports');
+      }
+
+      const data = await response.json();
+      
+      const mappedReports = data.reports.map(r => ({
+        studentId: r.student_id,
+        studentName: r.student_name,
+        reportPeriod: r.report_period,
+        summary: r.summary,
+        strengths: r.strengths,
+        areasForGrowth: r.areas_for_growth,
+        recommendations: r.recommendations,
+        progressData: r.progress_data.map(pd => ({
+          area: pd.area,
+          progress: pd.progress,
+          comment: pd.comment
+        })),
+        dskpReferences: r.dskp_references
+      }));
+
+      dispatch({ type: 'SET_REPORTS', payload: mappedReports });
+      dispatch({ type: 'SET_GENERATING', payload: false });
+      toast.success(`Generated ${mappedReports.length} report(s) successfully!`);
+    } catch (err) {
+      console.error(err);
+      dispatch({ type: 'SET_ERROR', payload: err.message });
+      toast.error(err.message);
+    }
   };
 
   const downloadReport = (report) => {
@@ -126,7 +151,6 @@ export function ReportGeneration() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
-        {/* Configuration Card */}
         <Card className="border-2 border-green-200">
           <CardHeader className="bg-gradient-to-r from-green-50 to-blue-50">
             <CardTitle className="flex items-center gap-2">
@@ -168,6 +192,19 @@ export function ReportGeneration() {
                 </Select>
               </div>
             </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="language">Output Language</Label>
+              <Select value={language} onValueChange={(value) => dispatch({ type: 'SET_FIELD', field: 'language', value })}>
+                <SelectTrigger id="language">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="bm">Bahasa Melayu</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -205,6 +242,13 @@ export function ReportGeneration() {
               )}
             </div>
 
+            {error && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded text-red-600 flex items-center gap-2 text-sm">
+                <AlertCircle className="h-4 w-4" />
+                {error}
+              </div>
+            )}
+
             <Button
               onClick={generateReports}
               disabled={generating || selectedStudents.length === 0}
@@ -226,7 +270,6 @@ export function ReportGeneration() {
           </CardContent>
         </Card>
 
-        {/* Generated Reports */}
         {reports.length > 0 && (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -252,13 +295,11 @@ export function ReportGeneration() {
                   </div>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-6">
-                  {/* Summary */}
                   <div>
                     <h3 className="font-semibold mb-2">Overall Summary</h3>
-                    <p className="text-sm text-muted-foreground">{report.summary}</p>
+                    <p className="text-sm text-muted-foreground italic">"{report.summary}"</p>
                   </div>
 
-                  {/* Progress Data */}
                   <div>
                     <h3 className="font-semibold mb-3">Developmental Progress</h3>
                     <div className="space-y-3">
@@ -275,7 +316,17 @@ export function ReportGeneration() {
                     </div>
                   </div>
 
-                  {/* Strengths */}
+                  {report.dskpReferences && report.dskpReferences.length > 0 && (
+                    <div>
+                      <h3 className="font-semibold mb-2">Curriculum Standards (DSKP)</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {report.dskpReferences.map((ref, idx) => (
+                          <Badge key={idx} variant="secondary">{ref}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   <div>
                     <h3 className="font-semibold mb-3 flex items-center gap-2">
                       <Award className="h-5 w-5 text-green-600" />
@@ -291,7 +342,6 @@ export function ReportGeneration() {
                     </div>
                   </div>
 
-                  {/* Areas for Growth */}
                   <div>
                     <h3 className="font-semibold mb-3 flex items-center gap-2">
                       <Target className="h-5 w-5 text-blue-600" />
@@ -309,7 +359,6 @@ export function ReportGeneration() {
                     </ul>
                   </div>
 
-                  {/* Recommendations */}
                   <div>
                     <h3 className="font-semibold mb-3 flex items-center gap-2">
                       <TrendingUp className="h-5 w-5 text-purple-600" />
