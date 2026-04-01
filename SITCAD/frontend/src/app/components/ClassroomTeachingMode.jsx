@@ -75,7 +75,7 @@ export function ClassroomTeachingMode() {
   const presentStudents = students.slice(0, 4); // Mock attendance
 
   const startActivity = (activityId) => {
-    setActiveActivity(activityId);
+    setActiveActivity(activityId);`12   `
     setIsTimerRunning(true);
     setTimer(0);
     toast.success('Activity started!');

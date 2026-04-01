@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useReducer } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
 import { mockStudents } from "../data/mockData";
@@ -6,6 +6,10 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
+import { activityReducer, initialState } from "../reducers/activityReducer";
+import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Checkbox } from "./ui/checkbox";
 import {
   Card,
   CardContent,
@@ -29,8 +33,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Checkbox } from "./ui/checkbox";
+
 import {
   ArrowLeft,
   Plus,
@@ -44,7 +47,7 @@ import {
   Brain,
   CheckCircle2,
 } from "lucide-react";
-import { toast } from "sonner";
+
 
 const activityTypes = [
   {
@@ -85,29 +88,18 @@ const activityTypes = [
   },
 ];
 
+
+
 export function ActivityManagement() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false);
-  const [selectedActivity, setSelectedActivity] = useState(null);
-  const [creationMode, setCreationMode] = useState("manual");
-
-  const [targetScore, setTargetScore] = useState("70");
-  const [scoringType, setScoringType] = useState("percentage");
+  const [state, dispatch] = useReducer(activityReducer, initialState);
 
   const handleBack = () => {
     navigate("/teacher");
   };
 
   const savedLessonPlan = JSON.parse(localStorage.getItem("lessonPlan"));
-
-  // Form state
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [type, setType] = useState("literacy");
-  const [duration, setDuration] = useState("20");
-  const [assignTo, setAssignTo] = useState("all");
-  const [selectedStudents, setSelectedStudents] = useState([]);
 
   if (!user || user.role !== "teacher") {
     navigate("/");
@@ -117,7 +109,7 @@ export function ActivityManagement() {
   const students = mockStudents;
 
   const handleCreateActivity = () => {
-    if (!title || !description) {
+    if (!state.title || !state.description) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -125,36 +117,23 @@ export function ActivityManagement() {
     // Mock activity creation
     const newActivity = {
       id: `act_${Date.now()}`,
-      type,
-      title,
-      description,
+      type: state.type,
+      title: state.title,
+      description: state.description,
       date: new Date().toISOString().split("T")[0],
-      duration: parseInt(duration),
-      targetScore,
-      scoringType,
+      duration: parseInt(state.duration),
+      targetScore: state.targetScore,
+      scoringType: state.scoringType,
       completed: false,
-      assignedTo: assignTo === "all" ? "all" : selectedStudents,
+      assignedTo: state.assignTo === "all" ? "all" : state.selectedStudents,
     };
 
-    toast.success(`Activity "${title}" created successfully!`);
+    toast.success(`Activity "${state.title}" created successfully!`);
 
-    // Reset form
-    setTitle("");
-    setDescription("");
-    setType("literacy");
-    setDuration("20");
-    setAssignTo("all");
-    setSelectedStudents([]);
-    setOpen(false);
+    dispatch({ type: "RESET_FORM" });
   };
 
-  const handleStudentToggle = (studentId) => {
-    setSelectedStudents((prev) =>
-      prev.includes(studentId)
-        ? prev.filter((id) => id !== studentId)
-        : [...prev, studentId],
-    );
-  };
+
 
   const mockActivities = [
     {
@@ -202,7 +181,7 @@ export function ActivityManagement() {
                 </p>
               </div>
             </div>
-            <Dialog open={open} onOpenChange={setOpen}>
+            <Dialog open={state.open} onOpenChange={(val) => dispatch({ type: "SET_OPEN", payload: val })}>
               <DialogTrigger asChild>
                 <Button size="lg">
                   <Plus className="mr-2 h-4 w-4" />
@@ -218,7 +197,7 @@ export function ActivityManagement() {
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   {/* Tabs */}
-                  <Tabs value={creationMode} onValueChange={setCreationMode}>
+                  <Tabs value={state.creationMode} onValueChange={(val) => dispatch({ type: "SET_FIELD", field: "creationMode", value: val })}>
                     <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="manual">Manual</TabsTrigger>
                       <TabsTrigger value="lesson">From Lesson Plan</TabsTrigger>
@@ -232,8 +211,8 @@ export function ActivityManagement() {
                         <Label>Activity Title *</Label>
                         <Input
                           placeholder="e.g., Letter Recognition Practice"
-                          value={title}
-                          onChange={(e) => setTitle(e.target.value)}
+                          value={state.title}
+                          onChange={(e) => dispatch({ type: "SET_FIELD", field: "title", value: e.target.value })}
                         />
                       </div>
 
@@ -241,8 +220,8 @@ export function ActivityManagement() {
                         <Label>Description *</Label>
                         <Textarea
                           rows={3}
-                          value={description}
-                          onChange={(e) => setDescription(e.target.value)}
+                          value={state.description}
+                          onChange={(e) => dispatch({ type: "SET_FIELD", field: "description", value: e.target.value })}
                         />
                       </div>
 
@@ -250,8 +229,8 @@ export function ActivityManagement() {
                         <div className="space-y-2">
                           <Label>Target Score (%)</Label>
                           <Select
-                            value={targetScore}
-                            onValueChange={setTargetScore}
+                            value={state.targetScore}
+                            onValueChange={(val) => dispatch({ type: "SET_FIELD", field: "targetScore", value: val })}
                           >
                             <SelectTrigger>
                               <SelectValue />
@@ -269,8 +248,8 @@ export function ActivityManagement() {
                         <div className="space-y-2">
                           <Label>Scoring Method</Label>
                           <Select
-                            value={scoringType}
-                            onValueChange={setScoringType}
+                            value={state.scoringType}
+                            onValueChange={(val) => dispatch({ type: "SET_FIELD", field: "scoringType", value: val })}
                           >
                             <SelectTrigger>
                               <SelectValue />
@@ -314,10 +293,10 @@ export function ActivityManagement() {
                                 key={index}
                                 className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
                                 onClick={() => {
-                                  setTitle(act.title);
-                                  setDescription(act.description);
-                                  setDuration(parseInt(act.duration));
-                                  setType(savedLessonPlan.learningArea);
+                                  dispatch({ type: "SET_FIELD", field: "title", value: act.title });
+                                  dispatch({ type: "SET_FIELD", field: "description", value: act.description });
+                                  dispatch({ type: "SET_FIELD", field: "duration", value: act.duration }); // Note: act.duration is usually a string in lesson plan mock
+                                  dispatch({ type: "SET_FIELD", field: "type", value: savedLessonPlan.learningArea });
 
                                   toast.success(
                                     "Activity loaded from lesson plan!",
@@ -346,7 +325,7 @@ export function ActivityManagement() {
                   {/* ========================= */}
                   <div className="space-y-3">
                     <Label>Assign To</Label>
-                    <Tabs value={assignTo} onValueChange={setAssignTo}>
+                    <Tabs value={state.assignTo} onValueChange={(val) => dispatch({ type: "SET_FIELD", field: "assignTo", value: val })}>
                       <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="all">Whole Class</TabsTrigger>
                         <TabsTrigger value="individual">
@@ -374,9 +353,9 @@ export function ActivityManagement() {
                               className="flex items-center space-x-3"
                             >
                               <Checkbox
-                                checked={selectedStudents.includes(student.id)}
+                                checked={state.selectedStudents.includes(student.id)}
                                 onCheckedChange={() =>
-                                  handleStudentToggle(student.id)
+                                  dispatch({ type: "TOGGLE_STUDENT", studentId: student.id })
                                 }
                               />
                               <span className="text-sm">{student.name}</span>
@@ -392,7 +371,7 @@ export function ActivityManagement() {
                     <Button
                       variant="outline"
                       className="flex-1"
-                      onClick={() => setOpen(false)}
+                      onClick={() => dispatch({ type: "SET_OPEN", payload: false })}
                     >
                       Cancel
                     </Button>
@@ -452,7 +431,7 @@ export function ActivityManagement() {
                   <Card
                     key={activity.id}
                     className="border-2 cursor-pointer hover:shadow-lg transition-shadow"
-                    onClick={() => setSelectedActivity(activity)}
+                    onClick={() => dispatch({ type: "SELECT_ACTIVITY", payload: activity })}
                   >
                     <CardContent className="pt-6">
                       <div className="flex gap-4">
@@ -508,16 +487,15 @@ export function ActivityManagement() {
         </Card>
       </main>
 
-      {/* Activity Details Modal */}
       <Dialog
-        open={!!selectedActivity}
-        onOpenChange={() => setSelectedActivity(null)}
+        open={!!state.selectedActivity}
+        onOpenChange={() => dispatch({ type: "SELECT_ACTIVITY", payload: null })}
       >
         <DialogContent className="max-w-2xl">
-          {selectedActivity &&
+          {state.selectedActivity &&
             (() => {
               const activityType = activityTypes.find(
-                (t) => t.value === selectedActivity.type,
+                (t) => t.value === state.selectedActivity.type,
               );
               const Icon = activityType?.icon || Book;
 
@@ -526,13 +504,13 @@ export function ActivityManagement() {
                   <DialogHeader>
                     <div className="flex items-center gap-4 mb-2">
                       <div
-                        className={`w-16 h-16 rounded-lg${activityType?.color} flex items-center justify-center shrink-0`}
+                        className={`w-16 h-16 rounded-lg ${activityType?.color} flex items-center justify-center shrink-0`}
                       >
                         <Icon className="h-8 w-8" />
                       </div>
                       <div className="flex-1">
                         <DialogTitle className="text-2xl">
-                          {selectedActivity.title}
+                          {state.selectedActivity.title}
                         </DialogTitle>
                         <DialogDescription className="flex items-center gap-2 mt-1">
                           <Badge
@@ -541,7 +519,7 @@ export function ActivityManagement() {
                           >
                             {activityType?.label}
                           </Badge>
-                          {selectedActivity.completed && (
+                          {state.selectedActivity.completed && (
                             <Badge variant="secondary" className="gap-1">
                               <CheckCircle2 className="h-3 w-3" />
                               Completed
@@ -562,7 +540,7 @@ export function ActivityManagement() {
                             <span className="text-base">Duration</span>
                           </div>
                           <p className="text-lg font-semibold">
-                            {selectedActivity.duration} min
+                            {state.selectedActivity.duration} min
                           </p>
                         </CardContent>
                       </Card>
@@ -573,7 +551,7 @@ export function ActivityManagement() {
                             <span className="text-base">Date</span>
                           </div>
                           <p className="text-lg font-semibold">
-                            {new Date(selectedActivity.date).toLocaleDateString(
+                            {new Date(state.selectedActivity.date).toLocaleDateString(
                               "en-US",
                               {
                                 month: "short",
@@ -590,7 +568,7 @@ export function ActivityManagement() {
                             <span className="text-base">Assigned</span>
                           </div>
                           <p className="text-lg font-semibold line-clamp-2">
-                            {selectedActivity.assignedTo}
+                            {state.selectedActivity.assignedTo}
                           </p>
                         </CardContent>
                       </Card>
@@ -603,7 +581,7 @@ export function ActivityManagement() {
                       </h3>
                       <div className="p-4 bg-muted rounded-lg">
                         <p className="text-sm">
-                          {selectedActivity.description}
+                          {state.selectedActivity.description}
                         </p>
                       </div>
                     </div>
@@ -617,7 +595,7 @@ export function ActivityManagement() {
                         <li className="flex items-start gap-2 text-sm">
                           <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
                           <span>
-                            Develop {selectedActivity.type} skills through
+                            Develop {state.selectedActivity.type} skills through
                             hands-on practice
                           </span>
                         </li>
@@ -660,7 +638,7 @@ export function ActivityManagement() {
                       <Button
                         variant="outline"
                         className="flex-1"
-                        onClick={() => setSelectedActivity(null)}
+                        onClick={() => dispatch({ type: "SELECT_ACTIVITY", payload: null })}
                       >
                         Close
                       </Button>
@@ -675,7 +653,7 @@ export function ActivityManagement() {
                             );
                           }, 1000);
 
-                          setSelectedActivity(null);
+                          dispatch({ type: "SELECT_ACTIVITY", payload: null });
                         }}
                       >
                         Mark as Complete

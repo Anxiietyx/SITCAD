@@ -1,20 +1,25 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useReducer } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Users, GraduationCap, ShieldCheck, UserPlus } from 'lucide-react';
+import { adminReducer, initialState } from '../reducers/adminReducer';
 
 export function AdminDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [stats, setStats] = useState({ teacher: null, parent: null, admin: null });
+  const [state, dispatch] = useReducer(adminReducer, initialState);
 
   useEffect(() => {
+    dispatch({ type: 'SET_LOADING', payload: true });
     fetch('http://localhost:8000/admin/stats')
       .then((res) => res.json())
-      .then((data) => setStats(data))
-      .catch((err) => console.error('Failed to fetch admin stats:', err));
+      .then((data) => dispatch({ type: 'SET_STATS', payload: data }))
+      .catch((err) => {
+        console.error('Failed to fetch admin stats:', err);
+        dispatch({ type: 'SET_ERROR', payload: err.message });
+      });
   }, []);
 
   if (!user) return null;
@@ -69,7 +74,7 @@ export function AdminDashboard() {
           <Card>
             <CardHeader className="pb-3">
               <CardDescription>Total Teachers Registered</CardDescription>
-              <CardTitle className="text-3xl">{stats.teacher ?? '—'}</CardTitle>
+              <CardTitle className="text-3xl">{state.stats.teacher ?? '—'}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center text-sm text-muted-foreground">
@@ -82,7 +87,7 @@ export function AdminDashboard() {
           <Card>
             <CardHeader className="pb-3">
               <CardDescription>Total Parents Registered</CardDescription>
-              <CardTitle className="text-3xl">{stats.parent ?? '—'}</CardTitle>
+              <CardTitle className="text-3xl">{state.stats.parent ?? '—'}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center text-sm text-muted-foreground">

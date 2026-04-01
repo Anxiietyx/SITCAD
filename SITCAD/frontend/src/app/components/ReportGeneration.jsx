@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useReducer } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { mockStudents } from '../data/mockData';
@@ -12,18 +12,13 @@ import { Progress } from './ui/progress';
 import { ArrowLeft, FileText, Download, Sparkles, Loader2, TrendingUp, Award, Target } from 'lucide-react';
 import { toast } from 'sonner';
 import Duckpit from './Duckpit';
-
-// The interface GeneratedReport is removed as it's TypeScript specific.
-// The structure is implicitly defined by how the mock reports are created.
+import { reportReducer, initialReportState } from '../reducers/reportReducer';
 
 export function ReportGeneration() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [reportType, setReportType] = useState('comprehensive');
-  const [reportPeriod, setReportPeriod] = useState('term1');
-  const [selectedStudents, setSelectedStudents] = useState([]);
-  const [generating, setGenerating] = useState(false);
-  const [reports, setReports] = useState([]);
+  const [state, dispatch] = useReducer(reportReducer, initialReportState);
+  const { reportType, reportPeriod, selectedStudents, generating, reports } = state;
 
   if (!user || user.role !== 'teacher') {
     navigate('/');
@@ -33,18 +28,14 @@ export function ReportGeneration() {
   const students = mockStudents;
 
   const handleStudentToggle = (studentId) => {
-    setSelectedStudents(prev =>
-      prev.includes(studentId)
-        ? prev.filter(id => id !== studentId)
-        : [...prev, studentId]
-    );
+    dispatch({ type: 'TOGGLE_STUDENT', payload: studentId });
   };
 
   const selectAllStudents = () => {
     if (selectedStudents.length === students.length) {
-      setSelectedStudents([]);
+      dispatch({ type: 'SELECT_ALL_STUDENTS', payload: [] });
     } else {
-      setSelectedStudents(students.map(s => s.id));
+      dispatch({ type: 'SELECT_ALL_STUDENTS', payload: students.map(s => s.id) });
     }
   };
 
@@ -54,12 +45,12 @@ export function ReportGeneration() {
       return;
     }
 
-    setGenerating(true);
+    dispatch({ type: 'SET_GENERATING', payload: true });
     await new Promise(resolve => setTimeout(resolve, 2500));
 
     // Mock AI-generated reports
     const newReports = selectedStudents.map(studentId => {
-      const student = students.find(s => s.id === studentId); // Removed '!' assertion
+      const student = students.find(s => s.id === studentId);
       return {
         studentId,
         studentName: student.name,
@@ -91,8 +82,8 @@ export function ReportGeneration() {
       };
     });
 
-    setReports(newReports);
-    setGenerating(false);
+    dispatch({ type: 'SET_REPORTS', payload: newReports });
+    dispatch({ type: 'SET_GENERATING', payload: false });
     toast.success(`Generated ${newReports.length} report(s) successfully!`);
   };
 
@@ -151,7 +142,7 @@ export function ReportGeneration() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="reportType">Report Type</Label>
-                <Select value={reportType} onValueChange={setReportType}>
+                <Select value={reportType} onValueChange={(value) => dispatch({ type: 'SET_FIELD', field: 'reportType', value })}>
                   <SelectTrigger id="reportType">
                     <SelectValue />
                   </SelectTrigger>
@@ -165,7 +156,7 @@ export function ReportGeneration() {
 
               <div className="space-y-2">
                 <Label htmlFor="reportPeriod">Reporting Period</Label>
-                <Select value={reportPeriod} onValueChange={setReportPeriod}>
+                <Select value={reportPeriod} onValueChange={(value) => dispatch({ type: 'SET_FIELD', field: 'reportPeriod', value })}>
                   <SelectTrigger id="reportPeriod">
                     <SelectValue />
                   </SelectTrigger>

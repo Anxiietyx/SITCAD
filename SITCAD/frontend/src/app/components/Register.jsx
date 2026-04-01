@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useReducer } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
@@ -9,22 +9,18 @@ import { Alert, AlertDescription } from './ui/alert';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { motion } from 'motion/react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { registerReducer, initialRegisterState } from '../reducers/registerReducer';
 
 export function Register() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [role, setRole] = useState('teacher');
-  const [acceptTerms, setAcceptTerms] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [state, dispatch] = useReducer(registerReducer, initialRegisterState);
+  const { email, password, fullName, role, acceptTerms, error, loading } = state;
   const { googleLogin, register: manualRegister } = useAuth();
   const navigate = useNavigate();
 
   // Handle Google sign up — role is null, onboarding page will handle it
   const handleGoogleSignUp = async () => {
-    setLoading(true);
-    setError('');
+    dispatch({ type: 'SET_LOADING', payload: true });
+    dispatch({ type: 'RESET_ERROR' });
     try {
       await googleLogin();
       // googleLogin in AuthContext syncs with backend (role=null) and sets user state.
@@ -32,46 +28,29 @@ export function Register() {
       navigate('/onboarding');
     } catch (err) {
       console.error(err);
-      setError('Google Sign-up failed. Please try again.');
+      dispatch({ type: 'SET_ERROR', payload: 'Google Sign-up failed. Please try again.' });
     } finally {
-      setLoading(false);
+      dispatch({ type: 'SET_LOADING', payload: false });
     }
   };
 
   // Handle manual email+password sign up
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!acceptTerms) return setError('Please accept the terms');
+    if (!acceptTerms) return dispatch({ type: 'SET_ERROR', payload: 'Please accept the terms' });
     
-    setLoading(true);
-    setError('');
+    dispatch({ type: 'SET_LOADING', payload: true });
+    dispatch({ type: 'RESET_ERROR' });
 
     try {
       const registeredRole = await manualRegister(email, password, fullName, role);
       navigate(`/${registeredRole}/dashboard`);
     } catch (err) {
-      setError(err.message || 'Registration failed');
+      dispatch({ type: 'SET_ERROR', payload: err.message || 'Registration failed' });
     } finally {
-      setLoading(false);
+      dispatch({ type: 'SET_LOADING', payload: false });
     }
   };
-
-  // Helper function to talk to the FastAPI backend
-  const syncWithBackend = async (idToken, selectedRole, name) => {
-    const response = await fetch('http://localhost:8000/auth/sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        id_token: idToken,
-        role: selectedRole, // Explicitly send the role picked in the UI
-        full_name: name 
-      })
-    });
-
-    if (!response.ok) throw new Error('Backend sync failed');
-    return response.json();
-  };
-
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 sm:p-6 lg:p-8">
@@ -138,7 +117,7 @@ export function Register() {
                   type="text"
                   placeholder="Enter your full name"
                   value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'fullName', value: e.target.value })}
                   className="h-12 px-4 bg-muted/30 border-muted focus:bg-background transition-colors"
                   required
                 />
@@ -151,7 +130,7 @@ export function Register() {
                   type="email"
                   placeholder="name@example.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'email', value: e.target.value })}
                   className="h-12 px-4 bg-muted/30 border-muted focus:bg-background transition-colors"
                   required
                 />
@@ -164,7 +143,7 @@ export function Register() {
                   type="password"
                   placeholder="Create a strong password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'password', value: e.target.value })}
                   className="h-12 px-4 bg-muted/30 border-muted focus:bg-background transition-colors"
                   required
                 />
@@ -177,7 +156,7 @@ export function Register() {
                     type="button"
                     variant={role === 'teacher' ? 'default' : 'outline'}
                     className={`flex-1 h-12 rounded-lg transition-all cursor-pointer ${role === 'teacher' ? 'bg-[#3090A0] hover:bg-[#2FBFA5] text-white shadow-md scale-[1.02]' : 'hover:bg-[#2FBFA5]/10'}`}
-                    onClick={() => setRole('teacher')}
+                    onClick={() => dispatch({ type: 'SET_FIELD', field: 'role', value: 'teacher' })}
                   >
                     Teacher
                   </Button>
@@ -185,7 +164,7 @@ export function Register() {
                     type="button"
                     variant={role === 'parent' ? 'default' : 'outline'}
                     className={`flex-1 h-12 rounded-lg transition-all cursor-pointer ${role === 'parent' ? 'bg-[#3090A0] hover:bg-[#2FBFA5] text-white shadow-md scale-[1.02]' : 'hover:bg-[#3090A0]/10'}`}
-                    onClick={() => setRole('parent')}
+                    onClick={() => dispatch({ type: 'SET_FIELD', field: 'role', value: 'parent' })}
                   >
                     Parent
                   </Button>
@@ -196,7 +175,7 @@ export function Register() {
                 <Checkbox
                   id="terms"
                   checked={acceptTerms}
-                  onCheckedChange={(checked) => setAcceptTerms(checked)}
+                  onCheckedChange={(checked) => dispatch({ type: 'SET_FIELD', field: 'acceptTerms', value: checked })}
                   className="mt-1 data-[state=checked]:bg-[#3090A0] data-[state=checked]:border-[#3090A0]"
                 />
                 <Label
