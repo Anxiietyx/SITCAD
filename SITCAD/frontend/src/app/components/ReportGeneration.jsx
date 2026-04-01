@@ -5,8 +5,7 @@ import { auth } from '../lib/firebase';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import { ArrowLeft, FileText, Sparkles, Loader2, CheckCircle2, Clock, Users, Printer, Trophy, Target } from 'lucide-react';
-import { toast } from 'sonner';
+import { ArrowLeft, FileText, Clock, Users, Printer, Trophy, Target } from 'lucide-react';
 
 const API_BASE = 'http://localhost:8000';
 
@@ -19,27 +18,8 @@ async function getIdToken() {
 export function ReportGeneration() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [completedActivities, setCompletedActivities] = useState([]);
   const [reports, setReports] = useState([]);
-  const [generating, setGenerating] = useState(null); // activity id being generated
   const [viewingReport, setViewingReport] = useState(null);
-
-  const fetchCompletedActivities = useCallback(async () => {
-    try {
-      const idToken = await getIdToken();
-      const res = await fetch(`${API_BASE}/activities/my-activities`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id_token: idToken }),
-      });
-      if (res.ok) {
-        const all = await res.json();
-        setCompletedActivities(all.filter(a => a.status === 'completed'));
-      }
-    } catch (err) {
-      console.error('Failed to fetch activities:', err);
-    }
-  }, []);
 
   const fetchReports = useCallback(async () => {
     try {
@@ -57,46 +37,18 @@ export function ReportGeneration() {
 
   useEffect(() => {
     if (user?.role === 'teacher') {
-      fetchCompletedActivities();
       fetchReports();
     }
-  }, [user, fetchCompletedActivities, fetchReports]);
+  }, [user, fetchReports]);
 
   if (!user || user.role !== 'teacher') {
     navigate('/');
     return null;
   }
 
-  const generateReport = async (activityId) => {
-    setGenerating(activityId);
-    try {
-      const idToken = await getIdToken();
-      const res = await fetch(`${API_BASE}/reports/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id_token: idToken, activity_id: activityId }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || 'Failed to generate report');
-      }
-      const report = await res.json();
-      toast.success('Report generated successfully!');
-      setViewingReport(report);
-      fetchReports();
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setGenerating(null);
-    }
-  };
-
   const handlePrint = () => {
     window.print();
   };
-
-  // Check which completed activities already have a report
-  const reportedActivityIds = new Set(reports.map(r => r.activity_id));
 
   if (viewingReport) {
     return (
@@ -267,9 +219,9 @@ export function ReportGeneration() {
               <FileText className="w-6 h-6 text-black" />
             </div>
             <div>
-              <h1 className="text-2xl font-semibold">Report Generation</h1>
+              <h1 className="text-2xl font-semibold">Reports</h1>
               <p className="text-sm text-muted-foreground">
-                Generate reports from completed activities
+                View and manage generated reports
               </p>
             </div>
           </div>
@@ -277,92 +229,21 @@ export function ReportGeneration() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
-          {/* Completed Activities – Generate Reports */}
+          {/* Generated Reports */}
           <Card className="border-2 border-[#bafde0] shadow-md">
             <CardHeader className="bg-[#edfff8] rounded-t-lg pb-5">
               <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                <Sparkles className="h-5 w-5 text-green-600" />
-                Completed Activities
+                <FileText className="h-5 w-5 text-green-600" />
+                Generated Reports ({reports.length})
               </CardTitle>
-              <CardDescription>
-                Select a completed activity to generate a report
-              </CardDescription>
+              <CardDescription>View and print past reports</CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
-              {completedActivities.length === 0 ? (
+              {reports.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">
-                  No completed activities yet. Complete an activity in Classroom Mode to generate a report.
+                  No reports generated yet. Generate a report from the Activities page after completing an activity.
                 </p>
               ) : (
-                <div className="space-y-3">
-                  {completedActivities.map(activity => {
-                    const hasReport = reportedActivityIds.has(activity.id);
-                    return (
-                      <div
-                        key={activity.id}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                            <CheckCircle2 className="h-5 w-5 text-green-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium">{activity.title}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="outline" className="text-xs capitalize">
-                                {activity.learning_area}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                <Clock className="h-3 w-3" /> {activity.duration_minutes} min
-                              </span>
-                              <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                <Users className="h-3 w-3" /> {activity.student_names?.length || 0} students
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        {hasReport ? (
-                          <Badge variant="secondary" className="bg-green-100 text-green-700">
-                            Report Generated
-                          </Badge>
-                        ) : (
-                          <Button
-                            size="sm"
-                            onClick={() => generateReport(activity.id)}
-                            disabled={generating === activity.id}
-                          >
-                            {generating === activity.id ? (
-                              <>
-                                <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                                Generating...
-                              </>
-                            ) : (
-                              <>
-                                <Sparkles className="mr-2 h-3 w-3" />
-                                Generate Report
-                              </>
-                            )}
-                          </Button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Past Reports */}
-          {reports.length > 0 && (
-            <Card className="bg-white/80 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-blue-600" />
-                  Generated Reports ({reports.length})
-                </CardTitle>
-                <CardDescription>View and print past reports</CardDescription>
-              </CardHeader>
-              <CardContent>
                 <div className="space-y-3">
                   {reports.map(report => (
                     <div
@@ -395,9 +276,9 @@ export function ReportGeneration() {
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              )}
+            </CardContent>
+          </Card>
         </main>
     </div>
   );

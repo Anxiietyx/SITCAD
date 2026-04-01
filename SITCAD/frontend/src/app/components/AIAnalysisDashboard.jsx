@@ -103,26 +103,27 @@ export function AIAnalysisDashboard() {
         "Consider more hands-on math manipulatives",
       ],
     },
-    {
-      area: "Social-Emotional",
-      status: "developing",
-      average: 72,
-      insights: [
-        "Improved conflict resolution skills observed",
-        "1 student may benefit from social skills support",
-        "Positive peer interactions during group activities",
-      ],
-    },
-    {
-      area: "Physical Development",
-      status: "strong",
-      average: 80,
-      insights: [
-        "Fine motor skills progressing well",
-        "Gross motor activities highly engaging",
-        "Consider more outdoor physical activities",
-      ],
-    },
+    // vvv TEMPORARILY COMMENTED OUT vvv
+    // {
+    //   area: "Social-Emotional",
+    //   status: "developing",
+    //   average: 72,
+    //   insights: [
+    //     "Improved conflict resolution skills observed",
+    //     "1 student may benefit from social skills support",
+    //     "Positive peer interactions during group activities",
+    //   ],
+    // },
+    // {
+    //   area: "Physical Development",
+    //   status: "strong",
+    //   average: 80,
+    //   insights: [
+    //     "Fine motor skills progressing well",
+    //     "Gross motor activities highly engaging",
+    //     "Consider more outdoor physical activities",
+    //   ],
+    // },
   ];
 
   const predictiveInsights = [
