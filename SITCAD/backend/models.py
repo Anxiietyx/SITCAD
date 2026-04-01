@@ -77,6 +77,9 @@ class Activity(Base):
   duration_minutes = Column(Integer, nullable=True)
   assigned_to = Column(String, nullable=False, default="class")  # "class" | "individual"
   status = Column(String, nullable=False, default="pending")     # "pending" | "in_progress" | "completed"
+  quiz_score = Column(Integer, nullable=True)
+  quiz_total = Column(Integer, nullable=True)
+  quiz_time_seconds = Column(Integer, nullable=True)
   created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
   completed_at = Column(DateTime, nullable=True)
 

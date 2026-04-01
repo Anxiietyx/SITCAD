@@ -45,6 +45,8 @@ import {
   CheckCircle2,
   Sparkles,
   Trash2,
+  FileText,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -85,6 +87,12 @@ export function ActivityManagement() {
   const [assignTo, setAssignTo] = useState("all");
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [selectedLessonPlanId, setSelectedLessonPlanId] = useState(null);
+
+  // Report generation state
+  const [reportScore, setReportScore] = useState("");
+  const [reportTotal, setReportTotal] = useState("");
+  const [reportTime, setReportTime] = useState("");
+  const [generatingReport, setGeneratingReport] = useState(false);
 
   const fetchActivities = useCallback(async () => {
     try {
@@ -231,6 +239,43 @@ export function ActivityManagement() {
         ? prev.filter((id) => id !== studentId)
         : [...prev, studentId],
     );
+  };
+
+  const handleGenerateReport = async (activityId) => {
+    // Use saved quiz data from the activity if available, otherwise use form inputs
+    const activity = activities.find(a => a.id === activityId);
+    const score = activity?.quiz_score ?? (reportScore ? parseInt(reportScore) : undefined);
+    const total = activity?.quiz_total ?? (reportTotal ? parseInt(reportTotal) : undefined);
+    const time = activity?.quiz_time_seconds ?? (reportTime ? parseInt(reportTime) : undefined);
+
+    setGeneratingReport(true);
+    try {
+      const idToken = await getIdToken();
+      const res = await fetch(`${API_BASE}/reports/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_token: idToken,
+          activity_id: activityId,
+          score: score,
+          total_questions: total,
+          time_taken_seconds: time,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || "Failed to generate report");
+      }
+      toast.success("Report generated! View it in the Reports page.");
+      setSelectedActivity(null);
+      setReportScore("");
+      setReportTotal("");
+      setReportTime("");
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setGeneratingReport(false);
+    }
   };
 
   return (
@@ -622,6 +667,98 @@ export function ActivityManagement() {
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
+
+                  {/* Generate Report Section (completed activities only) */}
+                  {selectedActivity.status === "completed" && (
+                    <div className="border-t pt-5 space-y-4">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-emerald-600" />
+                        <h3 className="font-semibold text-lg">Generate Report</h3>
+                      </div>
+
+                      {/* Show saved quiz data if available */}
+                      {selectedActivity.quiz_score != null ? (
+                        <>
+                          <p className="text-sm text-muted-foreground">
+                            Quiz results were saved from Classroom Mode and will be included in the report.
+                          </p>
+                          <div className="grid grid-cols-3 gap-3">
+                            <div className="text-center p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                              <p className="text-2xl font-bold text-emerald-700">
+                                {selectedActivity.quiz_score}/{selectedActivity.quiz_total}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">Score</p>
+                            </div>
+                            <div className="text-center p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                              <p className="text-2xl font-bold text-emerald-700">
+                                {selectedActivity.quiz_total ? Math.round(selectedActivity.quiz_score / selectedActivity.quiz_total * 100) : 0}%
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">Accuracy</p>
+                            </div>
+                            <div className="text-center p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                              <p className="text-2xl font-bold text-emerald-700">
+                                {selectedActivity.quiz_time_seconds != null
+                                  ? selectedActivity.quiz_time_seconds >= 60
+                                    ? `${Math.floor(selectedActivity.quiz_time_seconds / 60)}m ${selectedActivity.quiz_time_seconds % 60}s`
+                                    : `${selectedActivity.quiz_time_seconds}s`
+                                  : "N/A"}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">Time Taken</p>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm text-muted-foreground">
+                            No quiz data saved. Enter results manually to generate a performance report.
+                          </p>
+                          <div className="grid grid-cols-3 gap-3">
+                            <div className="space-y-1">
+                              <Label className="text-xs font-medium">Score</Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                placeholder="e.g. 6"
+                                value={reportScore}
+                                onChange={(e) => setReportScore(e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs font-medium">Total Questions</Label>
+                              <Input
+                                type="number"
+                                min="1"
+                                placeholder="e.g. 8"
+                                value={reportTotal}
+                                onChange={(e) => setReportTotal(e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs font-medium">Time (seconds)</Label>
+                              <Input
+                                type="number"
+                                min="0"
+                                placeholder="e.g. 90"
+                                value={reportTime}
+                                onChange={(e) => setReportTime(e.target.value)}
+                              />
+                            </div>
+                          </div>
+                        </>
+                      )}
+                      <Button
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                        onClick={() => handleGenerateReport(selectedActivity.id)}
+                        disabled={generatingReport}
+                      >
+                        {generatingReport ? (
+                          <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating Report...</>
+                        ) : (
+                          <><FileText className="mr-2 h-4 w-4" /> Generate Performance Report</>
+                        )}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </>
             );

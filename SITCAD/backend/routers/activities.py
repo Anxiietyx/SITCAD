@@ -27,6 +27,12 @@ class CreateActivityRequest(BaseModel):
     lesson_plan_id: Optional[str] = None       # set when created from a lesson plan
     source: str = "manual"                     # "manual" | "lesson_plan"
 
+class CompleteActivityRequest(BaseModel):
+    id_token: str
+    quiz_score: Optional[int] = None
+    quiz_total: Optional[int] = None
+    quiz_time_seconds: Optional[int] = None
+
 
 # ── Helpers ───────────────────────────────────────────────────────
 
@@ -76,6 +82,9 @@ def _activity_to_dict(act: models.Activity, db: Session) -> dict:
         "status": act.status,
         "student_ids": student_ids,
         "student_names": student_names,
+        "quiz_score": act.quiz_score,
+        "quiz_total": act.quiz_total,
+        "quiz_time_seconds": act.quiz_time_seconds,
         "created_at": act.created_at.isoformat() if act.created_at else None,
         "completed_at": act.completed_at.isoformat() if act.completed_at else None,
     }
@@ -173,8 +182,8 @@ async def start_activity(activity_id: str, request: AuthenticatedRequest, db: Se
 
 
 @router.post("/{activity_id}/complete")
-async def complete_activity(activity_id: str, request: AuthenticatedRequest, db: Session = Depends(get_db)):
-    """Mark an activity as completed."""
+async def complete_activity(activity_id: str, request: CompleteActivityRequest, db: Session = Depends(get_db)):
+    """Mark an activity as completed, optionally saving quiz results."""
     teacher = _verify_teacher(request.id_token, db)
     activity = db.query(models.Activity).filter(
         models.Activity.id == activity_id,
@@ -184,6 +193,12 @@ async def complete_activity(activity_id: str, request: AuthenticatedRequest, db:
         raise HTTPException(status_code=404, detail="Activity not found")
     activity.status = "completed"
     activity.completed_at = datetime.now(timezone.utc)
+    if request.quiz_score is not None:
+        activity.quiz_score = request.quiz_score
+    if request.quiz_total is not None:
+        activity.quiz_total = request.quiz_total
+    if request.quiz_time_seconds is not None:
+        activity.quiz_time_seconds = request.quiz_time_seconds
     db.commit()
     db.refresh(activity)
     return _activity_to_dict(activity, db)

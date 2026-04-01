@@ -22,6 +22,9 @@ class CreateReportRequest(BaseModel):
     title: Optional[str] = None
     summary: Optional[str] = None
     details: Optional[dict] = None
+    score: Optional[int] = None
+    total_questions: Optional[int] = None
+    time_taken_seconds: Optional[int] = None
 
 
 # ── Helpers ───────────────────────────────────────────────────────
@@ -96,20 +99,64 @@ async def generate_report(request: CreateReportRequest, db: Session = Depends(ge
 
     # Mock report content generation
     student_summaries = []
+
+    # Compute performance inference from quiz data
+    quiz_score = request.score
+    quiz_total = request.total_questions
+    quiz_time = request.time_taken_seconds
+    score_pct = (quiz_score / quiz_total * 100) if quiz_score is not None and quiz_total else None
+    time_per_q = (quiz_time / quiz_total) if quiz_time is not None and quiz_total else None
+
+    def _infer_performance(pct, tpq):
+        """Return (level, description) based on score % and avg seconds per question."""
+        if pct is None:
+            return ("N/A", "No quiz data available for this activity.")
+        if pct >= 90:
+            speed = "quickly" if tpq and tpq < 8 else "steadily"
+            return ("Excellent", f"Achieved {pct:.0f}% accuracy and answered {speed}. Demonstrates strong mastery of the material.")
+        if pct >= 70:
+            speed = "at a good pace" if tpq and tpq < 10 else "with careful thought"
+            return ("Good", f"Scored {pct:.0f}% accuracy {speed}. Shows solid understanding with room for reinforcement.")
+        if pct >= 50:
+            speed = "under time pressure" if tpq and tpq > 12 else ""
+            extra = f" {speed}" if speed else ""
+            return ("Developing", f"Scored {pct:.0f}% accuracy{extra}. Grasping foundational concepts; would benefit from additional practice.")
+        speed = "and rushed through answers" if tpq and tpq < 5 else ""
+        extra = f" {speed}" if speed else ""
+        return ("Needs Support", f"Scored {pct:.0f}% accuracy{extra}. Requires targeted intervention and guided repetition.")
+
+    perf_level, perf_description = _infer_performance(score_pct, time_per_q)
+
     for s in students:
         student_summaries.append({
             "student_id": s.id,
             "student_name": s.name,
             "participation": "Active",
-            "notes": f"{s.name} participated well in the activity.",
+            "performance_level": perf_level,
+            "notes": f"{s.name}: {perf_description}",
         })
 
     title = request.title or f"Report: {activity.title}"
-    summary = request.summary or (
-        f"Activity \"{activity.title}\" was conducted successfully with {len(students)} student(s). "
-        f"The activity covered {activity.learning_area or 'general'} skills "
-        f"and lasted {activity.duration_minutes or 'N/A'} minutes."
-    )
+
+    # Build summary with quiz performance if available
+    if score_pct is not None:
+        time_str = ""
+        if quiz_time is not None:
+            mins = quiz_time // 60
+            secs = quiz_time % 60
+            time_str = f" completed in {mins}m {secs}s" if mins else f" completed in {secs}s"
+        summary = request.summary or (
+            f"Activity \"{activity.title}\" — Quiz score: {quiz_score}/{quiz_total} ({score_pct:.0f}%){time_str}. "
+            f"Performance level: {perf_level}. {perf_description} "
+            f"Conducted with {len(students)} student(s) covering {activity.learning_area or 'general'} skills."
+        )
+    else:
+        summary = request.summary or (
+            f"Activity \"{activity.title}\" was conducted successfully with {len(students)} student(s). "
+            f"The activity covered {activity.learning_area or 'general'} skills "
+            f"and lasted {activity.duration_minutes or 'N/A'} minutes."
+        )
+
     details = request.details or {
         "activity_title": activity.title,
         "activity_description": activity.description,
@@ -119,6 +166,12 @@ async def generate_report(request: CreateReportRequest, db: Session = Depends(ge
         "student_count": len(students),
         "student_summaries": student_summaries,
         "completed_at": activity.completed_at.isoformat() if activity.completed_at else None,
+        "quiz_score": quiz_score,
+        "quiz_total": quiz_total,
+        "quiz_time_seconds": quiz_time,
+        "score_percentage": round(score_pct, 1) if score_pct is not None else None,
+        "performance_level": perf_level,
+        "performance_description": perf_description,
     }
 
     report = models.Report(

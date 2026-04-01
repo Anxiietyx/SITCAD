@@ -5,7 +5,7 @@ import { auth } from '../lib/firebase';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
-import { ArrowLeft, FileText, Sparkles, Loader2, CheckCircle2, Clock, Users, Printer } from 'lucide-react';
+import { ArrowLeft, FileText, Sparkles, Loader2, CheckCircle2, Clock, Users, Printer, Trophy, Target } from 'lucide-react';
 import { toast } from 'sonner';
 
 const API_BASE = 'http://localhost:8000';
@@ -148,18 +148,75 @@ export function ReportGeneration() {
               </div>
             )}
 
+            {/* Quiz Performance */}
+            {viewingReport.details?.quiz_score != null && (
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold">Quiz Performance</h2>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center p-4 bg-emerald-50 rounded-lg border border-emerald-200 print:bg-white">
+                    <Trophy className="h-6 w-6 text-emerald-600 mx-auto mb-2" />
+                    <p className="text-3xl font-bold text-emerald-700">
+                      {viewingReport.details.quiz_score}/{viewingReport.details.quiz_total}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">Score ({viewingReport.details.score_percentage}%)</p>
+                  </div>
+                  <div className="text-center p-4 bg-emerald-50 rounded-lg border border-emerald-200 print:bg-white">
+                    <Clock className="h-6 w-6 text-emerald-600 mx-auto mb-2" />
+                    <p className="text-3xl font-bold text-emerald-700">
+                      {viewingReport.details.quiz_time_seconds != null
+                        ? viewingReport.details.quiz_time_seconds >= 60
+                          ? `${Math.floor(viewingReport.details.quiz_time_seconds / 60)}m ${viewingReport.details.quiz_time_seconds % 60}s`
+                          : `${viewingReport.details.quiz_time_seconds}s`
+                        : 'N/A'}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">Time Taken</p>
+                  </div>
+                  <div className="text-center p-4 bg-emerald-50 rounded-lg border border-emerald-200 print:bg-white">
+                    <Target className="h-6 w-6 text-emerald-600 mx-auto mb-2" />
+                    <p className={`text-xl font-bold ${
+                      viewingReport.details.performance_level === 'Excellent' ? 'text-emerald-700' :
+                      viewingReport.details.performance_level === 'Good' ? 'text-green-600' :
+                      viewingReport.details.performance_level === 'Developing' ? 'text-yellow-600' :
+                      'text-red-600'
+                    }`}>
+                      {viewingReport.details.performance_level}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">Performance Level</p>
+                  </div>
+                </div>
+                <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200 print:bg-white">
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    <strong>Assessment:</strong> {viewingReport.details.performance_description}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Student Summaries */}
             {viewingReport.details?.student_summaries?.length > 0 && (
               <div>
-                <h2 className="text-xl font-semibold mb-3">Student Participation</h2>
+                <h2 className="text-xl font-semibold mb-3">Student Performance</h2>
                 <div className="space-y-3">
                   {viewingReport.details.student_summaries.map((ss, i) => (
                     <div key={i} className="flex items-start gap-3 p-3 border rounded-lg">
                       <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-sm font-semibold text-slate-600 shrink-0">
                         {ss.student_name.charAt(0).toUpperCase()}
                       </div>
-                      <div>
-                        <p className="font-medium">{ss.student_name}</p>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{ss.student_name}</p>
+                          {ss.performance_level && (
+                            <Badge className={`text-xs ${
+                              ss.performance_level === 'Excellent' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                              ss.performance_level === 'Good' ? 'bg-green-100 text-green-700 border-green-200' :
+                              ss.performance_level === 'Developing' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                              ss.performance_level === 'Needs Support' ? 'bg-red-100 text-red-700 border-red-200' :
+                              'bg-gray-100 text-gray-700'
+                            }`}>
+                              {ss.performance_level}
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-sm text-muted-foreground">
                           Participation: <Badge variant="secondary">{ss.participation}</Badge>
                         </p>
