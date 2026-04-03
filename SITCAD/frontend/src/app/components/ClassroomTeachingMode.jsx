@@ -15,6 +15,7 @@ import {
 } from './ui/dialog';
 import { ArrowLeft, Play, Pause, CheckCircle2, Users, Clock, Book, Calculator, Palette, Brain, Activity as ActivityIcon, Trophy, RotateCcw, ChevronRight, Star, X } from 'lucide-react';
 import { toast } from 'sonner';
+import Duckpit from './Duckpit';
 
 const API_BASE = 'http://localhost:8000';
 
@@ -285,7 +286,7 @@ export function ClassroomTeachingMode() {
   const completedCount = activities.filter(a => a.status === 'completed' || completedIds.has(a.id)).length;
 
   return (
-    <div className="min-h-screen">
+    <div className="relative min-h-screen overflow-hidden bg-slate-50">
       <header className="bg-white border-b shadow-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <Button variant="ghost" onClick={() => navigate('/teacher')} className="mb-4">

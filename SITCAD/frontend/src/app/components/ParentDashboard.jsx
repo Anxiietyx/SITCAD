@@ -104,33 +104,38 @@ export function ParentDashboard() {
   const statsLabelStyle = { color: '#374151', fontSize: '1rem', fontWeight: 600 };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-50">
+    <div className="min-h-screen relative overflow-hidden bg-slate-50">
       <div className="absolute inset-0 z-0 pointer-events-none">
-        <Duckpit
-          count={32}
-          gravity={0.5}
-          friction={0.9975}
-          wallBounce={0.9}
-          className="h-full w-full opacity-100"
-        />
+        <Duckpit count={15} interactive={false} className="h-full w-full opacity-100" />
       </div>
       <div className="absolute inset-0 z-0 bg-linear-to-b from-white/72 via-white/58 to-emerald-50/72" />
 
       <div className="relative z-10">
-        {/* Header */}
-        <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
-          <div className="max-w-7xl mx-auto px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-semibold">Parent Dashboard</h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Welcome back, {user.name}!
-                </p>
-              </div>
+      {/* Header */}
+      <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
+        <div className="max-w-6xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold">Parent Dashboard</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Welcome back, {user.name}!
+              </p>
             </div>
           </div>
-        </header>
+        </div>
+      </header>
 
+      <main className="relative z-10 max-w-6xl mx-auto px-4 py-8 space-y-8">
+        {/* Welcome Message */}
+        <Card className="bg-linear-to-r bg-slate-50 shadow-lg border-slate-200">
+          <CardHeader>
+            <CardTitle className="text-black">Your Child's Learning Journey</CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Track progress, view activities, and celebrate achievements together
+            </CardDescription>
+            <div className="pb-3"></div>
+          </CardHeader>
+        </Card>
         <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
           {/* Quick Action Cards */}
           {/* <div className="grid grid-cols-2 md:grid-cols-3 gap-3">

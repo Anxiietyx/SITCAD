@@ -40,6 +40,7 @@ async function getIdToken() {
   if (!firebaseUser) throw new Error("Not authenticated");
   return firebaseUser.getIdToken();
 }
+import Duckpit from './Duckpit';
 
 export function AILessonPlanning() {
   const { user } = useAuth();
@@ -135,45 +136,38 @@ export function AILessonPlanning() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="relative min-h-screen overflow-hidden bg-slate-50">
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <Duckpit count={24} gravity={0.5} friction={0.9975} wallBounce={0.9} className="h-full w-full opacity-100" />
+      </div>
+      <div className="absolute inset-0 z-0 bg-linear-to-b from-white/72 via-white/58 to-emerald-50/72" />
+
+      <div className="relative z-10">
       {/* Header */}
-      <header className="bg-white border-b shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <Button variant="ghost" onClick={() => navigate("/teacher")} className="mb-4">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
-          </Button>
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-[#bafde0] rounded-lg flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-black" />
+      <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-linear-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-semibold">Lesson Planning Assistant Powered by AI</h1>
+                <p className="text-sm text-muted-foreground mt-1">Generate planning lesson powered by AI</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-semibold">
-                Lesson Planning Assistant
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Generate lesson plans powered by AI
-              </p>
-            </div>
+            <Button variant="ghost" onClick={() => navigate("/teacher")}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Dashboard
+            </Button>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto px-4 py-8">
-        <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); if (v === "generator") setLessonPlan(null); }}>
-          {/* Tab Navigation */}
-
-          <div className="mb-6 flex justify-center">
-            <TabsList className="grid w-full grid-cols-2 max-w-sm">
-              <TabsTrigger value="generator">Generator</TabsTrigger>
-              <TabsTrigger value="list">My Plans {savedPlans.length > 0 && `(${savedPlans.length})`}</TabsTrigger>
-            </TabsList>
-          </div>
-
-          {/* ── Tab 1: Generator ── */}
-          <TabsContent value="generator" className="space-y-6">
-        <Card className="border-2 border-[#bafde0] shadow-md">
-          <CardHeader className="bg-[#edfff8] rounded-t-lg">
+      <main className="max-w-6xl mx-auto px-4 py-8 space-y-6">
+        {/* Input Form */}
+        <Card className="border-2 border-indigo-200 shadow-md">
+          <CardHeader className="bg-linear-to-r from-indigo-100 to-purple-100">
             <CardTitle className="flex items-center gap-2 text-lg font-semibold">
               <Lightbulb className="h-5 w-5 text-[#3090A0]" />
               Lesson Plan Generator
@@ -342,7 +336,7 @@ export function AILessonPlanning() {
           <div className="space-y-6 animate-in fade-in duration-500">
             {/* Header */}
             <Card className="shadow-md border border-indigo-200">
-              <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50">
+              <CardHeader className="bg-linear-to-r from-indigo-50 to-purple-50">
                 <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div className="space-y-2">
                     <CardTitle className="text-2xl md:text-3xl font-bold text-gray-800 leading-tight">
@@ -416,7 +410,7 @@ export function AILessonPlanning() {
                       key={activity.step}
                       className="flex gap-3 p-3 border rounded-lg bg-gray-50"
                     >
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400 text-white flex items-center justify-center text-lg font-bold shrink-0">
+                      <div className="w-12 h-12 rounded-full bg-linear-to-br from-indigo-400 to-purple-400 text-white flex items-center justify-center text-lg font-bold shrink-0">
                         {activity.step}
                       </div>
 
@@ -489,6 +483,7 @@ export function AILessonPlanning() {
           </TabsContent>
         </Tabs>
       </main>
+      </div>
     </div>
   );
 }

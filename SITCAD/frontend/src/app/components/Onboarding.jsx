@@ -83,7 +83,7 @@ export function Onboarding() {
               id="terms"
               checked={acceptTerms}
               onCheckedChange={(checked) => setAcceptTerms(checked)}
-              className="mt-0.5 data-[state=checked]:bg-[#3090A0] data-[state=checked]:border-[#3090A0] flex-shrink-0"
+              className="mt-0.5 data-[state=checked]:bg-[#3090A0] data-[state=checked]:border-[#3090A0]shrink-0"
             />
             <label
               htmlFor="terms"

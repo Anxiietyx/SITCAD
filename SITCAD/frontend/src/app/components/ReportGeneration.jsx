@@ -46,17 +46,103 @@ export function ReportGeneration() {
     return null;
   }
 
-  const handlePrint = () => {
-    window.print();
+  const students = mockStudents;
+
+  const handleStudentToggle = (studentId) => {
+    setSelectedStudents(prev =>
+      prev.includes(studentId)
+        ? prev.filter(id => id !== studentId)
+        : [...prev, studentId]
+    );
   };
 
-  if (viewingReport) {
-    return (
-      <div className="min-h-screen bg-white">
-        {/* Print-friendly report view */}
-        <div className="max-w-3xl mx-auto px-8 py-8 print:p-0">
-          <div className="print:hidden mb-6 flex items-center gap-3">
-            <Button variant="ghost" onClick={() => setViewingReport(null)}>
+  const selectAllStudents = () => {
+    if (selectedStudents.length === students.length) {
+      setSelectedStudents([]);
+    } else {
+      setSelectedStudents(students.map(s => s.id));
+    }
+  };
+
+  const generateReports = async () => {
+    if (selectedStudents.length === 0) {
+      toast.error('Please select at least one student');
+      return;
+    }
+
+    setGenerating(true);
+    await new Promise(resolve => setTimeout(resolve, 2500));
+
+    // Mock AI-generated reports
+    const newReports = selectedStudents.map(studentId => {
+      const student = students.find(s => s.id === studentId); // Removed '!' assertion
+      return {
+        studentId,
+        studentName: student.name,
+        reportPeriod: reportPeriod === 'term1' ? 'Term 1 (Sep - Dec 2025)' : 'Term 2 (Jan - Apr 2026)',
+        summary: `${student.name} has shown ${student.developmentalStage === 'advanced' || student.developmentalStage === 'proficient' ? 'excellent' : 'steady'} progress throughout the reporting period. ${student.name} demonstrates ${student.developmentalStage === 'advanced' ? 'exceptional curiosity and advanced skills' : student.developmentalStage === 'proficient' ? 'strong engagement and growing independence' : student.developmentalStage === 'developing' ? 'positive growth and increasing confidence' : 'emerging skills with supportive guidance'}. Overall progress is tracking well with age-appropriate developmental milestones.`,
+        strengths: [
+          'Shows enthusiasm for learning activities',
+          'Demonstrates good social interaction with peers',
+          'Follows classroom routines and instructions well',
+          student.overallProgress > 75 ? 'Excels in problem-solving activities' : 'Making consistent progress in all areas',
+        ],
+        areasForGrowth: [
+          'Continue practicing letter recognition at home',
+          'Develop fine motor skills through drawing and crafts',
+          'Increase independence in self-help tasks',
+        ],
+        recommendations: [
+          'Read together for 15-20 minutes daily',
+          'Practice counting objects during everyday activities',
+          'Encourage creative play and imagination',
+          'Maintain consistent routines at home',
+        ],
+        progressData: [
+          { area: 'Literacy Skills', progress: student.overallProgress, comment: 'Making good progress with letter recognition' },
+          { area: 'Numeracy Skills', progress: student.overallProgress + 5, comment: 'Strong counting and number sense' },
+          { area: 'Social-Emotional', progress: student.overallProgress - 5, comment: 'Growing confidence in group settings' },
+          { area: 'Physical Development', progress: student.overallProgress, comment: 'Developing fine and gross motor skills' },
+        ],
+      };
+    });
+
+    setReports(newReports);
+    setGenerating(false);
+    toast.success(`Generated ${newReports.length} report(s) successfully!`);
+  };
+
+  const downloadReport = (report) => {
+    toast.success(`Report for ${report.studentName} downloaded!`);
+  };
+
+  const downloadAllReports = () => {
+    toast.success(`Downloaded ${reports.length} reports as PDF bundle!`);
+  };
+
+  return (
+    <div className="relative min-h-screen overflow-hidden bg-slate-50">
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <Duckpit count={24} gravity={0.5} friction={0.9975} wallBounce={0.9} className="h-full w-full opacity-100" />
+      </div>
+      <div className="absolute inset-0 z-0 bg-linear-to-b from-white/72 via-white/58 to-emerald-50/72" />
+
+      <div className="relative z-10">
+      <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-linear-to-br from-green-500 to-blue-600 rounded-lg flex items-center justify-center">
+                <FileText className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-semibold">AI Progress Report Generation</h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Automatically generate comprehensive student reports
+                </p>
+              </div>
+            </div>
+            <Button variant="ghost" onClick={() => navigate('/teacher')}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Reports
             </Button>
@@ -65,16 +151,37 @@ export function ReportGeneration() {
               Print / Save as PDF
             </Button>
           </div>
+        </div>
+      </header>
 
-          <div className="space-y-6">
-            <div className="text-center border-b pb-6">
-              <h1 className="text-3xl font-bold">{viewingReport.title}</h1>
-              <p className="text-muted-foreground mt-2">
-                Generated on {new Date(viewingReport.created_at).toLocaleDateString('en-MY', {
-                  year: 'numeric', month: 'long', day: 'numeric',
-                })}
-              </p>
-            </div>
+      <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+        {/* Configuration Card */}
+        <Card className="border-2 border-green-200">
+          <CardHeader className="bg-linear-to-r from-green-50 to-blue-50">
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-green-600" />
+              Configure Report Generation
+            </CardTitle>
+            <CardDescription>
+              Select students and report parameters
+            </CardDescription>
+            <div className="pb-3"></div>
+          </CardHeader>
+          <CardContent className="pt-6 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="reportType">Report Type</Label>
+                <Select value={reportType} onValueChange={setReportType}>
+                  <SelectTrigger id="reportType">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="comprehensive">Comprehensive Report</SelectItem>
+                    <SelectItem value="progress">Progress Summary</SelectItem>
+                    <SelectItem value="brief">Brief Overview</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
             {/* Summary */}
             <div>
@@ -112,16 +219,59 @@ export function ReportGeneration() {
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">Score ({viewingReport.details.score_percentage}%)</p>
                   </div>
-                  <div className="text-center p-4 bg-emerald-50 rounded-lg border border-emerald-200 print:bg-white">
-                    <Clock className="h-6 w-6 text-emerald-600 mx-auto mb-2" />
-                    <p className="text-3xl font-bold text-emerald-700">
-                      {viewingReport.details.quiz_time_seconds != null
-                        ? viewingReport.details.quiz_time_seconds >= 60
-                          ? `${Math.floor(viewingReport.details.quiz_time_seconds / 60)}m ${viewingReport.details.quiz_time_seconds % 60}s`
-                          : `${viewingReport.details.quiz_time_seconds}s`
-                        : 'N/A'}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">Time Taken</p>
+                ))}
+              </div>
+              {selectedStudents.length > 0 && (
+                <p className="text-sm text-green-600">
+                  {selectedStudents.length} student(s) selected for report generation
+                </p>
+              )}
+            </div>
+
+            <Button
+              onClick={generateReports}
+              disabled={generating || selectedStudents.length === 0}
+              size="lg"
+              className="w-full"
+            >
+              {generating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating AI Reports...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Generate Reports ({selectedStudents.length})
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Generated Reports */}
+        {reports.length > 0 && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Generated Reports ({reports.length})</h2>
+              <Button onClick={downloadAllReports}>
+                <Download className="mr-2 h-4 w-4" />
+                Download All as PDF
+              </Button>
+            </div>
+
+            {reports.map((report) => (
+              <Card key={report.studentId} className="border-2">
+                <CardHeader className="bg-linear-to-r from-blue-50 to-purple-50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>{report.studentName}</CardTitle>
+                      <CardDescription className="mt-1">{report.reportPeriod}</CardDescription>
+                    </div>
+                    <Button variant="outline" onClick={() => downloadReport(report)}>
+                      <Download className="mr-2 h-4 w-4" />
+                      Download PDF
+                    </Button>
                   </div>
                   <div className="text-center p-4 bg-emerald-50 rounded-lg border border-emerald-200 print:bg-white">
                     <Target className="h-6 w-6 text-emerald-600 mx-auto mb-2" />

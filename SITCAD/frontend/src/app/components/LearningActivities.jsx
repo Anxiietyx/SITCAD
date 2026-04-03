@@ -9,6 +9,7 @@ import { Progress } from './ui/progress';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { ArrowLeft, Book, Calculator, Users, Activity as ActivityIcon, Palette, Brain, Clock, CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';
+import Duckpit from './Duckpit';
 
 const activityIcons = {
   literacy: Book,
@@ -60,9 +61,15 @@ export function LearningActivities() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="relative min-h-screen overflow-hidden bg-slate-50">
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <Duckpit count={24} gravity={0.5} friction={0.9975} wallBounce={0.9} className="h-full w-full opacity-100" />
+      </div>
+      <div className="absolute inset-0 z-0 bg-linear-to-b from-white/72 via-white/58 to-emerald-50/72" />
+
+      <div className="relative z-10">
       {/* Header */}
-      <header className="bg-white border-b shadow-sm sticky top-0 z-10">
+      <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -336,6 +343,7 @@ export function LearningActivities() {
           })()}
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }

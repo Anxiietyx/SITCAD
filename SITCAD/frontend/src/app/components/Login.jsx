@@ -81,7 +81,7 @@ export function Login() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-5xl bg-card rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[600px] border border-border"
+        className="w-full max-w-5xl bg-card rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-150 border border-border"
       >
         {/* Left Section - Illustration & Branding */}
         <div className="w-full md:w-5/12 bg-[#3090A0] p-8 md:p-12 flex flex-col justify-between text-white relative overflow-hidden">
