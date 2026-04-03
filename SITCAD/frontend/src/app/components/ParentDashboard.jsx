@@ -111,21 +111,21 @@ export function ParentDashboard() {
       <div className="absolute inset-0 z-0 bg-linear-to-b from-white/72 via-white/58 to-emerald-50/72" />
 
       <div className="relative z-10">
-      {/* Header */}
-      <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold">Parent Dashboard</h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Welcome back, {user.name}!
-              </p>
+        {/* Header */}
+        <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
+          <div className="max-w-6xl mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-semibold">Parent Dashboard</h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Welcome back, {user.name}!
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="relative z-10 max-w-6xl mx-auto px-4 py-8 space-y-8">
+      <main className="relative z-10 max-w-7xl mx-auto px-4 py-8 space-y-8">
         {/* Welcome Message */}
         <Card className="bg-linear-to-r bg-slate-50 shadow-lg border-slate-200">
           <CardHeader>
@@ -136,7 +136,6 @@ export function ParentDashboard() {
             <div className="pb-3"></div>
           </CardHeader>
         </Card>
-        <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
           {/* Quick Action Cards */}
           {/* <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <Card
@@ -366,7 +365,8 @@ export function ParentDashboard() {
               )}
             </CardContent>
           </Card>
-        </main>
+      </main>
+
       </div>
     </div>
   );

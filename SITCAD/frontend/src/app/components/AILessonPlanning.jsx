@@ -165,6 +165,14 @@ export function AILessonPlanning() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-8 space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="generator">Generator</TabsTrigger>
+            <TabsTrigger value="list">My Plans</TabsTrigger>
+          </TabsList>
+
+          {/* ── Tab 1: Generator ── */}
+          <TabsContent value="generator" className="space-y-6">
         {/* Input Form */}
         <Card className="border-2 border-indigo-200 shadow-md">
           <CardHeader className="bg-linear-to-r from-indigo-100 to-purple-100">
