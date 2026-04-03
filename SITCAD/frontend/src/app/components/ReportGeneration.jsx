@@ -51,16 +51,29 @@ export function ReportGeneration() {
   if (viewingReport) {
     return (
       <div className="min-h-screen print:min-h-0">
-        <header className="bg-white border-b shadow-sm sticky top-0 z-10 print:hidden">
-          <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-            <Button variant="ghost" onClick={() => setViewingReport(null)}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Reports
-            </Button>
-            <Button onClick={handlePrint}>
-              <Printer className="mr-2 h-4 w-4" />
-              Print / Save as PDF
-            </Button>
+        <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm print:hidden">
+          <div className="max-w-4xl mx-auto px-6 py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-8 h-8 bg-[#bafde0] rounded-lg flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-black" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-semibold">Report Details</h1>
+                  <p className="text-sm text-muted-foreground mt-1">View activity report</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" onClick={() => setViewingReport(null)} className="cursor-pointer">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Reports
+                </Button>
+                <Button onClick={handlePrint} className="cursor-pointer">
+                  <Printer className="mr-2 h-4 w-4" />
+                  Print / Save as PDF
+                </Button>
+              </div>
+            </div>
           </div>
         </header>
 
@@ -192,22 +205,24 @@ export function ReportGeneration() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="bg-white border-b shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <Button variant="ghost" onClick={() => navigate('/teacher')} className="mb-4">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
-          </Button>
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-[#bafde0] rounded-lg flex items-center justify-center">
-              <FileText className="w-6 h-6 text-black" />
+      <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 bg-[#bafde0] rounded-lg flex items-center justify-center">
+                <FileText className="w-4 h-4 text-black" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-semibold">Reports</h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                  View and manage generated reports
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-semibold">Reports</h1>
-              <p className="text-sm text-muted-foreground">
-                View and manage generated reports
-              </p>
-            </div>
+            <Button variant="ghost" onClick={() => navigate('/teacher')} className="cursor-pointer">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Dashboard
+            </Button>
           </div>
         </div>
       </header>

@@ -291,23 +291,53 @@ export function ActivityManagement() {
       <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
               <div className="w-8 h-8 bg-[#bafde0] rounded-lg flex items-center justify-center">
-                <Calendar className="w-4 h-4 text-Black" />
+                <Calendar className="w-4 h-4 text-black" />
               </div>
               <div>
                 <h1 className="text-2xl font-semibold">Activity Management</h1>
                 <p className="text-sm text-muted-foreground mt-1">Create and assign learning activities to students</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-            <Button variant="ghost" onClick={handleBack}>
+            <Button variant="ghost" onClick={handleBack} className="cursor-pointer">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Dashboard
             </Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+        {/* Activity Type Quick Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {activityTypes.map(({ value, label, icon: Icon, color }) => (
+            <Card key={value}>
+              <CardContent className="pt-6">
+                <div className={`w-12 h-12 rounded-lg ${color} flex items-center justify-center mb-3`}>
+                  <Icon className="h-6 w-6" />
+                </div>
+                <p className="text-4xl font-bold mb-1">
+                  {activities.filter((a) => a.learning_area === value).length}
+                </p>
+                <p className="text-base font-medium text-muted-foreground">{label}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Activities List */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-2xl font-bold mb-2">Created Activities</CardTitle>
+              <CardDescription className="text-lg text-muted-foreground mb-4 font-medium">
+                Manage and track all learning activities
+              </CardDescription>
+            </div>
             <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
               <DialogTrigger asChild>
-                <Button size="lg">
+                <Button size="lg" className="cursor-pointer">
                   <Plus className="mr-2 h-4 w-4" />
                   Create Activity
                 </Button>
@@ -482,36 +512,6 @@ export function ActivityManagement() {
                 </div>
               </DialogContent>
             </Dialog>
-          </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
-        {/* Activity Type Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {activityTypes.map(({ value, label, icon: Icon, color }) => (
-            <Card key={value}>
-              <CardContent className="pt-6">
-                <div className={`w-12 h-12 rounded-lg ${color} flex items-center justify-center mb-3`}>
-                  <Icon className="h-6 w-6" />
-                </div>
-                <p className="text-4xl font-bold mb-1">
-                  {activities.filter((a) => a.learning_area === value).length}
-                </p>
-                <p className="text-base font-medium text-muted-foreground">{label}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Activities List */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold mb-2">Created Activities</CardTitle>
-            <CardDescription className="text-lg text-muted-foreground mb-4 font-medium">
-              Manage and track all learning activities
-            </CardDescription>
           </CardHeader>
           <CardContent>
             {activities.length === 0 ? (

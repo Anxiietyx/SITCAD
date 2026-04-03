@@ -287,28 +287,24 @@ export function ClassroomTeachingMode() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-slate-50">
-      <header className="bg-white border-b shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <Button variant="ghost" onClick={() => navigate('/teacher')} className="mb-4">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Exit Classroom Mode
-          </Button>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-[#bafde0] rounded-lg flex items-center justify-center">
-                <Users className="w-6 h-6 text-black" />
+      <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 bg-[#bafde0] rounded-lg flex items-center justify-center">
+                <Users className="w-4 h-4 text-black" />
               </div>
               <div>
                 <h1 className="text-2xl font-semibold">Classroom Teaching Mode</h1>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground mt-1">
                   Whole-class instruction and activity delivery
                 </p>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-sm text-muted-foreground">Students</p>
-              <p className="text-2xl font-semibold">{students.length}</p>
-            </div>
+            <Button variant="ghost" onClick={() => navigate('/teacher')} className="cursor-pointer">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Dashboard
+            </Button>
           </div>
         </div>
       </header>

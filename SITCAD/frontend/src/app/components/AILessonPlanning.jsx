@@ -147,16 +147,16 @@ export function AILessonPlanning() {
       <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-linear-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-white" />
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 bg-[#bafde0] rounded-lg flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-black" />
               </div>
               <div>
                 <h1 className="text-2xl font-semibold">Lesson Planning Assistant Powered by AI</h1>
                 <p className="text-sm text-muted-foreground mt-1">Generate planning lesson powered by AI</p>
               </div>
             </div>
-            <Button variant="ghost" onClick={() => navigate("/teacher")}>
+            <Button variant="ghost" onClick={() => navigate("/teacher")} className="cursor-pointer">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Dashboard
             </Button>
@@ -164,7 +164,7 @@ export function AILessonPlanning() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-8 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="generator">Generator</TabsTrigger>

@@ -149,8 +149,8 @@ export function Interventions() {
       <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-linear-to-br from-yellow-500 to-orange-300 rounded-lg flex items-center justify-center">
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 bg-[#bafde0] rounded-lg flex items-center justify-center">
                 <AlertTriangle className="w-4 h-4 text-black" />
               </div>
               <div>
@@ -158,7 +158,7 @@ export function Interventions() {
                 <p className="text-sm text-muted-foreground mt-1">Identify, review, and take action on students who need extra support based on AI-detected learning gaps and developmental needs.</p>
               </div>
             </div>
-            <Button variant="ghost" onClick={handleBack}>
+            <Button variant="ghost" onClick={handleBack} className="cursor-pointer">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Dashboard
             </Button>

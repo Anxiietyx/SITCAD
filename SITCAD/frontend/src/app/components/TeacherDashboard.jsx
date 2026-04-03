@@ -165,37 +165,37 @@ export function TeacherDashboard() {
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
             <Card className="cursor-pointer border-white shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle} onClick={() => navigate('/teacher/activities')}>
               <CardContent className="pt-6 text-center">
-                <Calendar className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                <Calendar className="h-8 w-8 mx-auto mb-2 text-[#3090A0]" />
                 <p className="text-sm font-medium">Activities</p>
               </CardContent>
             </Card>
             <Card className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle} onClick={() => navigate('/teacher/ai-lesson-planning')}>
               <CardContent className="pt-6 text-center">
-                <Sparkles className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                <Sparkles className="h-8 w-8 mx-auto mb-2 text-[#3090A0]" />
                 <p className="text-sm font-medium">AI Lessons</p>
               </CardContent>
             </Card>
             <Card className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle} onClick={() => navigate('/teacher/reports')}>
               <CardContent className="pt-6 text-center">
-                <FileText className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                <FileText className="h-8 w-8 mx-auto mb-2 text-[#3090A0]" />
                 <p className="text-sm font-medium">Reports</p>
               </CardContent>
             </Card>
             <Card className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle} onClick={() => navigate('/teacher/communication')}>
               <CardContent className="pt-6 text-center">
-                <MessageSquare className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                <MessageSquare className="h-8 w-8 mx-auto mb-2 text-[#3090A0]" />
                 <p className="text-sm font-medium">Messages</p>
               </CardContent>
             </Card>
             <Card className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle} onClick={() => navigate('/teacher/classroom-mode')}>
               <CardContent className="pt-6 text-center">
-                <Monitor className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                <Monitor className="h-8 w-8 mx-auto mb-2 text-[#3090A0]" />
                 <p className="text-sm font-medium">Classroom</p>
               </CardContent>
             </Card>
             <Card className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle} onClick={() => navigate('/teacher/ai-analysis')}>
               <CardContent className="pt-6 text-center">
-                <Brain className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                <Brain className="h-8 w-8 mx-auto mb-2 text-[#3090A0]" />
                 <p className="text-sm font-medium">AI Analysis</p>
               </CardContent>
             </Card>
@@ -209,7 +209,7 @@ export function TeacherDashboard() {
                 <CardTitle className="text-3xl">{classroomStats.totalStudents}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center text-sm text-green-600">
+                <div className="flex items-center text-sm text-[#3090A0]">
                   <Users className="mr-5 h-10 w-10" />
                   Active learners
                 </div>
@@ -222,7 +222,7 @@ export function TeacherDashboard() {
                 <CardTitle className="text-3xl">{classroomStats.averageProgress}%</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center text-sm text-green-600">
+                <div className="flex items-center text-sm text-[#3090A0]">
                   <TrendingUp className="mr-5 h-10 w-10" />
                   Class performance
                 </div>
@@ -235,7 +235,7 @@ export function TeacherDashboard() {
                 <CardTitle className="text-3xl">{classroomStats.onTrack}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center text-sm text-green-600">
+                <div className="flex items-center text-sm text-[#3090A0]">
                   <TrendingUp className="mr-5 h-10 w-10" />
                   Meeting milestones
                 </div>
