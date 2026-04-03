@@ -298,7 +298,8 @@ export function LandingPage() {
              shadow-lg
              rounded-full
              hover:scale-105 
-             transition-all duration-300 bg-white"
+             transition-all duration-300 bg-white
+             cursor-pointer"
                 onClick={() => navigate("/login")}
               >
                 Log In
@@ -314,7 +315,8 @@ export function LandingPage() {
              font-semibold
              shadow-lg 
              hover:scale-105 
-             transition-all duration-300"
+             transition-all duration-300
+             cursor-pointer"
                 onClick={() => navigate("/register")}
               >
                 Get Started
