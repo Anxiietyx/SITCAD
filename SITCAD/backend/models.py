@@ -61,6 +61,8 @@ class LessonPlan(Base):
   activities = Column(JSON, nullable=True)       # [{step, title, description, duration}]
   assessment = Column(Text, nullable=True)
   adaptations = Column(JSON, nullable=True)
+  dskp_standards = Column(JSON, nullable=True)   # ["BM 1.1.2", "KO 2.3.1", ...]
+  teacher_notes = Column(Text, nullable=True)
   created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 

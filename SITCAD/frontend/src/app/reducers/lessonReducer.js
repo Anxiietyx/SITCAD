@@ -1,14 +1,17 @@
 export const initialState = {
+  // Step tracking: "form" → "generating" → "review" → (saved → back to form)
+  step: "form",
   loading: false,
   lessonPlan: null,
   showSavedMsg: false,
-  targetScore: "70",
-  scoringType: "percentage",
-  ageGroup: "5-6",
-  learningArea: "literacy",
-  topic: "",
+  // Form fields (P-A)
+  ageGroup: "5",
+  learningArea: "literacy_bm",
   duration: "30",
+  topic: "",
   additionalNotes: "",
+  moralEducation: "moral",   // "moral" | "islam"
+  language: "bm",            // "bm" | "en"
 };
 
 export const lessonReducer = (state, action) => {
@@ -16,11 +19,15 @@ export const lessonReducer = (state, action) => {
     case "SET_FIELD":
       return { ...state, [action.field]: action.value };
     case "START_GENERATION":
-      return { ...state, loading: true };
+      return { ...state, step: "generating", loading: true };
     case "FINISH_GENERATION":
-      return { ...state, loading: false, lessonPlan: action.payload };
+      return { ...state, step: action.payload ? "review" : "form", loading: false, lessonPlan: action.payload };
+    case "UPDATE_PLAN_FIELD":
+      return { ...state, lessonPlan: { ...state.lessonPlan, [action.field]: action.value } };
     case "SET_SAVED_MSG":
       return { ...state, showSavedMsg: action.payload };
+    case "RESET_FORM":
+      return { ...initialState };
     default:
       return state;
   }

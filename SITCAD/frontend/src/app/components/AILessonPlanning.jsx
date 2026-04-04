@@ -1,4 +1,4 @@
-import { useReducer, useEffect, useCallback, useState } from "react";
+import { useReducer, useEffect, useCallback, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
 import { auth } from "../lib/firebase";
@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "./ui/card";
+import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import {
   Select,
@@ -22,6 +23,17 @@ import {
 import { Textarea } from "./ui/textarea";
 import { Badge } from "./ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "./ui/alert-dialog";
 import {
   ArrowLeft,
   Sparkles,
@@ -31,6 +43,16 @@ import {
   Users,
   Loader2,
   Trash2,
+  Save,
+  Pencil,
+  BookOpen,
+  CheckCircle2,
+  RotateCcw,
+  Plus,
+  X,
+  Monitor,
+  Layers,
+  ClipboardCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { lessonReducer, initialState } from "../reducers/lessonReducer";
@@ -43,12 +65,65 @@ async function getIdToken() {
   return firebaseUser.getIdToken();
 }
 
+// Mascot images for the loading carousel
+const MASCOT_IMAGES = [
+  "/mascot/writing_1.png",
+  "/mascot/holding_book_1.png",
+  "/mascot/magnifying_1.png",
+  "/mascot/clipboard_1.png",
+  "/mascot/holding_book_2.png",
+  "/mascot/whiteboard_1.png",
+  "/mascot/holding_scroll_1.png",
+  "/mascot/holding_book_4.png",
+];
+
+const LOADING_MESSAGES = [
+  "Analysing DSKP KSPK curriculum standards",
+  "Aligning objectives with learning outcomes",
+  "Designing age-appropriate activities",
+  "Selecting suitable digital resources",
+  "Crafting assessment strategies",
+  "Adding adaptations for diverse learners",
+  "Polishing and finalising your lesson plan",
+  "Almost done! Putting the finishing touches",
+];
+
+const LEARNING_AREA_LABELS = {
+  literacy_bm: "Literacy (Bahasa Melayu)",
+  literacy_en: "Literacy (English)",
+  numeracy: "Numeracy",
+  social: "Social Skills",
+  motor: "Motor Skills",
+  creative: "Creative Arts",
+  cognitive: "Cognitive Development",
+};
+
 export function AILessonPlanning() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [state, dispatch] = useReducer(lessonReducer, initialState);
   const [savedPlans, setSavedPlans] = useState([]);
   const [activeTab, setActiveTab] = useState("generator");
+  const [savingPlan, setSavingPlan] = useState(false);
+  const [viewingPlan, setViewingPlan] = useState(null); // for "My Plans" detail view
+  const [showResetDialog, setShowResetDialog] = useState(false);
+
+  // Loading mascot carousel state
+  const [mascotIndex, setMascotIndex] = useState(0);
+  const mascotInterval = useRef(null);
+
+  // Start/stop mascot carousel when generating
+  useEffect(() => {
+    if (state.step === "generating") {
+      setMascotIndex(0);
+      mascotInterval.current = setInterval(() => {
+        setMascotIndex((prev) => (prev + 1) % MASCOT_IMAGES.length);
+      }, 3000);
+    } else {
+      if (mascotInterval.current) clearInterval(mascotInterval.current);
+    }
+    return () => { if (mascotInterval.current) clearInterval(mascotInterval.current); };
+  }, [state.step]);
 
   const fetchSavedPlans = useCallback(async () => {
     try {
@@ -73,120 +148,90 @@ export function AILessonPlanning() {
     return null;
   }
 
+  // ────────────────────────────────────────────
+  // Step I → III: Generate lesson plan via Gemini
+  // ────────────────────────────────────────────
   const generateLessonPlan = async () => {
-    if (!state.topic) {
+    if (!state.topic.trim()) {
       toast.error("Please enter a topic for the lesson");
       return;
     }
 
     dispatch({ type: "START_GENERATION" });
 
-    // Simulate AI generation with a delay
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    // Mock AI-generated lesson plan
-    const mockLessonPlan = {
-      id: `lesson_${Date.now()}`,
-      title: `${state.topic} Exploration`,
-      ageGroup: state.ageGroup,
-      learningArea: state.learningArea,
-      duration: `${state.duration} minutes`,
-      targetScore: state.targetScore,
-      scoringType: state.scoringType,
-      objectives: [
-        `Introduce basic concepts of ${state.topic}`,
-        "Develop fine motor skills through hands-on activities",
-        "Encourage verbal expression and communication",
-        "Foster curiosity and exploration",
-      ],
-      materials: [
-        "Visual aids and picture cards",
-        "Hands-on manipulatives",
-        "Art supplies (crayons, paper, scissors)",
-        "Interactive storybooks",
-        "Music player for transitions",
-      ],
-      activities: [
-        {
-          step: 1,
-          title: "Circle Time Introduction",
-          description: `Gather students in a circle and introduce the topic of ${state.topic}. Use visual aids and encourage students to share what they know.`,
-          duration: "5-7 minutes",
-        },
-        {
-          step: 2,
-          title: "Interactive Story",
-          description: `Read an engaging story related to ${state.topic}. Pause to ask questions and encourage predictions.`,
-          duration: "8-10 minutes",
-        },
-        {
-          step: 3,
-          title: "Hands-On Activity",
-          description: `Students explore ${state.topic} through a structured activity with manipulatives. Teacher circulates to provide support.`,
-          duration: "10-12 minutes",
-        },
-        {
-          step: 4,
-          title: "Creative Expression",
-          description:
-            "Students create artwork or crafts related to the lesson topic, reinforcing concepts learned.",
-          duration: "8-10 minutes",
-        },
-        {
-          step: 5,
-          title: "Closing & Review",
-          description:
-            "Gather students to review what they learned. Sing a related song and preview upcoming activities.",
-          duration: "3-5 minutes",
-        },
-      ],
-      assessment:
-        "Observe student participation, listen to verbal responses, and review completed activities. Note students who may need additional support or enrichment.",
-      adaptations: [
-        "For visual learners: Provide extra visual supports and diagrams",
-        "For kinesthetic learners: Include more movement-based activities",
-        "For advanced students: Offer extension activities with increased complexity",
-        "For students needing support: Provide one-on-one assistance and simplified instructions",
-        "For English language learners: Use visual cues and gestures to support understanding",
-      ],
-    };
-
-    dispatch({ type: "FINISH_GENERATION", payload: mockLessonPlan });
-    toast.success("Lesson plan generated successfully!");
-  };
-
-  const saveLessonPlan = async () => {
-    dispatch({ type: "SET_SAVED_MSG", payload: true });
-    setTimeout(() => {
-      dispatch({ type: "SET_SAVED_MSG", payload: false });
-    }, 2000);
-    dispatch({ type: "START_GENERATION" });
     try {
       const idToken = await getIdToken();
-      const res = await fetch(`${API_BASE}/lesson-plans/generate`, {
+      const res = await fetch(`${API_BASE}/ai-integrations/generate-lesson`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id_token: idToken,
-          title: state.topic,
+          topic: state.topic,
           age_group: state.ageGroup,
           learning_area: state.learningArea,
-          duration_minutes: parseInt(state.duration),
-          topic: state.topic,
-          additional_notes: state.additionalNotes || null,
+          duration: parseInt(state.duration),
+          additional_notes: state.additionalNotes,
+          moral_education: state.learningArea === "social" ? state.moralEducation : "moral",
+          language: state.learningArea === "literacy_bm" ? "bm" : state.learningArea === "literacy_en" ? "en" : state.language,
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to generate lesson plan");
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || "Failed to generate lesson plan");
+      }
+
       const plan = await res.json();
       dispatch({ type: "FINISH_GENERATION", payload: plan });
-      toast.success("Lesson plan generated and saved!");
+      toast.success("Lesson plan generated! Review and customise below.");
+    } catch (err) {
+      console.error(err);
+      dispatch({ type: "FINISH_GENERATION", payload: null });
+      toast.error(err.message || "Failed to generate lesson plan. Please try again.");
+    }
+  };
+
+  // ────────────────────────────────────────────
+  // Step V: Save the (customised) lesson plan
+  // ────────────────────────────────────────────
+  const saveLessonPlan = async () => {
+    if (!state.lessonPlan) return;
+    setSavingPlan(true);
+    try {
+      const idToken = await getIdToken();
+      const lp = state.lessonPlan;
+      const res = await fetch(`${API_BASE}/lesson-plans/save`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_token: idToken,
+          title: lp.title,
+          age_group: lp.age_group,
+          learning_area: lp.learning_area,
+          duration_minutes: lp.duration_minutes,
+          topic: lp.topic,
+          additional_notes: lp.additional_notes,
+          objectives: lp.objectives,
+          materials: lp.materials,
+          activities: lp.activities,
+          assessment: lp.assessment,
+          adaptations: lp.adaptations,
+          dskp_standards: lp.dskp_standards,
+          teacher_notes: lp.teacher_notes,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to save lesson plan");
+
+      toast.success("Lesson plan saved!");
+      dispatch({ type: "RESET_FORM" });
       fetchSavedPlans();
       setActiveTab("list");
     } catch (err) {
       console.error(err);
-      dispatch({ type: "FINISH_GENERATION", payload: null });
-      toast.error("Failed to generate lesson plan");
+      toast.error("Failed to save lesson plan");
+    } finally {
+      setSavingPlan(false);
     }
   };
 
@@ -201,12 +246,30 @@ export function AILessonPlanning() {
       });
       if (res.ok) {
         toast.success("Lesson plan deleted");
-        if (state.lessonPlan?.id === planId) dispatch({ type: "FINISH_GENERATION", payload: null });
+        if (viewingPlan?.id === planId) setViewingPlan(null);
         fetchSavedPlans();
       }
     } catch (err) {
       toast.error("Failed to delete");
     }
+  };
+
+  // Helper: update an array item in lessonPlan
+  const updatePlanArrayItem = (field, index, value) => {
+    const arr = [...(state.lessonPlan[field] || [])];
+    arr[index] = value;
+    dispatch({ type: "UPDATE_PLAN_FIELD", field, value: arr });
+  };
+
+  const removePlanArrayItem = (field, index) => {
+    const arr = [...(state.lessonPlan[field] || [])];
+    arr.splice(index, 1);
+    dispatch({ type: "UPDATE_PLAN_FIELD", field, value: arr });
+  };
+
+  const addPlanArrayItem = (field, defaultValue) => {
+    const arr = [...(state.lessonPlan[field] || []), defaultValue];
+    dispatch({ type: "UPDATE_PLAN_FIELD", field, value: arr });
   };
 
   return (
@@ -227,7 +290,7 @@ export function AILessonPlanning() {
               </div>
               <div>
                 <h1 className="text-2xl font-semibold">Lesson Planning Assistant Powered by AI</h1>
-                <p className="text-sm text-muted-foreground mt-1">Generate planning lesson powered by AI</p>
+                <p className="text-sm text-muted-foreground mt-1">Generate DSKP-aligned lesson plans powered by Gemini AI</p>
               </div>
             </div>
             <Button variant="ghost" onClick={() => navigate("/teacher")} className="cursor-pointer">
@@ -241,346 +304,672 @@ export function AILessonPlanning() {
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="generator">Generator</TabsTrigger>
-            <TabsTrigger value="list">My Plans</TabsTrigger>
+            <TabsTrigger value="generator" className="cursor-pointer">Generator</TabsTrigger>
+            <TabsTrigger value="list" className="cursor-pointer">My Lesson Plans</TabsTrigger>
           </TabsList>
 
-          {/* ── Tab 1: Generator ── */}
+          {/* ══════════════════════════════════════════════════════════
+              TAB 1: GENERATOR  (form → generating → review)
+              ══════════════════════════════════════════════════════════ */}
           <TabsContent value="generator" className="space-y-6">
-        {/* Input Form */}
-        <Card className="border-2 border-indigo-200 shadow-md">
-          <CardHeader className="bg-linear-to-r from-indigo-100 to-purple-100">
-            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-              <Lightbulb className="h-5 w-5 text-[#3090A0]" />
-              Lesson Plan Generator
-            </CardTitle>
-            <CardDescription className="text-sm text-gray-700">
-              Enter your lesson details and let AI generate a structured lesson
-              plan with objectives, activities, and assessment strategies.
-            </CardDescription>
-            <div className="pb-3"></div>
-          </CardHeader>
 
-          <CardContent className="pt-2 space-y-4 text-base">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold">Age Group</Label>
-                <Select value={state.ageGroup} onValueChange={(val) => dispatch({ type: "SET_FIELD", field: "ageGroup", value: val })}>
-                  <SelectTrigger className="text-sm font-medium">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="4">4 years old</SelectItem>
-                    <SelectItem value="5">5 years old</SelectItem>
-                    <SelectItem value="6">6 years old</SelectItem>
-                  </SelectContent>
-                </Select>
+            {/* ─── STEP I: INPUT FORM ─── */}
+            {state.step === "form" && (
+              <Card className="border-2 border-indigo-200 shadow-md">
+                <CardHeader className="bg-linear-to-r from-indigo-100 to-purple-100">
+                  <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                    <Lightbulb className="h-5 w-5 text-[#3090A0]" />
+                    Lesson Plan Generator
+                  </CardTitle>
+                  <CardDescription className="text-sm text-gray-700 mb-2">
+                    Fill in your lesson details below. AI will generate a DSKP KSPK 2026-aligned lesson plan for you.
+                  </CardDescription>
+                  <div className="pb-3"></div>
+                </CardHeader>
+
+                <CardContent className="space-y-4 text-base">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                    {/* Age Group */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">Age Group</Label>
+                      <Select value={state.ageGroup} onValueChange={(val) => dispatch({ type: "SET_FIELD", field: "ageGroup", value: val })}>
+                        <SelectTrigger className="text-sm font-medium">
+                          <SelectValue placeholder="Select age group" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="4">4 years old</SelectItem>
+                          <SelectItem value="5">5 years old</SelectItem>
+                          <SelectItem value="6">6 years old</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Learning Area */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">Learning Area</Label>
+                      <Select value={state.learningArea} onValueChange={(val) => {
+                        dispatch({ type: "SET_FIELD", field: "learningArea", value: val });
+                        // Auto-set language from literacy selection
+                        if (val === "literacy_bm") dispatch({ type: "SET_FIELD", field: "language", value: "bm" });
+                        else if (val === "literacy_en") dispatch({ type: "SET_FIELD", field: "language", value: "en" });
+                      }}>
+                        <SelectTrigger className="text-sm font-medium">
+                          <SelectValue placeholder="Select learning area" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="literacy_bm">Literacy (Bahasa Melayu)</SelectItem>
+                          <SelectItem value="literacy_en">Literacy (English)</SelectItem>
+                          <SelectItem value="numeracy">Numeracy</SelectItem>
+                          <SelectItem value="social">Social Skills</SelectItem>
+                          <SelectItem value="motor">Motor Skills</SelectItem>
+                          <SelectItem value="creative">Creative Arts</SelectItem>
+                          <SelectItem value="cognitive">Cognitive Development</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Moral Education Toggle — only for Social Skills */}
+                    {state.learningArea === "social" && (
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold">Moral / Islam Education</Label>
+                        <Select value={state.moralEducation} onValueChange={(val) => dispatch({ type: "SET_FIELD", field: "moralEducation", value: val })}>
+                          <SelectTrigger className="text-sm font-medium">
+                            <SelectValue placeholder="Select education stream" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="moral">Pendidikan Moral</SelectItem>
+                            <SelectItem value="islam">Pendidikan Islam</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {/* Language of Delivery — not shown for Literacy (implicit) */}
+                    {state.learningArea !== "literacy_bm" && state.learningArea !== "literacy_en" && (
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold">Language of Delivery</Label>
+                        <Select value={state.language} onValueChange={(val) => dispatch({ type: "SET_FIELD", field: "language", value: val })}>
+                          <SelectTrigger className="text-sm font-medium">
+                            <SelectValue placeholder="Select language" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="bm">Bahasa Malaysia</SelectItem>
+                            <SelectItem value="en">English</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {/* Duration */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">Duration (minutes)</Label>
+                      <Select value={state.duration} onValueChange={(val) => dispatch({ type: "SET_FIELD", field: "duration", value: val })}>
+                        <SelectTrigger className="text-sm font-medium">
+                          <SelectValue placeholder="Select duration" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="15">15 minutes</SelectItem>
+                          <SelectItem value="20">20 minutes</SelectItem>
+                          <SelectItem value="30">30 minutes</SelectItem>
+                          <SelectItem value="45">45 minutes</SelectItem>
+                          <SelectItem value="60">60 minutes</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold">Lesson Topic *</Label>
+                    <Textarea
+                      className="text-sm"
+                      placeholder="e.g., The letter 'B' and animals that start with B"
+                      rows={2}
+                      value={state.topic}
+                      onChange={(e) => dispatch({ type: "SET_FIELD", field: "topic", value: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold">Additional Notes (Optional)</Label>
+                    <Textarea
+                      className="text-sm"
+                      placeholder="Any specific requirements, student considerations, or resources you'd like to include..."
+                      rows={3}
+                      value={state.additionalNotes}
+                      onChange={(e) => dispatch({ type: "SET_FIELD", field: "additionalNotes", value: e.target.value })}
+                    />
+                  </div>
+
+                  <Button
+                    onClick={generateLessonPlan}
+                    disabled={state.loading}
+                    size="lg"
+                    className="w-full bg-[#3090A0] hover:bg-[#2FBFA5] text-white font-semibold text-base cursor-pointer"
+                  >
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Generate Lesson Plan
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* ─── STEP III: GENERATING (mascot loading) ─── */}
+            {state.step === "generating" && (
+              <Card className="border-2 border-indigo-200 shadow-md">
+                <CardContent className="pt-8 pb-20 flex flex-col items-center justify-center text-center space-y-8">
+                  <div className="relative w-48 h-48 flex items-center justify-center">
+                    {/* Spinning ring behind the mascot */}
+                    <div className="absolute inset-0 rounded-full border-4 border-[#3090A0]/20 border-t-[#3090A0] animate-spin" />
+                    <img
+                      key={mascotIndex}
+                      src={MASCOT_IMAGES[mascotIndex]}
+                      alt="SabahSprout mascot"
+                      className="w-32 h-32 object-contain animate-in fade-in zoom-in-95 duration-500"
+                      style={{ animation: "fade-in 500ms ease-out, mascotWobble 2s ease-in-out infinite" }}
+                    />
+                  </div>
+                  <div className="space-y-3 max-w-md">
+                    <h2 className="text-xl font-semibold text-gray-800">Generating Your Lesson Plan</h2>
+                    <p key={mascotIndex} className="text-sm text-muted-foreground animate-in fade-in duration-300">
+                      {LOADING_MESSAGES[mascotIndex]}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* ─── STEP IV: REVIEW & CUSTOMISE ─── */}
+            {state.step === "review" && state.lessonPlan && (
+              <div className="space-y-4 animate-in fade-in duration-500">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="h-6 w-6 text-green-600" />
+                    <h2 className="text-xl font-semibold text-gray-800">Review & Customise Your Lesson Plan</h2>
+                  </div>
+                </div>
+
+                {/* Title & Metadata */}
+                <Card className="shadow-md border border-indigo-200">
+                  <CardHeader className="bg-linear-to-r from-indigo-50 to-purple-50 pb-4">
+                    <div className="space-y-3">
+                      <Input
+                        className="text-2xl font-bold text-gray-800 border-dashed border-gray-300 bg-white/50"
+                        value={state.lessonPlan.title}
+                        onChange={(e) => dispatch({ type: "UPDATE_PLAN_FIELD", field: "title", value: e.target.value })}
+                      />
+                      {state.lessonPlan.topic && (
+                        <p className="text-sm text-muted-foreground">Topic: <span className="font-medium text-gray-700">{state.lessonPlan.topic}</span></p>
+                      )}
+                      <div className="flex flex-wrap gap-2 text-xs md:text-sm">
+                        <Badge className="bg-indigo-100 text-indigo-700"><Users className="h-3 w-3 mr-1" /> Ages {state.lessonPlan.age_group}</Badge>
+                        <Badge className="bg-blue-100 text-blue-700"><Clock className="h-3 w-3 mr-1" /> {state.lessonPlan.duration_minutes} minutes</Badge>
+                        <Badge className="bg-purple-100 text-purple-700 capitalize">{LEARNING_AREA_LABELS[state.lessonPlan.learning_area] || state.lessonPlan.learning_area}</Badge>
+                        <Badge className="bg-teal-100 text-teal-700">
+                          {state.lessonPlan.language === "en" ? "English" : "Bahasa Malaysia"}
+                        </Badge>
+                        {state.lessonPlan.learning_area === "social" && (
+                          <Badge className="bg-amber-100 text-amber-700">
+                            {state.lessonPlan.moral_education === "islam" ? "Pendidikan Islam" : "Pendidikan Moral"}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </CardHeader>
+                </Card>
+
+                {/* DSKP Standards */}
+                {state.lessonPlan.dskp_standards?.length > 0 && (
+                  <Card className="shadow-sm border border-gray-200">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                        <BookOpen className="h-5 w-5 text-emerald-600" />
+                        DSKP Standards Referenced
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <TooltipProvider>
+                        <div className="flex flex-wrap gap-2">
+                          {state.lessonPlan.dskp_standards.map((std, i) => {
+                            const code = typeof std === "object" ? std.code : std;
+                            const title = typeof std === "object" ? std.title : null;
+                            return (
+                              <div key={i} className="flex items-center gap-1">
+                                {title ? (
+                                  <Tooltip>
+                                    <TooltipTrigger className="cursor-help">
+                                      <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono text-sm">
+                                        {code}
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-xs">
+                                      <p className="text-sm">{title}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                ) : (
+                                  <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono text-sm">
+                                    {code}
+                                  </Badge>
+                                )}
+                                <button onClick={() => removePlanArrayItem("dskp_standards", i)} className="text-gray-400 hover:text-red-500 cursor-pointer">
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </TooltipProvider>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Learning Objectives — editable */}
+                <Card className="shadow-sm border border-gray-200">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                      <Target className="h-5 w-5 text-emerald-600" />
+                      Learning Objectives
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {state.lessonPlan.objectives?.map((obj, i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-semibold shrink-0 mt-1">
+                          {i + 1}
+                        </div>
+                        <Input
+                          className="flex-1 text-sm border-dashed"
+                          value={obj}
+                          onChange={(e) => updatePlanArrayItem("objectives", i, e.target.value)}
+                        />
+                        <button onClick={() => removePlanArrayItem("objectives", i)} className="text-gray-400 hover:text-red-500 mt-1.5 cursor-pointer">
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                    <Button variant="ghost" size="sm" onClick={() => addPlanArrayItem("objectives", "")} className="text-indigo-600 cursor-pointer">
+                      <Plus className="h-4 w-4 mr-1" /> Add Objective
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Materials — editable */}
+                <Card className="shadow-sm border border-gray-200">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                      <Monitor className="h-5 w-5 text-emerald-600" />
+                      Digital Resources
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {state.lessonPlan.materials?.map((mat, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <span className="text-gray-400">•</span>
+                        <Input
+                          className="flex-1 text-sm border-dashed"
+                          value={mat}
+                          onChange={(e) => updatePlanArrayItem("materials", i, e.target.value)}
+                        />
+                        <button onClick={() => removePlanArrayItem("materials", i)} className="text-gray-400 hover:text-red-500 cursor-pointer">
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                    <Button variant="ghost" size="sm" onClick={() => addPlanArrayItem("materials", "")} className="text-indigo-600 cursor-pointer">
+                      <Plus className="h-4 w-4 mr-1" /> Add Resource
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Activity Steps — editable */}
+                <Card className="shadow-sm border border-gray-200">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                      <Layers className="h-5 w-5 text-emerald-600" />
+                      Activities
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {state.lessonPlan.activities?.map((activity, i) => (
+                      <div key={i} className="flex gap-3 p-4 border rounded-lg bg-gray-50 relative">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <Input
+                              className="font-semibold text-gray-800 border-dashed flex-1"
+                              value={activity.title}
+                              onChange={(e) => {
+                                const newActs = [...state.lessonPlan.activities];
+                                newActs[i] = { ...newActs[i], title: e.target.value };
+                                dispatch({ type: "UPDATE_PLAN_FIELD", field: "activities", value: newActs });
+                              }}
+                            />
+                            <Input
+                              className="w-28 text-sm border-dashed text-blue-700"
+                              value={activity.duration}
+                              onChange={(e) => {
+                                const newActs = [...state.lessonPlan.activities];
+                                newActs[i] = { ...newActs[i], duration: e.target.value };
+                                dispatch({ type: "UPDATE_PLAN_FIELD", field: "activities", value: newActs });
+                              }}
+                            />
+                          </div>
+                          <Textarea
+                            className="text-sm border-dashed"
+                            rows={2}
+                            value={activity.description}
+                            onChange={(e) => {
+                              const newActs = [...state.lessonPlan.activities];
+                              newActs[i] = { ...newActs[i], description: e.target.value };
+                              dispatch({ type: "UPDATE_PLAN_FIELD", field: "activities", value: newActs });
+                            }}
+                          />
+                        </div>
+                        <button onClick={() => removePlanArrayItem("activities", i)} className="text-gray-400 hover:text-red-500 absolute top-2 right-2 cursor-pointer">
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => addPlanArrayItem("activities", { title: "", description: "", duration: "5 minutes" })}
+                      className="text-indigo-600 cursor-pointer"
+                    >
+                      <Plus className="h-4 w-4 mr-1" /> Add Activity Step
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Assessment — editable */}
+                <Card className="shadow-sm border border-gray-200">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                      <ClipboardCheck className="h-5 w-5 text-emerald-600" />
+                      Assessment Strategy
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Textarea
+                      className="text-sm border-dashed"
+                      rows={3}
+                      value={state.lessonPlan.assessment}
+                      onChange={(e) => dispatch({ type: "UPDATE_PLAN_FIELD", field: "assessment", value: e.target.value })}
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Adaptations — editable */}
+                <Card className="shadow-sm border border-gray-200">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                      <Lightbulb className="h-5 w-5 text-emerald-600" />
+                      Adaptations
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {state.lessonPlan.adaptations?.map((adp, i) => (
+                      <div key={i} className="flex items-start gap-2">
+                        <Lightbulb className="h-4 w-4 text-indigo-600 shrink-0 mt-2" />
+                        <Input
+                          className="flex-1 text-sm border-dashed"
+                          value={adp}
+                          onChange={(e) => updatePlanArrayItem("adaptations", i, e.target.value)}
+                        />
+                        <button onClick={() => removePlanArrayItem("adaptations", i)} className="text-gray-400 hover:text-red-500 mt-1.5 cursor-pointer">
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                    <Button variant="ghost" size="sm" onClick={() => addPlanArrayItem("adaptations", "")} className="text-indigo-600 cursor-pointer">
+                      <Plus className="h-4 w-4 mr-1" /> Add Adaptation
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Teacher Notes — editable */}
+                {state.lessonPlan.teacher_notes !== undefined && (
+                  <Card className="shadow-sm border border-gray-200">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                        <Pencil className="h-5 w-5 text-emerald-600" />
+                        Teacher Notes
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <Textarea
+                        className="text-sm border-dashed"
+                        rows={3}
+                        value={state.lessonPlan.teacher_notes}
+                        onChange={(e) => dispatch({ type: "UPDATE_PLAN_FIELD", field: "teacher_notes", value: e.target.value })}
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Bottom save bar */}
+                <div className="flex justify-end gap-3 pb-8">
+                  <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" className="cursor-pointer">
+                        <RotateCcw className="mr-2 h-4 w-4" />
+                        Discard & Start Over
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will discard all changes to the lesson plan and return you to the form. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <div className="flex justify-end gap-3">
+                        <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => {
+                            dispatch({ type: "RESET_FORM" });
+                            setShowResetDialog(false);
+                          }}
+                          className="bg-red-600 hover:bg-red-700 cursor-pointer"
+                        >
+                          Discard
+                        </AlertDialogAction>
+                      </div>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  <Button
+                    onClick={saveLessonPlan}
+                    disabled={savingPlan}
+                    className="bg-[#3090A0] hover:bg-[#2FBFA5] text-white cursor-pointer"
+                  >
+                    {savingPlan ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    {savingPlan ? "Saving…" : "Save to My Plans"}
+                  </Button>
+                </div>
               </div>
+            )}
 
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold">Learning Area</Label>
-                <Select value={state.learningArea} onValueChange={(val) => dispatch({ type: "SET_FIELD", field: "learningArea", value: val })}>
-                  <SelectTrigger className="text-sm font-medium">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="literacy">Literacy</SelectItem>
-                    <SelectItem value="numeracy">Numeracy</SelectItem>
-                    <SelectItem value="social">Social Skills</SelectItem>
-                    <SelectItem value="motor">Motor Skills</SelectItem>
-                    <SelectItem value="creative">Creative Arts</SelectItem>
-                    <SelectItem value="cognitive">
-                      Cognitive Development
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold">
-                  Duration (minutes)
-                </Label>
-                <Select value={state.duration} onValueChange={(val) => dispatch({ type: "SET_FIELD", field: "duration", value: val })}>
-                  <SelectTrigger className="text-sm font-medium">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="15">15 minutes</SelectItem>
-                    <SelectItem value="20">20 minutes</SelectItem>
-                    <SelectItem value="30">30 minutes</SelectItem>
-                    <SelectItem value="45">45 minutes</SelectItem>
-                    <SelectItem value="60">60 minutes</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold">Lesson Topic *</Label>
-              <Textarea
-                className="text-sm"
-                placeholder="e.g., The letter 'B' and animals that start with B"
-                rows={2}
-                value={state.topic}
-                onChange={(e) => dispatch({ type: "SET_FIELD", field: "topic", value: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold">
-                Additional Notes (Optional)
-              </Label>
-              <Textarea
-                className="text-sm"
-                placeholder="Any specific requirements, student considerations, or resources you'd like to include..."
-                rows={3}
-                value={state.additionalNotes}
-                onChange={(e) => dispatch({ type: "SET_FIELD", field: "additionalNotes", value: e.target.value })}
-              />
-            </div>
-
-            <Button
-              onClick={generateLessonPlan}
-              disabled={state.loading}
-              size="lg"
-              className="w-full bg-[#3090A0] hover:bg-[#2FBFA5] text-white font-semibold text-base"
-            >
-              {state.loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating AI Lesson Plan...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Generate Lesson Plan
-                </>
-              )}
-            </Button>
-          </CardContent>
-        </Card>
           </TabsContent>
 
-          {/* ── Tab 2: My Plans ── */}
+          {/* ══════════════════════════════════════════════════════════
+              TAB 2: MY PLANS LIST
+              ══════════════════════════════════════════════════════════ */}
           <TabsContent value="list" className="space-y-6">
 
-        {/* Saved Lesson Plans Library */}
-        {!state.lessonPlan && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Saved Lesson Plans</CardTitle>
-              <CardDescription>Click a plan to view details</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {savedPlans.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">
-                  No lesson plans yet. Go to the Generator tab to create one.
-                </p>
-              ) : (
-              <div className="space-y-3">
-                {savedPlans.map((plan) => (
-                  <div
-                    key={plan.id}
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                    onClick={() => dispatch({ type: "FINISH_GENERATION", payload: {
-                      id: plan.id,
-                      title: plan.title,
-                      ageGroup: plan.age_group,
-                      learningArea: plan.learning_area,
-                      duration: `${plan.duration_minutes} minutes`,
-                      targetScore: plan.target_score ?? "70",
-                      scoringType: plan.scoring_type ?? "percentage",
-                      objectives: plan.objectives ?? [],
-                      activities: plan.activities ?? [],
-                      assessment: plan.assessment ?? "",
-                      adaptations: plan.adaptations ?? [],
-                    }})}
-                  >
-                    <div>
-                      <p className="font-medium">{plan.title}</p>
-                      <div className="flex gap-2 mt-1">
-                        <Badge variant="outline" className="text-xs capitalize">{plan.learning_area}</Badge>
-                        <Badge variant="outline" className="text-xs">{plan.duration_minutes} min</Badge>
-                        <Badge variant="outline" className="text-xs">Ages {plan.age_group}</Badge>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">
-                        {plan.created_at ? new Date(plan.created_at).toLocaleDateString() : ""}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-500 hover:text-red-700 h-8 w-8 p-0"
-                        onClick={(e) => { e.stopPropagation(); deletePlan(plan.id); }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Generated / Viewed Lesson Plan */}
-        {state.lessonPlan && (
-          <div className="space-y-6 animate-in fade-in duration-500">
-            {/* Header */}
-            <Card className="shadow-md border border-indigo-200">
-              <CardHeader className="bg-linear-to-r from-indigo-50 to-purple-50">
-                <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  <div className="space-y-2">
-                    <CardTitle className="text-2xl md:text-3xl font-bold text-gray-800 leading-tight">
-                      {state.lessonPlan.title}
-                    </CardTitle>
-
-                    <div className="flex flex-wrap gap-2 mt-2 text-xs md:text-sm">
-                      <Badge className="bg-indigo-100 text-indigo-700 font-medium">
-                        <Users className="h-3 w-3 mr-1" />
-                        Ages {state.lessonPlan.ageGroup}
-                      </Badge>
-
-                      <Badge className="bg-blue-100 text-blue-700 font-medium">
-                        <Clock className="h-3 w-3 mr-1" />
-                        {state.lessonPlan.duration}
-                      </Badge>
-
-                      <Badge className="bg-purple-100 text-purple-700 capitalize font-medium">
-                        {state.lessonPlan.learningArea}
-                      </Badge>
-
-                      <Badge className="bg-green-100 text-green-700 font-medium">
-                        🎯 Target: {state.lessonPlan.targetScore}%
-                      </Badge>
-
-                      <Badge className="bg-orange-100 text-orange-700 font-medium">
-                        📊 {state.lessonPlan.scoringType}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => dispatch({ type: "FINISH_GENERATION", payload: null })}
-                    >
-                      Back to List
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-            </Card>
-
-            {/* Learning Objectives */}
-            <Card className="shadow-sm border border-gray-200">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                  <Target className="h-5 w-5 text-indigo-600" />
-                  Learning Objectives
-                </CardTitle>
-              </CardHeader>
-
-              <CardContent>
-                <ul className="space-y-3 text-base">
-                  {state.lessonPlan.objectives.map((obj, index) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-semibold shrink-0 mt-0.5">
-                        {index + 1}
-                      </div>
-                      <span className="text-gray-700 font-medium">{obj}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-
-            {/* Activity Steps */}
-            <Card className="shadow-sm border border-gray-200">
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold">
-                  Activity Sequence
-                </CardTitle>
-              </CardHeader>
-
-              <CardContent>
-                <div className="space-y-4">
-                  {state.lessonPlan.activities.map((activity) => (
-                    <div
-                      key={activity.step}
-                      className="flex gap-3 p-3 border rounded-lg bg-gray-50"
-                    >
-                      <div className="w-12 h-12 rounded-full bg-linear-to-br from-indigo-400 to-purple-400 text-white flex items-center justify-center text-lg font-bold shrink-0">
-                        {activity.step}
-                      </div>
-
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <h3 className="font-semibold text-gray-800">
-                            {activity.title}
-                          </h3>
-
-                          <Badge className="bg-blue-50 text-blue-700 border border-blue-200">
-                            <Clock className="h-3 w-3 mr-1" />
-                            {activity.duration}
-                          </Badge>
+            {/* Detail view of a saved plan */}
+            {viewingPlan ? (
+              <div className="space-y-4 animate-in fade-in duration-500">
+                <Card className="shadow-md border border-indigo-200">
+                  <CardHeader className="bg-linear-to-r from-indigo-50 to-purple-50 pb-5">
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                      <div className="space-y-2">
+                        <CardTitle className="text-2xl font-bold text-gray-800">{viewingPlan.title}</CardTitle>
+                        {viewingPlan.topic && (
+                          <p className="text-sm text-muted-foreground">Topic: <span className="font-medium text-gray-700">{viewingPlan.topic}</span></p>
+                        )}
+                        <div className="flex flex-wrap gap-2 text-xs md:text-sm">
+                          <Badge className="bg-indigo-100 text-indigo-700"><Users className="h-3 w-3 mr-1" /> Ages {viewingPlan.age_group}</Badge>
+                          <Badge className="bg-blue-100 text-blue-700"><Clock className="h-3 w-3 mr-1" /> {viewingPlan.duration_minutes} min</Badge>
+                          <Badge className="bg-purple-100 text-purple-700 capitalize">{LEARNING_AREA_LABELS[viewingPlan.learning_area] || viewingPlan.learning_area}</Badge>
                         </div>
-
-                        <p className="text-base text-gray-600">
-                          {activity.description}
-                        </p>
                       </div>
+                      <Button variant="outline" onClick={() => setViewingPlan(null)} className="cursor-pointer">Back to List</Button>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  </CardHeader>
+                </Card>
 
-            {/* Assessment */}
-            <Card className="shadow-sm border border-gray-200">
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold">
-                  Assessment Strategy
-                </CardTitle>
-              </CardHeader>
+                {/* DSKP Standards */}
+                {viewingPlan.dskp_standards?.length > 0 && (
+                  <Card className="shadow-sm border border-gray-200">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                        <BookOpen className="h-5 w-5 text-emerald-600" />
+                        DSKP Standards
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <TooltipProvider>
+                        <div className="flex flex-wrap gap-2">
+                          {viewingPlan.dskp_standards.map((std, i) => {
+                            const code = typeof std === "object" ? std.code : std;
+                            const title = typeof std === "object" ? std.title : null;
+                            return title ? (
+                              <Tooltip key={i}>
+                                <TooltipTrigger className="cursor-help">
+                                  <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono text-sm">{code}</Badge>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs">
+                                  <p className="text-sm">{title}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            ) : (
+                              <Badge key={i} variant="secondary" className="bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono text-sm">{code}</Badge>
+                            );
+                          })}
+                        </div>
+                      </TooltipProvider>
+                    </CardContent>
+                  </Card>
+                )}
 
-              <CardContent>
-                <div className="flex items-start gap-3 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
-                  <p className="text-base text-gray-700 font-medium">
-                    {state.lessonPlan.assessment}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                {/* Objectives */}
+                <Card className="shadow-sm border border-gray-200">
+                  <CardHeader><CardTitle className="flex items-center gap-2 text-lg font-semibold"><Target className="h-5 w-5 text-emerald-600" /> Learning Objectives</CardTitle></CardHeader>
+                  <CardContent>
+                    <ul className="space-y-3">
+                      {(viewingPlan.objectives || []).map((obj, i) => (
+                        <li key={i} className="flex items-start gap-3">
+                          <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-semibold shrink-0 mt-0.5">{i + 1}</div>
+                          <span className="text-gray-700 font-medium">{obj}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
 
-            {/* Adaptations */}
-            <Card className="shadow-sm border border-gray-200">
-              <CardHeader>
-                <CardTitle className="text-lg font-semibold">
-                  Adaptations
-                </CardTitle>
-              </CardHeader>
-
-              <CardContent>
-                <div className="space-y-3">
-                  {state.lessonPlan.adaptations.map((adaptation, index) => (
-                    <div
-                      key={index}
-                      className="flex items-start gap-3 p-3 bg-indigo-50 rounded-lg border border-indigo-200"
-                    >
-                      <Lightbulb className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5" />
-                      <p className="text-base text-gray-700 font-medium">
-                        {adaptation}
-                      </p>
+                {/* Activities */}
+                <Card className="shadow-sm border border-gray-200">
+                  <CardHeader><CardTitle className="flex items-center gap-2 text-lg font-semibold"><Layers className="h-5 w-5 text-emerald-600" /> Activities</CardTitle></CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {(viewingPlan.activities || []).map((act, i) => (
+                        <div key={i} className="flex gap-3 p-3 border rounded-lg bg-gray-50">
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                              <h3 className="font-semibold text-gray-800">{act.title}</h3>
+                              <Badge className="bg-blue-50 text-blue-700 border border-blue-200"><Clock className="h-3 w-3 mr-1" />{act.duration}</Badge>
+                            </div>
+                            <p className="text-sm text-gray-600">{act.description}</p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+                  </CardContent>
+                </Card>
+
+                {/* Assessment */}
+                <Card className="shadow-sm border border-gray-200">
+                  <CardHeader><CardTitle className="flex items-center gap-2 text-lg font-semibold"><ClipboardCheck className="h-5 w-5 text-emerald-600" /> Assessment Strategy</CardTitle></CardHeader>
+                  <CardContent>
+                    <div className="p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                      <p className="text-sm text-gray-700">{viewingPlan.assessment}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Adaptations */}
+                {viewingPlan.adaptations?.length > 0 && (
+                  <Card className="shadow-sm border border-gray-200">
+                    <CardHeader><CardTitle className="flex items-center gap-2 text-lg font-semibold"><Lightbulb className="h-5 w-5 text-emerald-600" /> Adaptations</CardTitle></CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {viewingPlan.adaptations.map((adp, i) => (
+                          <div key={i} className="flex items-start gap-3 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                            <Lightbulb className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5" />
+                            <p className="text-sm text-gray-700">{adp}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Teacher Notes */}
+                {viewingPlan.teacher_notes && (
+                  <Card className="shadow-sm border border-gray-200">
+                    <CardHeader><CardTitle className="flex items-center gap-2 text-lg font-semibold"><Pencil className="h-5 w-5 text-emerald-600" /> Teacher Notes</CardTitle></CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{viewingPlan.teacher_notes}</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            ) : (
+              /* Plans list */
+              <Card>
+                <CardHeader>
+                  <CardTitle>My Lesson Plans</CardTitle>
+                  <CardDescription>Click a plan to view details</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {savedPlans.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">
+                      No lesson plans yet. Go to the Generator tab to create one.
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {savedPlans.map((plan) => (
+                        <div
+                          key={plan.id}
+                          className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                          onClick={() => setViewingPlan(plan)}
+                        >
+                          <div>
+                            <p className="font-medium">{plan.title}</p>
+                            <div className="flex gap-2 mt-1">
+                              <Badge variant="outline" className="text-xs capitalize">{LEARNING_AREA_LABELS[plan.learning_area] || plan.learning_area}</Badge>
+                              <Badge variant="outline" className="text-xs">{plan.duration_minutes} min</Badge>
+                              <Badge variant="outline" className="text-xs">Ages {plan.age_group}</Badge>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">
+                              {plan.created_at ? new Date(plan.created_at).toLocaleDateString() : ""}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-500 hover:text-red-700 h-8 w-8 p-0 cursor-pointer"
+                              onClick={(e) => { e.stopPropagation(); deletePlan(plan.id); }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
           </TabsContent>
         </Tabs>

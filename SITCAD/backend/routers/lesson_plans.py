@@ -29,6 +29,8 @@ class CreateLessonPlanRequest(BaseModel):
     activities: Optional[list] = None
     assessment: Optional[str] = None
     adaptations: Optional[list] = None
+    dskp_standards: Optional[list] = None
+    teacher_notes: Optional[str] = None
 
 
 # ── Helpers ───────────────────────────────────────────────────────
@@ -48,53 +50,10 @@ def _verify_teacher(id_token: str, db: Session) -> models.User:
 
 # ── Endpoints ─────────────────────────────────────────────────────
 
-@router.post("/generate")
-async def generate_lesson_plan(request: CreateLessonPlanRequest, db: Session = Depends(get_db)):
-    """Generate a mock lesson plan (placeholder for future AI) and save it."""
+@router.post("/save")
+async def save_lesson_plan(request: CreateLessonPlanRequest, db: Session = Depends(get_db)):
+    """Save a (possibly AI-generated and teacher-edited) lesson plan to the database."""
     teacher = _verify_teacher(request.id_token, db)
-
-    # Mock AI generation — produces structured content based on inputs
-    objectives = request.objectives or [
-        f"Introduce basic concepts of {request.topic}",
-        "Develop fine motor skills through hands-on activities",
-        "Encourage verbal expression and communication",
-        "Foster curiosity and exploration",
-    ]
-    materials = request.materials or [
-        "Visual aids and picture cards",
-        "Hands-on manipulatives",
-        "Art supplies (crayons, paper, scissors)",
-        "Interactive storybooks",
-        "Music player for transitions",
-    ]
-    activities = request.activities or [
-        {"step": 1, "title": "Circle Time Introduction",
-         "description": f"Gather students in a circle and introduce the topic of {request.topic}. Use visual aids and encourage students to share what they know.",
-         "duration": "5-7 minutes"},
-        {"step": 2, "title": "Interactive Story",
-         "description": f"Read an engaging story related to {request.topic}. Pause to ask questions and encourage predictions.",
-         "duration": "8-10 minutes"},
-        {"step": 3, "title": "Hands-On Activity",
-         "description": f"Students explore {request.topic} through a structured activity with manipulatives. Teacher circulates to provide support.",
-         "duration": "10-12 minutes"},
-        {"step": 4, "title": "Creative Expression",
-         "description": "Students create artwork or crafts related to the lesson topic, reinforcing concepts learned.",
-         "duration": "8-10 minutes"},
-        {"step": 5, "title": "Closing & Review",
-         "description": "Gather students to review what they learned. Sing a related song and preview upcoming activities.",
-         "duration": "3-5 minutes"},
-    ]
-    assessment = request.assessment or (
-        "Observe student participation, listen to verbal responses, and review completed activities. "
-        "Note students who may need additional support or enrichment."
-    )
-    adaptations = request.adaptations or [
-        "For visual learners: Provide extra visual supports and diagrams",
-        "For kinesthetic learners: Include more movement-based activities",
-        "For advanced students: Offer extension activities with increased complexity",
-        "For students needing support: Provide one-on-one assistance and simplified instructions",
-        "For English language learners: Use visual cues and gestures to support understanding",
-    ]
 
     plan = models.LessonPlan(
         id=str(uuid.uuid4()),
@@ -105,11 +64,13 @@ async def generate_lesson_plan(request: CreateLessonPlanRequest, db: Session = D
         duration_minutes=request.duration_minutes,
         topic=request.topic,
         additional_notes=request.additional_notes,
-        objectives=objectives,
-        materials=materials,
-        activities=activities,
-        assessment=assessment,
-        adaptations=adaptations,
+        objectives=request.objectives or [],
+        materials=request.materials or [],
+        activities=request.activities or [],
+        assessment=request.assessment or "",
+        adaptations=request.adaptations or [],
+        dskp_standards=request.dskp_standards or [],
+        teacher_notes=request.teacher_notes or "",
     )
     db.add(plan)
     db.commit()
@@ -174,5 +135,7 @@ def _plan_to_dict(plan: models.LessonPlan) -> dict:
         "activities": plan.activities,
         "assessment": plan.assessment,
         "adaptations": plan.adaptations,
+        "dskp_standards": plan.dskp_standards,
+        "teacher_notes": plan.teacher_notes,
         "created_at": plan.created_at.isoformat() if plan.created_at else None,
     }
