@@ -195,7 +195,7 @@ CRITICAL RULES:
 - Every objective must map to at least one DSKP standard.
 - This system generates content end-to-end from lesson plan to activities. Assume all activities are delivered digitally on-screen — do NOT include physical materials.
 - Each activity MUST be one of these three types:
-    • "quiz"  — an interactive multiple-choice quiz game played on screen.
+    • "quiz"  — an interactive multiple-choice quiz game played on screen. Descriptions for quiz activities must describe the questions and knowledge being tested only — do NOT mention images, pictures, flashcards, or visual elements.
     • "image" — a set of educational flashcard images displayed on screen.
     • "story" — a short illustrated text story read on screen.
   Do NOT generate video, music, audio, or any other activity type. Every activity must be exactly one of: "quiz", "image", or "story".
@@ -365,7 +365,9 @@ LANGUAGE REQUIREMENT (STRICT — NO EXCEPTIONS):
 RULES:
 - Generate exactly {num_questions} multiple-choice questions.
 - Each question must have exactly 4 options (A, B, C, D).
-- Questions must be simple, visual, and suitable for {age_group}-year-old children.
+- Questions must be simple and suitable for {age_group}-year-old children who are still learning to read.
+- Make every question EASY and OBVIOUS: the correct answer should be clearly identifiable, and the wrong options (distractors) should be clearly and unmistakably different from the correct answer.
+- Use very simple, short vocabulary. Avoid tricky wording or close distractors.
 - Include a short, encouraging explanation for the correct answer.
 - Return ONLY a single valid JSON object with this schema:
 

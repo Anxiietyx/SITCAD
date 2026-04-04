@@ -799,9 +799,6 @@ export function ActivityManagement() {
                       {act.status === "completed" && <CheckCircle2 className="h-3 w-3" />}
                       {act.status.replace("_", " ")}
                     </Badge>
-                    <Badge variant="outline" className="text-xs bg-indigo-50 text-indigo-600 border-indigo-200">
-                      <Sparkles className="h-3 w-3 mr-1" /> AI Generated
-                    </Badge>
                   </div>
                 </DialogHeader>
 
