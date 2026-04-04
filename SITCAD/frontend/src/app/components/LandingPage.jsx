@@ -119,7 +119,7 @@ export function LandingPage() {
 
     const interval = setInterval(() => {
       setCurrent((prev) => (prev === TOTAL_SLIDES - 1 ? 0 : prev + 1));
-    }, 10000);
+    }, 15000);
 
     return () => clearInterval(interval);
   }, [isPlaying]);
@@ -212,6 +212,35 @@ export function LandingPage() {
 
   return (
     <>
+      <style>{`
+      @keyframes wordBounceIn {
+        0%   { opacity: 0; transform: scale(0.2) rotate(-12deg); }
+        55%  { opacity: 1; transform: scale(1.22) rotate(4deg); }
+        72%  { transform: scale(0.92) rotate(-2deg); }
+        88%  { transform: scale(1.06) rotate(0.5deg); }
+        100% { opacity: 1; transform: scale(1) rotate(0deg); }
+      }
+      @keyframes wordWiggle {
+        0%, 100% { transform: rotate(-2.5deg); }
+        50%      { transform: rotate(2.5deg); }
+      }
+      @keyframes drawLine {
+        from { stroke-dashoffset: 210; }
+        to   { stroke-dashoffset: 0; }
+      }
+      .word-cycle {
+        display: inline-block;
+        animation:
+          wordBounceIn 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+          wordWiggle 0.25s ease-in-out 0.56s 3 alternate;
+        transform-origin: center bottom;
+      }
+      .word-underline {
+        stroke-dasharray: 210;
+        stroke-dashoffset: 210;
+        animation: drawLine 0.45s ease-out 0.2s forwards;
+      }
+    `}</style>
 
       <div
         className={`h-screen w-screen overflow-hidden relative bg-white ${!isPlaying ? "cursor-pointer" : "cursor-default"
@@ -334,53 +363,29 @@ export function LandingPage() {
             <div className="text-center max-w-3xl mx-auto space-y-7 animate-fade-in-up">
               <h1 className="text-5xl lg:text-7xl font-bold leading-[1.1] font-serif tracking-tight">
                 Where Learning Meets{" "}
-                <span className="relative inline-block">
-                  {[
-                    { tx: "-32px", ty: "-24px", d: "0ms" },
-                    { tx: "30px", ty: "-20px", d: "55ms" },
-                    { tx: "-26px", ty: "22px", d: "25ms" },
-                    { tx: "28px", ty: "20px", d: "80ms" },
-                    { tx: "2px", ty: "-32px", d: "40ms" },
-                  ].map((s, i) => (
-                    <span
-                      key={`star-${wordIndex}-${i}`}
-                      className="star-particle"
-                      style={{
-                        "--tx": s.tx,
-                        "--ty": s.ty,
-                        color: CYCLE_WORDS[wordIndex].color,
-                        top: "40%",
-                        left: "50%",
-                        animationDelay: s.d,
-                      }}
-                    >
-                      ★
-                    </span>
-                  ))}
-                  <span
-                    key={wordIndex}
-                    className="word-cycle relative"
-                    style={{
-                      color: "#FFFFFF",
-                      textShadow: `3px 3px 0 ${CYCLE_WORDS[wordIndex].color}, -3px 3px 0 ${CYCLE_WORDS[wordIndex].color}, 3px -3px 0 ${CYCLE_WORDS[wordIndex].color}, -3px -3px 0 ${CYCLE_WORDS[wordIndex].color}`,
-                      filter: `drop-shadow(0 0 4px ${CYCLE_WORDS[wordIndex].color}99)`,
-                    }}
+                <span
+                  key={wordIndex}
+                  className="word-cycle relative inline-block"
+                  style={{
+                    color: "#FFFFFF",
+                    textShadow: `3px 3px 0 ${CYCLE_WORDS[wordIndex].color}, -3px 3px 0 ${CYCLE_WORDS[wordIndex].color}, 3px -3px 0 ${CYCLE_WORDS[wordIndex].color}, -3px -3px 0 ${CYCLE_WORDS[wordIndex].color}`,
+                    filter: `drop-shadow(0 0 4px ${CYCLE_WORDS[wordIndex].color}99)`,
+                  }}
+                >
+                  {CYCLE_WORDS[wordIndex].word}
+                  <svg
+                    className="absolute -bottom-2 left-0 w-full"
+                    viewBox="0 0 200 12"
+                    fill="none"
                   >
-                    {CYCLE_WORDS[wordIndex].word}
-                    <svg
-                      className="absolute -bottom-2 left-0 w-full"
-                      viewBox="0 0 200 12"
-                      fill="none"
-                    >
-                      <path
-                        d="M2 8c40-6 80-6 196-2"
-                        stroke={CYCLE_WORDS[wordIndex].color}
-                        strokeWidth="3.5"
-                        strokeLinecap="round"
-                        className="word-underline"
-                      />
-                    </svg>
-                  </span>
+                    <path
+                      d="M2 8c40-6 80-6 196-2"
+                      stroke={CYCLE_WORDS[wordIndex].color}
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                      className="word-underline"
+                    />
+                  </svg>
                 </span>
               </h1>
               <p className="text-xl xl:text-2xl font-bold text-muted-foreground leading-relaxed max-w-2xl mx-auto">
@@ -795,7 +800,7 @@ export function LandingPage() {
 
                 {/* Right Copyright */}
                 <p className="flex items-center gap-1 text-sm text-muted-foreground">
-                  &copy; 2026 Sabah Sprout · Made with
+                  &copy; 2026 SabahSprout · Made with
                   <Heart className="h-3 w-3 text-[#F46197] fill-[#F46197]" />
                   for Sabahan
                 </p>
@@ -810,7 +815,7 @@ export function LandingPage() {
         {current > 0 && (
           <button
             onClick={prev}
-            className="fixed left-4 top-1/2 -translate-y-1/2 z-50 w-12 h-12 rounded-full bg-white/90 border-2 border-[#E3E3E3] shadow-lg flex items-center justify-center hover:bg-[#ACFCD9]/20 hover:border-[#55D6BE] transition-all duration-200 hover:scale-110 group"
+            className="fixed left-4 top-1/2 -translate-y-1/2 z-50 w-12 h-12 rounded-full bg-white/90 border-2 border-[#E3E3E3] shadow-lg flex items-center justify-center hover:bg-[#ACFCD9]/20 hover:border-[#55D6BE] transition-all duration-200 hover:scale-110 group cursor-pointer"
             aria-label="Previous slide"
           >
             <ChevronLeft className="h-6 w-6 text-muted-foreground group-hover:text-[#55D6BE] transition-colors" />
@@ -821,7 +826,7 @@ export function LandingPage() {
         {current < TOTAL_SLIDES - 1 && (
           <button
             onClick={next}
-            className="fixed right-4 top-1/2 -translate-y-1/2 z-50 w-12 h-12 rounded-full bg-white/90 border-2 border-[#E3E3E3] shadow-lg flex items-center justify-center hover:bg-[#ACFCD9]/10 hover:border-[#55D6BE] transition-all duration-200 hover:scale-110 group"
+            className="fixed right-4 top-1/2 -translate-y-1/2 z-50 w-12 h-12 rounded-full bg-white/90 border-2 border-[#E3E3E3] shadow-lg flex items-center justify-center hover:bg-[#ACFCD9]/10 hover:border-[#55D6BE] transition-all duration-200 hover:scale-110 group cursor-pointer"
             aria-label="Next slide"
           >
             <ChevronRight className="h-6 w-6 text-muted-foreground group-hover:text-[#55D6BE] transition-colors" />
@@ -836,7 +841,7 @@ export function LandingPage() {
             <button
               key={i}
               onClick={() => goTo(i)}
-              className="group relative flex items-center"
+              className="group relative flex items-center cursor-pointer"
               aria-label={`Go to ${label}`}
             >
               <div
@@ -857,7 +862,7 @@ export function LandingPage() {
         <div className="fixed right-6 bottom-15 z-40 flex items-center gap-3 bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 border border-[#E3E3E3] shadow-sm">
           <button
             onClick={() => setIsPlaying(!isPlaying)}
-            className="hover:scale-110 transition-transform"
+            className="hover:scale-110 transition-transform cursor-pointer"
           >
             {isPlaying ? (
               <Pause className="h-4 w-4 text-[#55D6BE]" />

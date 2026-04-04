@@ -261,7 +261,7 @@ export function ProgressTracking() {
                   </CardHeader>
 
                   {isExpanded && (
-                    <CardContent className="pt-6 space-y-6">
+                    <CardContent className="space-y-6">
                       {/* Domain description */}
                       <div className={`p-4 rounded-lg ${config.bg} ${config.border} border`}>
                         <p className="text-sm leading-relaxed">

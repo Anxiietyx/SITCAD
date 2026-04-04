@@ -112,7 +112,7 @@ export function Login() {
               <ImageWithFallback
                 src="/mascot/holding_book_3.png"
                 alt="Kindergarten Learning"
-                className="w-full h-full object-cover rounded-xl"
+                className="w-full h-full object-contain rounded-xl"
               />
             </div>
 

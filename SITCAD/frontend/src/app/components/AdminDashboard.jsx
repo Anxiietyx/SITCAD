@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useCallback } from 'react';
+import { useEffect, useReducer, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -23,7 +23,10 @@ export function AdminDashboard() {
     dispatch({ type: 'SET_LOADING', payload: true });
     fetch(`${API_BASE}/admin/stats`)
       .then((res) => res.json())
-      .then((data) => dispatch({ type: 'SET_STATS', payload: data }))
+      .then((data) => {
+        dispatch({ type: 'SET_STATS', payload: data });
+        setStats(data);
+      })
       .catch((err) => {
         console.error('Failed to fetch admin stats:', err);
         dispatch({ type: 'SET_ERROR', payload: err.message });
@@ -109,25 +112,25 @@ export function AdminDashboard() {
         <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
           {/* Quick Action Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Card className="cursor-pointer border-white hover:shadow-lg transition-shadow" style={dashboardCardShadeStyle} onClick={() => navigate('/admin/register')}>
+            <Card className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle} onClick={() => navigate('/admin/register')}>
               <CardContent className="pt-6 text-center">
                 <UserPlus className="h-8 w-8 mx-auto mb-2 text-amber-600" />
                 <p className="text-sm font-medium">Add Admin</p>
               </CardContent>
             </Card>
-            <Card className="cursor-pointer border-white/70 hover:shadow-lg transition-shadow" style={dashboardCardShadeStyle} onClick={() => setRoleFilter('teacher')}>
+            <Card className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle} onClick={() => setRoleFilter('teacher')}>
               <CardContent className="pt-6 text-center">
                 <GraduationCap className="h-8 w-8 mx-auto mb-2 text-blue-600" />
                 <p className="text-sm font-medium">View Teachers</p>
               </CardContent>
             </Card>
-            <Card className="cursor-pointer border-white/70 hover:shadow-lg transition-shadow" style={dashboardCardShadeStyle} onClick={() => setRoleFilter('parent')}>
+            <Card className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle} onClick={() => setRoleFilter('parent')}>
               <CardContent className="pt-6 text-center">
                 <Users className="h-8 w-8 mx-auto mb-2 text-green-600" />
                 <p className="text-sm font-medium">View Parents</p>
               </CardContent>
             </Card>
-            <Card className="cursor-pointer border-white/70 hover:shadow-lg transition-shadow" style={dashboardCardShadeStyle} onClick={() => setRoleFilter(null)}>
+            <Card className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle} onClick={() => setRoleFilter(null)}>
               <CardContent className="pt-6 text-center">
                 <ShieldCheck className="h-8 w-8 mx-auto mb-2 text-purple-600" />
                 <p className="text-sm font-medium">All Users</p>
@@ -137,7 +140,7 @@ export function AdminDashboard() {
 
           {/* Statistics Overview */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card className="border-white/70" style={statsCardShadeStyle}>
+            <Card className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={statsCardShadeStyle}>
               <CardHeader className="pb-1">
                 <CardDescription style={statsLabelStyle}>Total Users</CardDescription>
                 <CardTitle className="text-6xl">{stats.total ?? '—'}</CardTitle>
@@ -150,7 +153,7 @@ export function AdminDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="border-white/70" style={statsCardShadeStyle}>
+            <Card className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={statsCardShadeStyle}>
               <CardHeader className="pb-1">
                 <CardDescription style={statsLabelStyle}>Teachers</CardDescription>
                 <CardTitle className="text-6xl">{stats.teacher ?? '—'}</CardTitle>
@@ -163,7 +166,7 @@ export function AdminDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="border-white/70" style={statsCardShadeStyle}>
+            <Card className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={statsCardShadeStyle}>
               <CardHeader className="pb-1">
                 <CardDescription style={statsLabelStyle}>Parents</CardDescription>
                 <CardTitle className="text-6xl">{stats.parent ?? '—'}</CardTitle>
@@ -176,7 +179,7 @@ export function AdminDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="border-white/70" style={statsCardShadeStyle}>
+            <Card className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={statsCardShadeStyle}>
               <CardHeader className="pb-1">
                 <CardDescription style={statsLabelStyle}>Admins</CardDescription>
                 <CardTitle className="text-6xl">{stats.admin ?? '—'}</CardTitle>
