@@ -24,6 +24,7 @@ import {
   Users,
   BarChart3,
 } from "lucide-react";
+import Duckpit from './Duckpit';
 
 export function AIAnalysisDashboard() {
   const { user } = useAuth();
@@ -103,26 +104,27 @@ export function AIAnalysisDashboard() {
         "Consider more hands-on math manipulatives",
       ],
     },
-    {
-      area: "Social-Emotional",
-      status: "developing",
-      average: 72,
-      insights: [
-        "Improved conflict resolution skills observed",
-        "1 student may benefit from social skills support",
-        "Positive peer interactions during group activities",
-      ],
-    },
-    {
-      area: "Physical Development",
-      status: "strong",
-      average: 80,
-      insights: [
-        "Fine motor skills progressing well",
-        "Gross motor activities highly engaging",
-        "Consider more outdoor physical activities",
-      ],
-    },
+    // vvv TEMPORARILY COMMENTED OUT vvv
+    // {
+    //   area: "Social-Emotional",
+    //   status: "developing",
+    //   average: 72,
+    //   insights: [
+    //     "Improved conflict resolution skills observed",
+    //     "1 student may benefit from social skills support",
+    //     "Positive peer interactions during group activities",
+    //   ],
+    // },
+    // {
+    //   area: "Physical Development",
+    //   status: "strong",
+    //   average: 80,
+    //   insights: [
+    //     "Fine motor skills progressing well",
+    //     "Gross motor activities highly engaging",
+    //     "Consider more outdoor physical activities",
+    //   ],
+    // },
   ];
 
   const predictiveInsights = [
@@ -297,29 +299,29 @@ export function AIAnalysisDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#66D0BC]-30 via-[#66D0BC]-20 to-[#66D0BC]-10">
-      <header className="bg-white border-b shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/teacher")}
-            className="mb-4"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
-          </Button>
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-pink-500 rounded-lg flex items-center justify-center">
-              <Brain className="w-6 h-6 text-white" />
+    <div className="relative min-h-screen overflow-hidden bg-slate-50">
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <Duckpit count={24} gravity={0.5} friction={0.9975} wallBounce={0.9} className="h-full w-full opacity-100" />
+      </div>
+      <div className="absolute inset-0 z-0 bg-linear-to-b from-white/72 via-white/58 to-emerald-50/72" />
+
+      <div className="relative z-10">
+      <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 bg-[#bafde0] rounded-lg flex items-center justify-center">
+                <Brain className="w-4 h-4 text-black" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-semibold">Student Development Analysis By AI</h1>
+                <p className="text-sm text-muted-foreground mt-1">Insight powered by Artificial intelligent</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-semibold">
-                Student Development Analysis By AI
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Insight powered by Artificial intelligent
-              </p>
-            </div>
+            <Button variant="ghost" onClick={() => navigate("/teacher")} className="cursor-pointer">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Dashboard
+            </Button>
           </div>
         </div>
       </header>
@@ -439,7 +441,7 @@ export function AIAnalysisDashboard() {
           {/*===LEARNING PATTERN===*/}
           <TabsContent value="patterns" className="space-y-4">
             {/* Header */}
-            <Card className="border-2 border-pink-300 bg-gradient-to-r from-pink-100 to-pink-100">
+            <Card className="border-2 border-pink-300 bg-linear-to-r from-pink-100 to-pink-100">
               <CardHeader>
                 <CardTitle className="flex items-center gap-1 text-lg font-bold">
                   <Sparkles className="h-5 w-5 text-pink-600" />
@@ -517,7 +519,7 @@ export function AIAnalysisDashboard() {
           {/*===Developmental Areas===*/}
           <TabsContent value="developmental" className="space-y-4">
             {/* 🔥 Header */}
-            <Card className="border-2 border-blue-300 bg-gradient-to-r from-blue-200 to-blue-100">
+            <Card className="border-2 border-blue-300 bg-linear-to-r from-blue-200 to-blue-100">
               <CardHeader>
                 <CardTitle className="flex items-center gap-1 text-lg font-bold">
                   📊 Developmental Progress
@@ -575,7 +577,7 @@ export function AIAnalysisDashboard() {
           {/*===Predictive Insights===*/}
           <TabsContent value="predictive" className="space-y-4">
             {/* 🔥 Header Card */}
-            <Card className="border-2 border-indigo-200 bg-gradient-to-r from-indigo-50 to-purple-50">
+            <Card className="border-2 border-indigo-200 bg-linear-to-r from-indigo-50 to-purple-50">
               <CardHeader>
                 <CardTitle className="flex items-center gap-1 text-lg font-bold">
                   <BarChart3 className="h-5 w-5 text-indigo-600" />
@@ -659,6 +661,7 @@ export function AIAnalysisDashboard() {
           </TabsContent>
         </Tabs>
       </main>
+      </div>
     </div>
   );
 }

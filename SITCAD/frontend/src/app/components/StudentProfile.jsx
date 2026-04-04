@@ -1,27 +1,85 @@
 import { useParams, useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
-import { getStudentById, getDevelopmentalAreas } from '../data/mockData';
+import { auth } from '../lib/firebase';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Progress } from './ui/progress';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { ArrowLeft, Calendar, MapPin, TrendingUp, Award, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, TrendingUp, Award, AlertCircle, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export function StudentProfile() {
   const { studentId } = useParams(); // Removed type annotation
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [student, setStudent] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchStudent = async () => {
+      if (!user?.id) return;
+      try {
+        setIsLoading(true);
+        const idToken = await auth.currentUser.getIdToken();
+        
+        // Determine which endpoint to use based on user role
+        const endpoint = user.role === 'teacher' 
+          ? 'http://localhost:8000/teachers/my-students'
+          : 'http://localhost:8000/parents/my-children';
+        
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id_token: idToken }),
+        });
+        
+        if (!res.ok) throw new Error('Failed to fetch student');
+        const students = await res.json();
+        const found = students.find(s => s.id === studentId);
+        
+        if (!found) {
+          setError('Student not found');
+        } else {
+          setStudent(found);
+        }
+      } catch (err) {
+        console.error('Error fetching student:', err);
+        setError(err.message || 'Failed to load student');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStudent();
+  }, [user?.id, studentId]);
 
   if (!user || !studentId) return null;
 
-  const student = getStudentById(studentId);
-  const developmentalAreas = getDevelopmentalAreas(studentId);
-
-  if (!student) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p>Student not found</p>
+        <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+      </div>
+    );
+  }
+
+  if (error || !student) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="pt-6 text-center">
+            <AlertCircle className="h-8 w-8 mx-auto mb-4 text-red-500" />
+            <p className="font-medium">{error || 'Student not found'}</p>
+            <Button 
+              className="mt-4 w-full" 
+              onClick={() => navigate(user.role === 'teacher' ? '/teacher' : '/parent')}
+            >
+              Back to Dashboard
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -43,14 +101,25 @@ export function StudentProfile() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 via-purple-50 to-pink-50">
       {/* Header */}
-      <header className="bg-white border-b shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <Button variant="ghost" onClick={handleBack} className="mb-4">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
-          </Button>
+      <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 bg-[#bafde0] rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 text-black" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-semibold">{student.name}</h1>
+                <p className="text-sm text-muted-foreground mt-1">Student profile and learning activities</p>
+              </div>
+            </div>
+            <Button variant="ghost" onClick={handleBack} className="cursor-pointer">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Dashboard
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -59,11 +128,11 @@ export function StudentProfile() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-              <img
-                src={student.avatar}
-                alt={student.name}
-                className="w-32 h-32 rounded-full object-cover border-4 border-purple-200 shadow-lg"
-              />
+              <div
+                className="w-32 h-32 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-3xl font-bold text-white shadow-lg border-4 border-purple-200"
+              >
+                {student.name.charAt(0).toUpperCase()}
+              </div>
               <div className="flex-1">
                 <div className="flex items-start justify-between mb-4">
                   <div>
@@ -73,26 +142,21 @@ export function StudentProfile() {
                         <Calendar className="h-4 w-4" />
                         Age {student.age}
                       </span>
-                      <span className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        {student.classroom}
-                      </span>
-                      <span>Enrolled: {new Date(student.enrollmentDate).toLocaleDateString()}</span>
+                      {student.classroom && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-4 w-4" />
+                          {student.classroom}
+                        </span>
+                      )}
+                      <span>Enrolled: {new Date(student.enrollment_date).toLocaleDateString()}</span>
                     </div>
                   </div>
-                  {student.needsIntervention && (
+                  {student.needs_intervention && (
                     <Badge variant="destructive" className="gap-1">
                       <AlertCircle className="h-3 w-3" />
                       Needs Support
                     </Badge>
                   )}
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Overall Progress</span>
-                    <span className="text-lg font-semibold text-purple-600">{student.overallProgress}%</span>
-                  </div>
-                  <Progress value={student.overallProgress} className="h-3" />
                 </div>
               </div>
             </div>
@@ -101,148 +165,79 @@ export function StudentProfile() {
 
         {/* Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="milestones">Milestones</TabsTrigger>
-            <TabsTrigger value="activities">Activities</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="overview" className="cursor-pointer">Overview</TabsTrigger>
+            {/* <TabsTrigger value="activities" onClick={() => navigate(`/${user.role}/student/${studentId}/activities`)}>Learning Activities</TabsTrigger> */}
+            <TabsTrigger value="progress" className="cursor-pointer" onClick={() => navigate(`/${user.role}/student/${studentId}/progress`)}>Progress Report</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Developmental Areas</CardTitle>
+                <CardTitle>Student Information</CardTitle>
                 <CardDescription>
-                  Progress across key learning domains
+                  Basic details and enrollment information
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {developmentalAreas.map(area => (
-                    <div key={area.name} className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-medium">{area.name}</h3>
-                          <Badge variant="outline" className={`text-xs ${getCategoryColor(area.category)}`}>
-                            {area.category}
-                          </Badge>
-                        </div>
-                        <span className="text-sm font-semibold">
-                          Level {area.level}/{area.maxLevel}
-                        </span>
-                      </div>
-                      <Progress value={(area.level / area.maxLevel) * 100} />
-                      <p className="text-sm text-muted-foreground">
-                        {area.milestones.filter(m => m.achieved).length} of {area.milestones.length} milestones achieved
-                      </p>
-                    </div>
-                  ))}
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground">Name</p>
+                    <p className="text-lg font-semibold">{student.name}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground">Age</p>
+                    <p className="text-lg font-semibold">{student.age} years old</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground">Classroom</p>
+                    <p className="text-lg font-semibold">{student.classroom || 'Not assigned yet'}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground">Enrollment Date</p>
+                    <p className="text-lg font-semibold">{new Date(student.enrollment_date).toLocaleDateString()}</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
+
+            {/* <Card>
+              <CardHeader>
+                <CardTitle>Additional Information</CardTitle>
+                <CardDescription>
+                  Extended learning profile (coming soon)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Detailed learning progress, developmental milestones, and activity history will be available here once integrated with the learning tracking system.
+                </p>
+              </CardContent>
+            </Card> */}
 
             <Card>
               <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
+                <CardTitle>Support Status</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-start gap-3 p-4 bg-purple-50 rounded-lg">
-                  <TrendingUp className="h-5 w-5 text-purple-600 mt-0.5" />
+                <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg">
+                  <AlertCircle className="h-5 w-5 text-blue-600" />
                   <div>
-                    <p className="font-medium">{student.recentActivity}</p>
-                    <p className="text-sm text-muted-foreground mt-1">Today at 10:30 AM</p>
+                    <p className="font-medium">
+                      {student.needs_intervention ? 'Requires Intervention' : 'No Intervention Required'}
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {student.needs_intervention 
+                        ? `${user.role === 'parent' ? 'Your child has' : 'This student has'} been flagged as needing additional support.`
+                        : `${user.role === 'parent' ? 'Your child is' : 'This student is'} progressing well without additional interventions.`}
+                    </p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Milestones Tab */}
-          <TabsContent value="milestones" className="space-y-6">
-            {developmentalAreas.map(area => (
-              <Card key={area.name}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>{area.name}</CardTitle>
-                      <CardDescription className="mt-1">
-                        <Badge variant="outline" className={getCategoryColor(area.category)}>
-                          {area.category}
-                        </Badge>
-                      </CardDescription>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-semibold">Level {area.level}</div>
-                      <div className="text-sm text-muted-foreground">of {area.maxLevel}</div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {area.milestones.map(milestone => (
-                      <div
-                        key={milestone.id}
-                        className={`flex items-start gap-3 p-4 rounded-lg border ${
-                          milestone.achieved ? 'bg-green-50 border-green-200' : 'bg-gray-50'
-                        }`}
-                      >
-                        <div className="mt-0.5">
-                          {milestone.achieved ? (
-                            <Award className="h-5 w-5 text-green-600" />
-                          ) : (
-                            <div className="h-5 w-5 rounded-full border-2 border-gray-300" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <p className={`font-medium ${milestone.achieved ? 'text-green-900' : ''}`}>
-                            {milestone.description}
-                          </p>
-                          {milestone.achieved && milestone.achievedDate && (
-                            <p className="text-sm text-green-600 mt-1">
-                              Achieved on {new Date(milestone.achievedDate).toLocaleDateString()}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </TabsContent>
-
-          {/* Activities Tab */}
-          <TabsContent value="activities">
-            <Card>
-              <CardContent className="pt-6">
-                <Button
-                  onClick={() => navigate(`/${user.role}/student/${studentId}/activities`)}
-                  className="w-full"
-                >
-                  View All Learning Activities
-                </Button>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={() => navigate(`/${user.role}/student/${studentId}/activities`)}
-          >
-            View Learning Activities
-          </Button>
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={() => navigate(`/${user.role}/student/${studentId}/progress`)}
-          >
-            Detailed Progress Report
-          </Button>
-        </div>
       </main>
     </div>
   );

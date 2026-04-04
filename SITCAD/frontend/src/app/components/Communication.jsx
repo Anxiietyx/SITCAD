@@ -73,15 +73,15 @@ export function Communication() {
       <div className="absolute inset-0 z-0 pointer-events-none">
         <Duckpit count={24} gravity={0.5} friction={0.9975} wallBounce={0.9} className="h-full w-full opacity-100" />
       </div>
-      <div className="absolute inset-0 z-0 bg-gradient-to-b from-white/72 via-white/58 to-emerald-50/72" />
+      <div className="absolute inset-0 z-0 bg-linear-to-b from-white/72 via-white/58 to-emerald-50/72" />
 
       <div className="relative z-10">
       <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-lg flex items-center justify-center">
-                <MessageSquare className="w-4 h-4 text-white" />
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 bg-[#bafde0] rounded-lg flex items-center justify-center">
+                <MessageSquare className="w-4 h-4 text-black" />
               </div>
               <div>
                 <h1 className="text-2xl font-semibold">Communication Center</h1>
@@ -90,7 +90,7 @@ export function Communication() {
                 </p>
               </div>
             </div>
-            <Button variant="ghost" onClick={() => navigate(isTeacher ? '/teacher' : '/parent')}>
+            <Button variant="ghost" onClick={() => navigate(isTeacher ? '/teacher' : '/parent')} className="cursor-pointer">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Dashboard
             </Button>
@@ -130,7 +130,7 @@ export function Communication() {
               </Card>
             ) : (
               mockMessages.map((message) => (
-                <Card key={message.id} className={`border-2 ${!message.read ? 'bg-blue-50 border-blue-200' : ''}`}>
+                <Card key={message.id} className={`shadow-lg ${!message.read ? 'bg-slate-50 border-slate-200' : 'bg-slate-50 border-slate-200'}`}>
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -151,11 +151,11 @@ export function Communication() {
                   <CardContent>
                     <p className="text-sm">{message.message}</p>
                     <div className="flex gap-2 mt-4">
-                      <Button variant="default" size="sm">
+                      <Button size="sm" className="bg-fuchsia-600 hover:bg-fuchsia-700 text-white hover:text-white cursor-pointer">
                         <Send className="mr-2 h-3 w-3" />
                         Reply
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button size="sm" className="bg-fuchsia-600 hover:bg-fuchsia-700 text-white hover:text-white cursor-pointer">
                         Mark as Read
                       </Button>
                     </div>
@@ -230,11 +230,11 @@ export function Communication() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button onClick={handleSendMessage} className="flex-1">
+                  <Button onClick={handleSendMessage} className="flex-1 bg-fuchsia-600 hover:bg-fuchsia-700 text-white hover:text-white cursor-pointer">
                     <Send className="mr-2 h-4 w-4" />
                     Send Message
                   </Button>
-                  <Button variant="outline" onClick={() => {
+                  <Button className="bg-fuchsia-600 hover:bg-fuchsia-700 text-white hover:text-white cursor-pointer" onClick={() => {
                     setNewSubject('');
                     setNewMessage('');
                     setRecipient('');

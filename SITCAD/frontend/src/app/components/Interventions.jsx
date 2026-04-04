@@ -18,6 +18,7 @@ import {
   Clock,
   Target,
 } from "lucide-react";
+import Duckpit from './Duckpit';
 
 export function Interventions() {
   const { user } = useAuth();
@@ -108,7 +109,7 @@ export function Interventions() {
           <ul className="space-y-3">
             {intervention.recommendedActions.map((action, index) => (
               <li key={index} className="flex items-start gap-2 text-base">
-                <div className="w-5 h-5 rounded-full bg-green-300 text-black-600 flex items-center justify-center text-xs font-medium shrink-1 mt-1.15">
+                <div className="w-5 h-5 rounded-full bg-green-300 text-black-600 flex items-center justify-center text-xs font-medium shrink mt-1.15">
                   {index + 1}
                 </div>
                 <span>{action}</span>
@@ -137,28 +138,30 @@ export function Interventions() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#66D0BC]-30 via-[#66D0BC]-20 to-[#66D0BC]-10">
+    <div className="relative min-h-screen overflow-hidden bg-slate-50">
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <Duckpit count={24} gravity={0.5} friction={0.9975} wallBounce={0.9} className="h-full w-full opacity-100" />
+      </div>
+      <div className="absolute inset-0 z-0 bg-linear-to-b from-white/72 via-white/58 to-emerald-50/72" />
+
+      <div className="relative z-10">
       {/* Header */}
-      <header className="bg-white border-b shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <Button variant="ghost" onClick={handleBack} className="mb-4">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
-          </Button>
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-orange-300 rounded-lg flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6 text-black" />
+      <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 bg-[#bafde0] rounded-lg flex items-center justify-center">
+                <AlertTriangle className="w-4 h-4 text-black" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-semibold">AI-Powered Student Interventions</h1>
+                <p className="text-sm text-muted-foreground mt-1">Identify, review, and take action on students who need extra support based on AI-detected learning gaps and developmental needs.</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-semibold">
-                AI-Powered Student Interventions
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Identify, review, and take action on students who need extra
-                support based on AI-detected learning gaps and developmental
-                needs.
-              </p>
-            </div>
+            <Button variant="ghost" onClick={handleBack} className="cursor-pointer">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Dashboard
+            </Button>
           </div>
         </div>
       </header>
@@ -226,7 +229,7 @@ export function Interventions() {
         </div>
 
         {/* AI Insights Banner */}
-        <Card className="border-2 border-yellow-300 bg-gradient-to-r from-yellow-100 to-yellow-100">
+        <Card className="border-2 border-yellow-300 bg-linear-to-r from-yellow-100 to-yellow-100">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg font-bold">
               <Target className="h-5 w-5 text-amber-600" />
@@ -298,6 +301,7 @@ export function Interventions() {
           </TabsContent>
         </Tabs>
       </main>
+      </div>
     </div>
   );
 }

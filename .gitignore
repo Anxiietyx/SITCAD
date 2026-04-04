@@ -23,6 +23,7 @@ SITCAD/frontend/node_modules/
 SITCAD/frontend/dist/
 SITCAD/frontend/dist-ssr/
 SITCAD/frontend/package-lock.json
+SITCAD/frontend/.env.sentry-build-plugin
 
 # --- Backend (Python/FastAPI/PgSQL) ---
 # Updated to match the SITCAD/backend path

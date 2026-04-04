@@ -104,8 +104,6 @@ export function LandingPage() {
     return () => window.removeEventListener("wheel", handler);
   }, [next, prev]);
 
-  const [isPaused, setIsPaused] = useState(false);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isPlaying, setIsPlaying] = useState(true);
   const [wordIndex, setWordIndex] = useState(0);
 
@@ -214,51 +212,10 @@ export function LandingPage() {
 
   return (
     <>
-      <style>{`
-      @keyframes wordBounceIn {
-        0%   { opacity: 0; transform: scale(0.2) rotate(-12deg); }
-        55%  { opacity: 1; transform: scale(1.22) rotate(4deg); }
-        72%  { transform: scale(0.92) rotate(-2deg); }
-        88%  { transform: scale(1.06) rotate(0.5deg); }
-        100% { opacity: 1; transform: scale(1) rotate(0deg); }
-      }
-      @keyframes wordWiggle {
-        0%, 100% { transform: rotate(-2.5deg); }
-        50%      { transform: rotate(2.5deg); }
-      }
-      @keyframes drawLine {
-        from { stroke-dashoffset: 210; }
-        to   { stroke-dashoffset: 0; }
-      }
-      @keyframes starPop {
-        0%   { opacity: 0; transform: scale(0) translate(0px, 0px); }
-        40%  { opacity: 1; }
-        100% { opacity: 0; transform: scale(1.1) translate(var(--tx), var(--ty)); }
-      }
-      .word-cycle {
-        display: inline-block;
-        animation:
-          wordBounceIn 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
-          wordWiggle 0.25s ease-in-out 0.56s 3 alternate;
-        transform-origin: center bottom;
-      }
-      .word-underline {
-        stroke-dasharray: 210;
-        stroke-dashoffset: 210;
-        animation: drawLine 0.45s ease-out 0.2s forwards;
-      }
-      .star-particle {
-        position: absolute;
-        pointer-events: none;
-        font-size: 1rem;
-        line-height: 1;
-        animation: starPop 0.65s ease-out forwards;
-      }
-    `}</style>
+
       <div
-        className={`h-screen w-screen overflow-hidden relative bg-white ${
-          !isPlaying ? "cursor-pointer" : "cursor-default"
-        }`}
+        className={`h-screen w-screen overflow-hidden relative bg-white ${!isPlaying ? "cursor-pointer" : "cursor-default"
+          }`}
       >
         {!isPlaying && (
           <div className="fixed top-20 right-6 bg-none/90 backdrop-blur-md px-4 py-2 rounded-full text-sm shadow-lg z-50 flex items-center gap-2 animate-fade-in">
@@ -298,7 +255,8 @@ export function LandingPage() {
              shadow-lg
              rounded-full
              hover:scale-105 
-             transition-all duration-300 bg-white"
+             transition-all duration-300 bg-white
+             cursor-pointer"
                 onClick={() => navigate("/login")}
               >
                 Log In
@@ -314,7 +272,8 @@ export function LandingPage() {
              font-semibold
              shadow-lg 
              hover:scale-105 
-             transition-all duration-300"
+             transition-all duration-300
+             cursor-pointer"
                 onClick={() => navigate("/register")}
               >
                 Get Started
@@ -464,61 +423,61 @@ export function LandingPage() {
                   <CardContent className="p-4 lg:p-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto items-stretch">
 
-  {/* ===== PARENT PLAN ===== */}
-  <div className="flex flex-col justify-between h-full rounded-xl border-2 border-[#3090A0]/50 backdrop-blur-md bg-white/40 p-6 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:scale-[1.03]">
+                      {/* ===== PARENT PLAN ===== */}
+                      <div className="flex flex-col justify-between h-full rounded-xl border-2 border-[#3090A0]/50 backdrop-blur-md bg-white/40 p-6 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:scale-[1.03]">
 
-    <div>
-      <h3 className="text-2xl font-bold text-center mb-4 text-[#3090A0]">
-        Parent
-      </h3>
+                        <div>
+                          <h3 className="text-2xl font-bold text-center mb-4 text-[#3090A0]">
+                            Parent
+                          </h3>
 
-      <div className="text-center mb-5">
-        <p className="text-4xl font-bold">RM99</p>
-        <p className="text-lg text-muted-foreground">per year</p>
-      </div>
+                          <div className="text-center mb-5">
+                            <p className="text-4xl font-bold">RM99</p>
+                            <p className="text-lg text-muted-foreground">per year</p>
+                          </div>
 
-      <div className="space-y-2 text-lg">
-        <p>✔ Real-time progress updates</p>
-        <p>✔ Direct teacher communication</p>
-        <p>✔ Child development insights</p>
-        <p>✔ Activity recommendations</p>
-        <p className="text-muted-foreground">✖ AI lesson tools</p>
-      </div>
-    </div>
+                          <div className="space-y-2 text-lg">
+                            <p>✔ Real-time progress updates</p>
+                            <p>✔ Direct teacher communication</p>
+                            <p>✔ Child development insights</p>
+                            <p>✔ Activity recommendations</p>
+                            <p className="text-muted-foreground">✖ AI lesson tools</p>
+                          </div>
+                        </div>
 
-    <Button className="mt-6 w-full bg-[#55B0A0] hover:bg-[#3fc9b0] text-white text-lg">
-      Choose Plan
-    </Button>
-  </div>
+                        <Button className="mt-6 w-full bg-[#55B0A0] hover:bg-[#3fc9b0] text-white text-lg">
+                          Choose Plan
+                        </Button>
+                      </div>
 
-  {/* ===== TEACHER PLAN (HIGHLIGHT) ===== */}
-  <div className="flex flex-col justify-between h-full rounded-xl border-2 border-[#3090A0]/50 backdrop-blur-md bg-white/40 p-6 transition-all duration-300 hover:-translate-y-3 hover:shadow-xl hover:scale-[1.03]">
+                      {/* ===== TEACHER PLAN (HIGHLIGHT) ===== */}
+                      <div className="flex flex-col justify-between h-full rounded-xl border-2 border-[#3090A0]/50 backdrop-blur-md bg-white/40 p-6 transition-all duration-300 hover:-translate-y-3 hover:shadow-xl hover:scale-[1.03]">
 
-    <div>
-      <h3 className="text-2xl font-bold text-center mb-4 text-[#3090A0]">
-        Teacher
-      </h3>
+                        <div>
+                          <h3 className="text-2xl font-bold text-center mb-4 text-[#3090A0]">
+                            Teacher
+                          </h3>
 
-      <div className="text-center mb-5">
-        <p className="text-4xl font-bold">RM199</p>
-        <p className="text-lg text-muted-foreground">per year</p>
-      </div>
+                          <div className="text-center mb-5">
+                            <p className="text-4xl font-bold">RM199</p>
+                            <p className="text-lg text-muted-foreground">per year</p>
+                          </div>
 
-      <div className="space-y-2 text-lg">
-        <p>✔ AI lesson planning</p>
-        <p>✔ Student progress tracking</p>
-        <p>✔ Automated reports</p>
-        <p>✔ Classroom management tools</p>
-        <p>✔ Parent communication system</p>
-      </div>
-    </div>
+                          <div className="space-y-2 text-lg">
+                            <p>✔ AI lesson planning</p>
+                            <p>✔ Student progress tracking</p>
+                            <p>✔ Automated reports</p>
+                            <p>✔ Classroom management tools</p>
+                            <p>✔ Parent communication system</p>
+                          </div>
+                        </div>
 
-    <Button className="mt-6 w-full bg-[#55B0A0] hover:bg-[#3fc9b0] text-white text-lg">
-      Choose Plan
-    </Button>
-  </div>
+                        <Button className="mt-6 w-full bg-[#55B0A0] hover:bg-[#3fc9b0] text-white text-lg">
+                          Choose Plan
+                        </Button>
+                      </div>
 
-</div>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -881,11 +840,10 @@ export function LandingPage() {
               aria-label={`Go to ${label}`}
             >
               <div
-                className={`rounded-full transition-all duration-300 ${
-                  i === current
+                className={`rounded-full transition-all duration-300 ${i === current
                     ? "w-8 h-3 bg-gradient-to-r from-[#55D6BE] to-[#55D6BE]"
                     : "w-3 h-3 bg-[#E3E3E3] hover:bg-[#ACFCD9]"
-                }`}
+                  }`}
               />
               {/* Tooltip */}
               <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] font-medium bg-foreground text-white px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">

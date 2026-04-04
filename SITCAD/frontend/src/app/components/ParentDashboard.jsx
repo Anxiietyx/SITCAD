@@ -1,12 +1,17 @@
 
 import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
-import { getStudentsByRole } from '../data/mockData';
+import { auth } from '../lib/firebase';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Progress } from './ui/progress';
 import { Badge } from './ui/badge';
-import { LogOut, Heart, Calendar, TrendingUp, MessageSquare } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Heart, TrendingUp, MessageSquare, UserPlus, FileText, Clock, CheckCircle2, AlertTriangle, Users } from 'lucide-react';
+import Duckpit from './Duckpit';
+import { useState, useEffect } from 'react';
 
 export function ParentDashboard() {
   const { user, logout } = useAuth();
@@ -14,165 +19,355 @@ export function ParentDashboard() {
 
   if (!user) return null;
 
-  const students = getStudentsByRole(user.id, 'parent');
+  const [children, setChildren] = useState([]);
+  const [isLoadingChildren, setIsLoadingChildren] = useState(true);
+  const [addChildOpen, setAddChildOpen] = useState(false);
+  const [newChild, setNewChild] = useState({ name: '', age: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [reports, setReports] = useState([]);
+  const [isLoadingReports, setIsLoadingReports] = useState(true);
+
+  // Fetch children from API on mount
+  useEffect(() => {
+    const fetchChildren = async () => {
+      try {
+        const idToken = await auth.currentUser.getIdToken();
+        const res = await fetch('http://localhost:8000/parents/my-children', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id_token: idToken }),
+        });
+        const data = await res.json();
+        setChildren(data);
+      } catch (error) {
+        console.error('Error fetching children:', error);
+      } finally {
+        setIsLoadingChildren(false);
+      }
+    };
+
+    fetchChildren();
+  }, []);
+
+  // Fetch reports for parent
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        const idToken = await auth.currentUser.getIdToken();
+        const res = await fetch('http://localhost:8000/reports/for-parent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id_token: idToken }),
+        });
+        if (res.ok) setReports(await res.json());
+      } catch (error) {
+        console.error('Error fetching reports:', error);
+      } finally {
+        setIsLoadingReports(false);
+      }
+    };
+    fetchReports();
+  }, []);
+
+  const handleAddChild = async () => {
+    if (!newChild.name || !newChild.age) return;
+    setIsSubmitting(true);
+    try {
+      const idToken = await auth.currentUser.getIdToken();
+      const res = await fetch('http://localhost:8000/parents/add-child', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_token: idToken, name: newChild.name, age: Number(newChild.age) }),
+      });
+      if (res.ok) {
+        const newStudent = await res.json();
+        setChildren([...children, newStudent]);
+        setNewChild({ name: '', age: '' });
+        setAddChildOpen(false);
+      }
+    } catch (error) {
+      console.error('Error adding child:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
+  const assignedCount = children.filter(c => c.teacher_id).length;
+
+  const statsCardShadeStyle = { backgroundColor: 'rgb(255 255 255 / 0.92)' };
+  const dashboardCardShadeStyle = { backgroundColor: 'rgb(255 255 255 / 0.88)' };
+  const statsLabelStyle = { color: '#374151', fontSize: '1rem', fontWeight: 600 };
+
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <header className="bg-white border-b shadow-sm sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold">Parent Dashboard</h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Welcome back, {user.name}!
-              </p>
+    <div className="min-h-screen relative overflow-hidden bg-slate-50">
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <Duckpit count={15} interactive={false} className="h-full w-full opacity-100" />
+      </div>
+      <div className="absolute inset-0 z-0 bg-linear-to-b from-white/72 via-white/58 to-emerald-50/72" />
+
+      <div className="relative z-10">
+        {/* Header */}
+        <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
+          <div className="max-w-6xl mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-semibold">Parent Dashboard</h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Welcome back, {user.name}!
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+      <main className="relative z-10 max-w-7xl mx-auto px-4 py-8 space-y-8">
         {/* Welcome Message */}
-        <Card className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0">
+        <Card className="bg-linear-to-r bg-slate-50 shadow-lg border-slate-200">
           <CardHeader>
-            <CardTitle className="text-white">Your Child's Learning Journey</CardTitle>
-            <CardDescription className="text-white/90">
+            <CardTitle className="text-black">Your Child's Learning Journey</CardTitle>
+            <CardDescription className="text-muted-foreground">
               Track progress, view activities, and celebrate achievements together
             </CardDescription>
             <div className="pb-3"></div>
           </CardHeader>
         </Card>
+          {/* Quick Action Cards */}
+          {/* <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <Card
+              className="cursor-pointer border-white shadow-md hover:shadow-lg transition-shadow transform-gpu"
+              style={dashboardCardShadeStyle}
+              onClick={() => navigate('/parent/communication')}
+            >
+              <CardContent className="pt-6 text-center">
+                <MessageSquare className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                <p className="text-sm font-medium">Messages</p>
+              </CardContent>
+            </Card>
+            <Card
+              className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu"
+              style={dashboardCardShadeStyle}
+              onClick={() => children.length > 0 && navigate(`/parent/student/${children[0].id}/progress`)}
+            >
+              <CardContent className="pt-6 text-center">
+                <TrendingUp className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                <p className="text-sm font-medium">Progress</p>
+              </CardContent>
+            </Card>
+            <Card
+              className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu"
+              style={dashboardCardShadeStyle}
+              onClick={() => children.length > 0 && navigate(`/parent/student/${children[0].id}`)}
+            >
+              <CardContent className="pt-6 text-center">
+                <Users className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                <p className="text-sm font-medium">Child Profile</p>
+              </CardContent>
+            </Card>
+          </div> */}
 
-        {/* Children */}
-        {students.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">No student profiles linked to your account.</p>
+          {/* Statistics Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={statsCardShadeStyle}>
+              <CardHeader className="pb-1">
+                <CardDescription style={statsLabelStyle}>My Children</CardDescription>
+                <CardTitle className="text-6xl">{children.length}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center text-sm text-green-600">
+                  <Heart className="mr-5 h-10 w-10" />
+                  Registered learners
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={statsCardShadeStyle}>
+              <CardHeader className="pb-1">
+                <CardDescription style={statsLabelStyle}>Assigned to Teacher</CardDescription>
+                <CardTitle className="text-6xl">{assignedCount}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center text-sm text-green-600">
+                  <CheckCircle2 className="mr-5 h-10 w-10" />
+                  In classroom
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={statsCardShadeStyle}>
+              <CardHeader className="pb-1">
+                <CardDescription style={statsLabelStyle}>Reports</CardDescription>
+                <CardTitle className="text-6xl">{reports.length}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center text-sm text-green-600">
+                  <FileText className="mr-5 h-10 w-10" />
+                  Activity reports
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* My Children */}
+          <Card className="border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle}>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>My Children</CardTitle>
+                <CardDescription>
+                  Click on a child to view their profile and learning progress
+                </CardDescription>
+              </div>
+              <Dialog open={addChildOpen} onOpenChange={setAddChildOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-[#3090A0] hover:bg-[#2FBFA5] text-white gap-2 cursor-pointer">
+                    <UserPlus className="h-4 w-4" />
+                    Add Child
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Register Your Child</DialogTitle>
+                    <DialogDescription>
+                      Enter your child's details. Their teacher will be able to assign them to a classroom afterwards.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="child-name">Full Name</Label>
+                      <Input
+                        id="child-name"
+                        placeholder="e.g. Ahmad Ibrahim"
+                        value={newChild.name}
+                        onChange={(e) => setNewChild({ ...newChild, name: e.target.value })}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="child-age">Age</Label>
+                      <Select
+                        value={newChild.age}
+                        onValueChange={(value) => setNewChild({ ...newChild, age: value })}
+                      >
+                        <SelectTrigger id="child-age">
+                          <SelectValue placeholder="Select age" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="4">4</SelectItem>
+                          <SelectItem value="5">5</SelectItem>
+                          <SelectItem value="6">6</SelectItem>
+                          <SelectItem value="7">7</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setAddChildOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      className="bg-[#3090A0] hover:bg-[#2FBFA5] text-white"
+                      onClick={handleAddChild}
+                      disabled={isSubmitting || !newChild.name || !newChild.age}
+                    >
+                      {isSubmitting ? 'Registering...' : 'Register Child'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent>
+              {isLoadingChildren ? (
+                <p className="text-sm text-muted-foreground text-center py-8">Loading your children...</p>
+              ) : children.length === 0 ? (
+                <div className="text-center py-8 space-y-2">
+                  <Heart className="h-8 w-8 mx-auto text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">No children linked to your account.</p>
+                  <p className="text-xs text-muted-foreground">Click "Add Child" to register your child and connect with their teacher.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {children.map(child => (
+                    <Card
+                      key={child.id}
+                      className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu pb-4"
+                      style={dashboardCardShadeStyle}
+                      onClick={() => navigate(`/parent/student/${child.id}`)}
+                    >
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-14 h-14 rounded-full bg-green-200 flex items-center justify-center text-xl font-bold text-green-700">
+                              {child.name.charAt(0)}
+                            </div>
+                            <div>
+                              <CardTitle className="text-base">{child.name}</CardTitle>
+                              <p className="text-sm text-muted-foreground">Age {child.age}{child.classroom && ` • ${child.classroom}`}</p>
+                            </div>
+                          </div>
+                          {child.teacher_id ? (
+                            <CheckCircle2 className="h-5 w-5 text-green-500" />
+                          ) : (
+                            <AlertTriangle className="h-5 w-5 text-yellow-400" />
+                          )}
+                        </div>
+                      </CardHeader>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
-        ) : (
-          <div className="space-y-6">
-            {students.map(student => (
-              <Card key={student.id} className="overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-purple-50 to-pink-50">
-                  <div className="flex items-center gap-4">
-                    <img
-                      src={student.avatar}
-                      alt={student.name}
-                      className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md"
-                    />
-                    <div className="flex-1">
-                      <CardTitle className="text-2xl">{student.name}</CardTitle>
-                      <CardDescription className="text-base">
-                        Age {student.age} • {student.classroom}
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-6 space-y-6">
-                  {/* Progress Overview */}
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-medium">Overall Progress</h3>
-                      <span className="text-2xl font-semibold text-purple-600">
-                        {student.overallProgress}%
-                      </span>
-                    </div>
-                    <Progress value={student.overallProgress} className="h-3" />
-                    <p className="text-sm text-muted-foreground mt-2">
-                      {student.name} is making great progress in their learning journey!
-                    </p>
-                  </div>
 
-                  {/* Developmental Stage */}
-                  <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Developmental Stage</p>
-                      <p className="font-medium text-lg capitalize">{student.developmentalStage}</p>
-                    </div>
-                    <Badge className="text-base px-4 py-2">
-                      {student.developmentalStage === 'advanced' && '🌟 Advanced'}
-                      {student.developmentalStage === 'proficient' && '✨ Proficient'}
-                      {student.developmentalStage === 'developing' && '🌱 Developing'}
-                      {student.developmentalStage === 'emerging' && '🌸 Emerging'}
-                    </Badge>
-                  </div>
-
-                  {/* Recent Activity */}
-                  <div className="p-4 border rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">Recent Activity</span>
-                    </div>
-                    <p className="text-sm">{student.recentActivity}</p>
-                  </div>
-
-                  {/* Quick Actions */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4">
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => navigate(`/parent/student/${student.id}`)}
-                    >
-                      <TrendingUp className="mr-2 h-4 w-4" />
-                      View Profile
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => navigate(`/parent/student/${student.id}/activities`)}
-                    >
-                      <Calendar className="mr-2 h-4 w-4" />
-                      Activities
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => navigate(`/parent/student/${student.id}/progress`)}
-                    >
-                      <TrendingUp className="mr-2 h-4 w-4" />
-                      Progress
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        {/* Tips for Parents */}
-        <Card className="border-purple-200 bg-purple-50/50">
-          <CardHeader>
-            <CardTitle>Tips for Supporting Learning at Home</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 text-sm">
-              <li className="flex items-start gap-2">
-                <span className="text-purple-600">•</span>
-                <span>Read together for at least 15 minutes each day</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-purple-600">•</span>
-                <span>Practice counting objects during everyday activities</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-purple-600">•</span>
-                <span>Encourage drawing and creative expression</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-purple-600">•</span>
-                <span>Celebrate small achievements and effort</span>
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
+          {/* Reports */}
+          <Card className="border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle}>
+            <CardHeader>
+              <CardTitle>Reports</CardTitle>
+              <CardDescription>Activity performance reports from your child's teacher</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingReports ? (
+                <p className="text-sm text-muted-foreground text-center py-8">Loading reports...</p>
+              ) : reports.length === 0 ? (
+                <div className="text-center py-8 space-y-2">
+                  <FileText className="h-8 w-8 mx-auto text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">No reports available yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {reports.map(report => (
+                    <Card key={report.id} className="border-white/70 shadow-sm hover:shadow-md transition-shadow" style={dashboardCardShadeStyle}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="font-medium">{report.title}</p>
+                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{report.summary}</p>
+                            <div className="flex items-center gap-3 mt-2">
+                              {report.activity_learning_area && (
+                                <Badge variant="outline" className="text-xs capitalize">{report.activity_learning_area}</Badge>
+                              )}
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {new Date(report.created_at).toLocaleDateString()}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {report.students?.length || 0} student(s)
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
       </main>
+
+      </div>
     </div>
   );
 }

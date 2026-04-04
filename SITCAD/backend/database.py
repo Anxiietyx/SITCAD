@@ -1,11 +1,12 @@
 import os
 import urllib.parse
+from pathlib import Path
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-load_dotenv()
+load_dotenv(Path(__file__).resolve().parent / ".env")
 
 # Retrieve variables
 DB_USER = os.getenv("DB_USER")

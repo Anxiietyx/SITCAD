@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useReducer, useEffect, useCallback, useState } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
+import { auth } from "../lib/firebase";
+import Duckpit from './Duckpit';
 import { Button } from "./ui/button";
 import {
   Card,
@@ -19,6 +21,7 @@ import {
 } from "./ui/select";
 import { Textarea } from "./ui/textarea";
 import { Badge } from "./ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import {
   ArrowLeft,
   Sparkles,
@@ -27,25 +30,43 @@ import {
   Clock,
   Users,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { lessonReducer, initialState } from "../reducers/lessonReducer";
+
+const API_BASE = "http://localhost:8000";
+
+async function getIdToken() {
+  const firebaseUser = auth.currentUser;
+  if (!firebaseUser) throw new Error("Not authenticated");
+  return firebaseUser.getIdToken();
+}
 
 export function AILessonPlanning() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [lessonPlan, setLessonPlan] = useState(null);
+  const [state, dispatch] = useReducer(lessonReducer, initialState);
+  const [savedPlans, setSavedPlans] = useState([]);
+  const [activeTab, setActiveTab] = useState("generator");
 
-  const [showSavedMsg, setShowSavedMsg] = useState(false);
+  const fetchSavedPlans = useCallback(async () => {
+    try {
+      const idToken = await getIdToken();
+      const res = await fetch(`${API_BASE}/lesson-plans/my-plans`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_token: idToken }),
+      });
+      if (res.ok) setSavedPlans(await res.json());
+    } catch (err) {
+      console.error("Failed to fetch lesson plans:", err);
+    }
+  }, []);
 
-  const [targetScore, setTargetScore] = useState("70");
-  const [scoringType, setScoringType] = useState("percentage");
-
-  const [ageGroup, setAgeGroup] = useState("4-5");
-  const [learningArea, setLearningArea] = useState("literacy");
-  const [topic, setTopic] = useState("");
-  const [duration, setDuration] = useState("30");
-  const [additionalNotes, setAdditionalNotes] = useState("");
+  useEffect(() => {
+    if (user?.role === "teacher") fetchSavedPlans();
+  }, [user, fetchSavedPlans]);
 
   if (!user || user.role !== "teacher") {
     navigate("/");
@@ -53,12 +74,12 @@ export function AILessonPlanning() {
   }
 
   const generateLessonPlan = async () => {
-    if (!topic) {
+    if (!state.topic) {
       toast.error("Please enter a topic for the lesson");
       return;
     }
 
-    setLoading(true);
+    dispatch({ type: "START_GENERATION" });
 
     // Simulate AI generation with a delay
     await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -66,14 +87,14 @@ export function AILessonPlanning() {
     // Mock AI-generated lesson plan
     const mockLessonPlan = {
       id: `lesson_${Date.now()}`,
-      title: `${topic} Exploration`,
-      ageGroup,
-      learningArea,
-      duration: `${duration} minutes`,
-      targetScore,
-      scoringType,
+      title: `${state.topic} Exploration`,
+      ageGroup: state.ageGroup,
+      learningArea: state.learningArea,
+      duration: `${state.duration} minutes`,
+      targetScore: state.targetScore,
+      scoringType: state.scoringType,
       objectives: [
-        `Introduce basic concepts of ${topic}`,
+        `Introduce basic concepts of ${state.topic}`,
         "Develop fine motor skills through hands-on activities",
         "Encourage verbal expression and communication",
         "Foster curiosity and exploration",
@@ -89,19 +110,19 @@ export function AILessonPlanning() {
         {
           step: 1,
           title: "Circle Time Introduction",
-          description: `Gather students in a circle and introduce the topic of ${topic}. Use visual aids and encourage students to share what they know.`,
+          description: `Gather students in a circle and introduce the topic of ${state.topic}. Use visual aids and encourage students to share what they know.`,
           duration: "5-7 minutes",
         },
         {
           step: 2,
           title: "Interactive Story",
-          description: `Read an engaging story related to ${topic}. Pause to ask questions and encourage predictions.`,
+          description: `Read an engaging story related to ${state.topic}. Pause to ask questions and encourage predictions.`,
           duration: "8-10 minutes",
         },
         {
           step: 3,
           title: "Hands-On Activity",
-          description: `Students explore ${topic} through a structured activity with manipulatives. Teacher circulates to provide support.`,
+          description: `Students explore ${state.topic} through a structured activity with manipulatives. Teacher circulates to provide support.`,
           duration: "10-12 minutes",
         },
         {
@@ -130,56 +151,107 @@ export function AILessonPlanning() {
       ],
     };
 
-    setLessonPlan(mockLessonPlan);
-    setLoading(false);
+    dispatch({ type: "FINISH_GENERATION", payload: mockLessonPlan });
     toast.success("Lesson plan generated successfully!");
   };
 
-  const saveLessonPlan = () => {
-    toast.success("Lesson plan saved to your library!");
-
-    setShowSavedMsg(true);
-
+  const saveLessonPlan = async () => {
+    dispatch({ type: "SET_SAVED_MSG", payload: true });
     setTimeout(() => {
-      setShowSavedMsg(false);
-    }, 2000); // disappears after 2s
+      dispatch({ type: "SET_SAVED_MSG", payload: false });
+    }, 2000);
+    dispatch({ type: "START_GENERATION" });
+    try {
+      const idToken = await getIdToken();
+      const res = await fetch(`${API_BASE}/lesson-plans/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id_token: idToken,
+          title: state.topic,
+          age_group: state.ageGroup,
+          learning_area: state.learningArea,
+          duration_minutes: parseInt(state.duration),
+          topic: state.topic,
+          additional_notes: state.additionalNotes || null,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to generate lesson plan");
+      const plan = await res.json();
+      dispatch({ type: "FINISH_GENERATION", payload: plan });
+      toast.success("Lesson plan generated and saved!");
+      fetchSavedPlans();
+      setActiveTab("list");
+    } catch (err) {
+      console.error(err);
+      dispatch({ type: "FINISH_GENERATION", payload: null });
+      toast.error("Failed to generate lesson plan");
+    }
+  };
+
+  const deletePlan = async (planId) => {
+    if (!window.confirm("Delete this lesson plan?")) return;
+    try {
+      const idToken = await getIdToken();
+      const res = await fetch(`${API_BASE}/lesson-plans/${planId}/delete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_token: idToken }),
+      });
+      if (res.ok) {
+        toast.success("Lesson plan deleted");
+        if (state.lessonPlan?.id === planId) dispatch({ type: "FINISH_GENERATION", payload: null });
+        fetchSavedPlans();
+      }
+    } catch (err) {
+      toast.error("Failed to delete");
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#66D0BC]-30 via-[#66D0BC]-20 to-[#66D0BC]-10">
+    <div className="relative min-h-screen overflow-hidden bg-slate-50">
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <Duckpit count={24} gravity={0.5} friction={0.9975} wallBounce={0.9} className="h-full w-full opacity-100" />
+      </div>
+      <div className="absolute inset-0 z-0 bg-linear-to-b from-white/72 via-white/58 to-emerald-50/72" />
+
+      <div className="relative z-10">
       {/* Header */}
-      <header className="bg-white border-b shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/teacher")}
-            className="mb-4"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
-          </Button>
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
-              <Sparkles className="w-6 h-6 text-white" />
+      <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 bg-[#bafde0] rounded-lg flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-black" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-semibold">Lesson Planning Assistant Powered by AI</h1>
+                <p className="text-sm text-muted-foreground mt-1">Generate planning lesson powered by AI</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-semibold">
-                Lesson Planning Assistant Powered by AI
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Generate planning lesson powered by AI
-              </p>
-            </div>
+            <Button variant="ghost" onClick={() => navigate("/teacher")} className="cursor-pointer">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Dashboard
+            </Button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-8 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="generator">Generator</TabsTrigger>
+            <TabsTrigger value="list">My Plans</TabsTrigger>
+          </TabsList>
+
+          {/* ── Tab 1: Generator ── */}
+          <TabsContent value="generator" className="space-y-6">
         {/* Input Form */}
         <Card className="border-2 border-indigo-200 shadow-md">
-          <CardHeader className="bg-gradient-to-r from-indigo-100 to-purple-100">
+          <CardHeader className="bg-linear-to-r from-indigo-100 to-purple-100">
             <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-              <Lightbulb className="h-5 w-5 text-indigo-600" />
+              <Lightbulb className="h-5 w-5 text-[#3090A0]" />
               Lesson Plan Generator
             </CardTitle>
             <CardDescription className="text-sm text-gray-700">
@@ -190,22 +262,24 @@ export function AILessonPlanning() {
           </CardHeader>
 
           <CardContent className="pt-2 space-y-4 text-base">
-            <div className="grid grid-cols-10 md:grid-cols-1 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               <div className="space-y-2">
                 <Label className="text-sm font-semibold">Age Group</Label>
-                <Select value={ageGroup} onValueChange={setAgeGroup}>
+                <Select value={state.ageGroup} onValueChange={(val) => dispatch({ type: "SET_FIELD", field: "ageGroup", value: val })}>
                   <SelectTrigger className="text-sm font-medium">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="5-6">5-6 years old</SelectItem>
+                    <SelectItem value="4">4 years old</SelectItem>
+                    <SelectItem value="5">5 years old</SelectItem>
+                    <SelectItem value="6">6 years old</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
                 <Label className="text-sm font-semibold">Learning Area</Label>
-                <Select value={learningArea} onValueChange={setLearningArea}>
+                <Select value={state.learningArea} onValueChange={(val) => dispatch({ type: "SET_FIELD", field: "learningArea", value: val })}>
                   <SelectTrigger className="text-sm font-medium">
                     <SelectValue />
                   </SelectTrigger>
@@ -226,7 +300,7 @@ export function AILessonPlanning() {
                 <Label className="text-sm font-semibold">
                   Duration (minutes)
                 </Label>
-                <Select value={duration} onValueChange={setDuration}>
+                <Select value={state.duration} onValueChange={(val) => dispatch({ type: "SET_FIELD", field: "duration", value: val })}>
                   <SelectTrigger className="text-sm font-medium">
                     <SelectValue />
                   </SelectTrigger>
@@ -242,44 +316,13 @@ export function AILessonPlanning() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm font-semibold">
-                Activity Target (%)
-              </Label>
-              <Select value={targetScore} onValueChange={setTargetScore}>
-                <SelectTrigger className="text-sm font-medium">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="50">50%</SelectItem>
-                  <SelectItem value="60">60%</SelectItem>
-                  <SelectItem value="70">70%</SelectItem>
-                  <SelectItem value="80">80%</SelectItem>
-                  <SelectItem value="90">90%</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm font-semibold">Scoring Method</Label>
-              <Select value={scoringType} onValueChange={setScoringType}>
-                <SelectTrigger className="text-sm font-medium">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="percentage">Percentage (%)</SelectItem>
-                  <SelectItem value="points">Points Based</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
               <Label className="text-sm font-semibold">Lesson Topic *</Label>
               <Textarea
                 className="text-sm"
                 placeholder="e.g., The letter 'B' and animals that start with B"
                 rows={2}
-                value={topic}
-                onChange={(e) => setTopic(e.target.value)}
+                value={state.topic}
+                onChange={(e) => dispatch({ type: "SET_FIELD", field: "topic", value: e.target.value })}
               />
             </div>
 
@@ -291,18 +334,18 @@ export function AILessonPlanning() {
                 className="text-sm"
                 placeholder="Any specific requirements, student considerations, or resources you'd like to include..."
                 rows={3}
-                value={additionalNotes}
-                onChange={(e) => setAdditionalNotes(e.target.value)}
+                value={state.additionalNotes}
+                onChange={(e) => dispatch({ type: "SET_FIELD", field: "additionalNotes", value: e.target.value })}
               />
             </div>
 
             <Button
               onClick={generateLessonPlan}
-              disabled={loading}
+              disabled={state.loading}
               size="lg"
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-base"
+              className="w-full bg-[#3090A0] hover:bg-[#2FBFA5] text-white font-semibold text-base"
             >
-              {loading ? (
+              {state.loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Generating AI Lesson Plan...
@@ -316,52 +359,115 @@ export function AILessonPlanning() {
             </Button>
           </CardContent>
         </Card>
+          </TabsContent>
 
-        {/* Generated Lesson Plan */}
-        {lessonPlan && (
+          {/* ── Tab 2: My Plans ── */}
+          <TabsContent value="list" className="space-y-6">
+
+        {/* Saved Lesson Plans Library */}
+        {!state.lessonPlan && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Saved Lesson Plans</CardTitle>
+              <CardDescription>Click a plan to view details</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {savedPlans.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  No lesson plans yet. Go to the Generator tab to create one.
+                </p>
+              ) : (
+              <div className="space-y-3">
+                {savedPlans.map((plan) => (
+                  <div
+                    key={plan.id}
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                    onClick={() => dispatch({ type: "FINISH_GENERATION", payload: {
+                      id: plan.id,
+                      title: plan.title,
+                      ageGroup: plan.age_group,
+                      learningArea: plan.learning_area,
+                      duration: `${plan.duration_minutes} minutes`,
+                      targetScore: plan.target_score ?? "70",
+                      scoringType: plan.scoring_type ?? "percentage",
+                      objectives: plan.objectives ?? [],
+                      activities: plan.activities ?? [],
+                      assessment: plan.assessment ?? "",
+                      adaptations: plan.adaptations ?? [],
+                    }})}
+                  >
+                    <div>
+                      <p className="font-medium">{plan.title}</p>
+                      <div className="flex gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs capitalize">{plan.learning_area}</Badge>
+                        <Badge variant="outline" className="text-xs">{plan.duration_minutes} min</Badge>
+                        <Badge variant="outline" className="text-xs">Ages {plan.age_group}</Badge>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {plan.created_at ? new Date(plan.created_at).toLocaleDateString() : ""}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:text-red-700 h-8 w-8 p-0"
+                        onClick={(e) => { e.stopPropagation(); deletePlan(plan.id); }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Generated / Viewed Lesson Plan */}
+        {state.lessonPlan && (
           <div className="space-y-6 animate-in fade-in duration-500">
             {/* Header */}
             <Card className="shadow-md border border-indigo-200">
-              <CardHeader className="bg-gradient-to-r from-indigo-50 to-purple-50">
+              <CardHeader className="bg-linear-to-r from-indigo-50 to-purple-50">
                 <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  {/* Left Section */}
                   <div className="space-y-2">
                     <CardTitle className="text-2xl md:text-3xl font-bold text-gray-800 leading-tight">
-                      {lessonPlan.title}
+                      {state.lessonPlan.title}
                     </CardTitle>
 
                     <div className="flex flex-wrap gap-2 mt-2 text-xs md:text-sm">
                       <Badge className="bg-indigo-100 text-indigo-700 font-medium">
                         <Users className="h-3 w-3 mr-1" />
-                        Ages {lessonPlan.ageGroup}
+                        Ages {state.lessonPlan.ageGroup}
                       </Badge>
 
                       <Badge className="bg-blue-100 text-blue-700 font-medium">
                         <Clock className="h-3 w-3 mr-1" />
-                        {lessonPlan.duration}
+                        {state.lessonPlan.duration}
                       </Badge>
 
                       <Badge className="bg-purple-100 text-purple-700 capitalize font-medium">
-                        {lessonPlan.learningArea}
+                        {state.lessonPlan.learningArea}
                       </Badge>
 
                       <Badge className="bg-green-100 text-green-700 font-medium">
-                        🎯 Target: {lessonPlan.targetScore}%
+                        🎯 Target: {state.lessonPlan.targetScore}%
                       </Badge>
 
                       <Badge className="bg-orange-100 text-orange-700 font-medium">
-                        📊 {lessonPlan.scoringType}
+                        📊 {state.lessonPlan.scoringType}
                       </Badge>
                     </div>
                   </div>
 
-                  {/* Right Section */}
-                  <div className="flex justify-end md:justify-start">
+                  <div className="flex gap-2">
                     <Button
-                      onClick={saveLessonPlan}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2"
+                      variant="outline"
+                      onClick={() => dispatch({ type: "FINISH_GENERATION", payload: null })}
                     >
-                      Save Plan
+                      Back to List
                     </Button>
                   </div>
                 </div>
@@ -379,7 +485,7 @@ export function AILessonPlanning() {
 
               <CardContent>
                 <ul className="space-y-3 text-base">
-                  {lessonPlan.objectives.map((obj, index) => (
+                  {state.lessonPlan.objectives.map((obj, index) => (
                     <li key={index} className="flex items-start gap-3">
                       <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-semibold shrink-0 mt-0.5">
                         {index + 1}
@@ -401,12 +507,12 @@ export function AILessonPlanning() {
 
               <CardContent>
                 <div className="space-y-4">
-                  {lessonPlan.activities.map((activity) => (
+                  {state.lessonPlan.activities.map((activity) => (
                     <div
                       key={activity.step}
                       className="flex gap-3 p-3 border rounded-lg bg-gray-50"
                     >
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-400 to-purple-400 text-white flex items-center justify-center text-lg font-bold shrink-0">
+                      <div className="w-12 h-12 rounded-full bg-linear-to-br from-indigo-400 to-purple-400 text-white flex items-center justify-center text-lg font-bold shrink-0">
                         {activity.step}
                       </div>
 
@@ -443,7 +549,7 @@ export function AILessonPlanning() {
               <CardContent>
                 <div className="flex items-start gap-3 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
                   <p className="text-base text-gray-700 font-medium">
-                    {lessonPlan.assessment}
+                    {state.lessonPlan.assessment}
                   </p>
                 </div>
               </CardContent>
@@ -459,7 +565,7 @@ export function AILessonPlanning() {
 
               <CardContent>
                 <div className="space-y-3">
-                  {lessonPlan.adaptations.map((adaptation, index) => (
+                  {state.lessonPlan.adaptations.map((adaptation, index) => (
                     <div
                       key={index}
                       className="flex items-start gap-3 p-3 bg-indigo-50 rounded-lg border border-indigo-200"
@@ -475,7 +581,11 @@ export function AILessonPlanning() {
             </Card>
           </div>
         )}
+
+          </TabsContent>
+        </Tabs>
       </main>
+      </div>
     </div>
   );
 }

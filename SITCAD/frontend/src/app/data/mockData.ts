@@ -124,6 +124,18 @@ export const mockStudents: Student[] = [
     recentActivity: 'Creative storytelling',
     needsIntervention: false,
   },
+  {
+    id: 'student6',
+    name: 'Little Sprout6',
+    age: 5,
+    avatar: holdingBook3,
+    classroom: 'Class A', 
+    enrollmentDate: '2025-09-01',
+    developmentalStage: 'developing',
+    overallProgress: 70,
+    recentActivity: 'Outdoor play and exploration',
+    needsIntervention: false,
+  }
 ];
 
 export const mockActivities: Activity[] = [

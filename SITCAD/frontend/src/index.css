@@ -85,11 +85,85 @@
     border-bottom: 1px solid #eee;
 }
 
-/*@keyframes fade-in {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
+/* --- Shared Animations --- */
+
+@keyframes wordBounceIn {
+  0%   { opacity: 0; transform: scale(0.2) rotate(-12deg); }
+  55%  { opacity: 1; transform: scale(1.22) rotate(4deg); }
+  72%  { transform: scale(0.92) rotate(-2deg); }
+  88%  { transform: scale(1.06) rotate(0.5deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
 }
 
-.animate-fade-in {
-  animation: fade-in 0.3s ease-out forwards;
-}*/
+@keyframes wordWiggle {
+  0%, 100% { transform: rotate(-2.5deg); }
+  50%      { transform: rotate(2.5deg); }
+}
+
+@keyframes drawLine {
+  from { stroke-dashoffset: 210; }
+  to   { stroke-dashoffset: 0; }
+}
+
+@keyframes starPop {
+  0%   { opacity: 0; transform: scale(0) translate(0px, 0px); }
+  40%  { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.1) translate(var(--tx), var(--ty)); }
+}
+
+@keyframes duckpitFloat {
+  0% {
+    transform: translate3d(0, 18vh, 0) rotate(-8deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.75;
+  }
+  50% {
+    transform: translate3d(18px, -36vh, 0) rotate(6deg);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate3d(-14px, -118vh, 0) rotate(-10deg);
+    opacity: 0;
+  }
+}
+
+/* --- Component Specific Classes --- */
+
+.word-cycle {
+  display: inline-block;
+  animation: 
+    wordBounceIn 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+    wordWiggle 0.25s ease-in-out 0.56s 3 alternate;
+  transform-origin: center bottom;
+}
+
+.word-underline {
+  stroke-dasharray: 210;
+  stroke-dashoffset: 210;
+  animation: drawLine 0.45s ease-out 0.2s forwards;
+}
+
+.star-particle {
+  position: absolute;
+  pointer-events: none;
+  font-size: 1rem;
+  line-height: 1;
+  animation: starPop 0.65s ease-out forwards;
+}
+
+/* Dashboard Shades */
+.stats-card-shade {
+  background-color: rgb(255 255 255 / 0.92) !important;
+}
+
+.dashboard-card-shade {
+  background-color: rgb(255 255 255 / 0.88) !important;
+}
+
+.stats-label {
+  color: #374151;
+  font-size: 1rem;
+  font-weight: 600;
+}

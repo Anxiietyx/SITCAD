@@ -9,6 +9,7 @@ import { Progress } from './ui/progress';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 import { ArrowLeft, Book, Calculator, Users, Activity as ActivityIcon, Palette, Brain, Clock, CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';
+import Duckpit from './Duckpit';
 
 const activityIcons = {
   literacy: Book,
@@ -60,25 +61,29 @@ export function LearningActivities() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="relative min-h-screen overflow-hidden bg-slate-50">
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <Duckpit count={24} gravity={0.5} friction={0.9975} wallBounce={0.9} className="h-full w-full opacity-100" />
+      </div>
+      <div className="absolute inset-0 z-0 bg-linear-to-b from-white/72 via-white/58 to-emerald-50/72" />
+
+      <div className="relative z-10">
       {/* Header */}
-      <header className="bg-white border-b shadow-sm sticky top-0 z-10">
+      <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <img
-                src={student.avatar}
-                alt={student.name}
-                className="w-10 h-10 rounded-full object-cover"
-              />
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 bg-[#bafde0] rounded-lg flex items-center justify-center">
+                <Book className="w-4 h-4 text-black" />
+              </div>
               <div>
-                <h1 className="text-xl font-semibold">{student.name}'s Learning Activities</h1>
+                <h1 className="text-2xl font-semibold">{student.name}'s Learning Activities</h1>
                 <p className="text-sm text-muted-foreground mt-1">
                   Track daily activities and learning progress
                 </p>
               </div>
             </div>
-            <Button variant="ghost" onClick={handleBack}>
+            <Button variant="ghost" onClick={handleBack} className="cursor-pointer">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Dashboard
             </Button>
@@ -336,6 +341,7 @@ export function LearningActivities() {
           })()}
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 }

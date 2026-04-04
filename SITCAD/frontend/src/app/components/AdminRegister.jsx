@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useReducer } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
@@ -7,29 +7,26 @@ import { Label } from './ui/label';
 import { Alert, AlertDescription } from './ui/alert';
 import { Loader2, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { motion } from 'motion/react';
+import { adminRegisterReducer, initialAdminRegisterState } from '../reducers/adminRegisterReducer';
 
 export function AdminRegister() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [adminSecret, setAdminSecret] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [state, dispatch] = useReducer(adminRegisterReducer, initialAdminRegisterState);
+  const { email, password, fullName, adminSecret, error, loading } = state;
   const { register: manualRegister } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    dispatch({ type: 'SET_LOADING', payload: true });
+    dispatch({ type: 'RESET_ERROR' });
 
     try {
       await manualRegister(email, password, fullName, 'admin', adminSecret);
       navigate('/admin/dashboard');
     } catch (err) {
-      setError(err.message || 'Registration failed.');
+      dispatch({ type: 'SET_ERROR', payload: err.message || 'Registration failed.' });
     } finally {
-      setLoading(false);
+      dispatch({ type: 'SET_LOADING', payload: false });
     }
   };
 
@@ -54,7 +51,7 @@ export function AdminRegister() {
               type="text"
               placeholder="Enter your full name"
               value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
+              onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'fullName', value: e.target.value })}
               className="h-12 px-4 bg-muted/30 border-muted focus:bg-background transition-colors"
               required
             />
@@ -67,7 +64,7 @@ export function AdminRegister() {
               type="email"
               placeholder="admin@example.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'email', value: e.target.value })}
               className="h-12 px-4 bg-muted/30 border-muted focus:bg-background transition-colors"
               required
             />
@@ -80,7 +77,7 @@ export function AdminRegister() {
               type="password"
               placeholder="Create a strong password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'password', value: e.target.value })}
               className="h-12 px-4 bg-muted/30 border-muted focus:bg-background transition-colors"
               required
             />
@@ -93,7 +90,7 @@ export function AdminRegister() {
               type="password"
               placeholder="Enter the admin secret key"
               value={adminSecret}
-              onChange={(e) => setAdminSecret(e.target.value)}
+              onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'adminSecret', value: e.target.value })}
               className="h-12 px-4 bg-muted/30 border-muted focus:bg-background transition-colors"
               required
             />
