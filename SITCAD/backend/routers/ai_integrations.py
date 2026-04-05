@@ -535,7 +535,7 @@ async def generate_report(request: ReportGenerationRequest):
     dskp_context = _build_holistic_dskp_context()
 
     llm = ChatGoogleGenerativeAI(
-        model="gemini-1.5-flash",
+        model="gemini-2.5-flash",
         google_api_key=api_key,
         temperature=0.6,
         max_tokens=2048,
