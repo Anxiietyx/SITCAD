@@ -10,12 +10,22 @@ import { Progress } from './ui/progress';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Checkbox } from './ui/checkbox';
-import { ArrowLeft, FileText, Download, Sparkles, Loader2, Printer, TrendingUp, Award, Target, Trophy, AlertCircle } from 'lucide-react';
+import { ArrowLeft, FileText, Download, Sparkles, Loader2, Printer, TrendingUp, Award, Target, Trophy, AlertCircle, AlertTriangle, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import Duckpit from './Duckpit';
 import { reportReducer, initialReportState } from '../reducers/reportReducer';
 
 const API_BASE = 'http://localhost:8000';
+
+const LEARNING_AREA_LABELS = {
+  literacy_bm: 'Literacy (BM)',
+  literacy_en: 'Literacy (EN)',
+  numeracy: 'Numeracy',
+  social: 'Social Skills',
+  motor: 'Motor Skills',
+  creative: 'Creative Arts',
+  cognitive: 'Cognitive',
+};
 
 async function getIdToken() {
   const firebaseUser = auth.currentUser;
@@ -160,7 +170,7 @@ export function ReportGeneration() {
     return (
       <div className="min-h-screen print:min-h-0">
         <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm print:hidden">
-          <div className="max-w-4xl mx-auto px-6 py-4">
+          <div className="max-w-7xl mx-auto px-6 py-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-8 h-8 bg-[#bafde0] rounded-lg flex items-center justify-center">
@@ -171,27 +181,33 @@ export function ReportGeneration() {
                   <p className="text-sm text-muted-foreground mt-1">View activity report</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" onClick={() => setViewingReport(null)} className="cursor-pointer">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Reports
-                </Button>
-                <Button onClick={handlePrint} className="cursor-pointer">
-                  <Printer className="mr-2 h-4 w-4" />
-                  Print / Save as PDF
-                </Button>
-              </div>
+              <Button variant="ghost" onClick={() => setViewingReport(null)} className="cursor-pointer">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Reports
+              </Button>
             </div>
           </div>
         </header>
 
-        <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
-          <div>
-            <h1 className="text-2xl font-bold">{viewingReport.title}</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {new Date(viewingReport.created_at).toLocaleString()}
-            </p>
-          </div>
+        <main className="max-w-7xl mx-auto px-4 py-8">
+          <Card className="shadow-md border">
+            <CardHeader className="bg-[#edfff8] rounded-t-lg pb-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center">{viewingReport.title}</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {new Date(viewingReport.created_at).toLocaleString()}
+                  </p>
+                </div>
+                <div className="ml-auto print:hidden">
+                  <Button onClick={handlePrint} className="cursor-pointer">
+                    <Printer className="mr-2 h-4 w-4" />
+                    Print / Save as PDF
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
 
           {/* Summary */}
           <div>
@@ -203,19 +219,157 @@ export function ReportGeneration() {
           {viewingReport.details && (
             <div className="bg-gray-50 rounded-lg p-5 space-y-2 print:bg-white print:border">
               <h2 className="text-xl font-semibold mb-3">Activity Details</h2>
-              <p><strong>Activity:</strong> {viewingReport.details.activity_title}</p>
+              {viewingReport.details.activity_title && <p><strong>Activity:</strong> {viewingReport.details.activity_title}</p>}
               {viewingReport.details.activity_description && (
                 <p><strong>Description:</strong> {viewingReport.details.activity_description}</p>
               )}
-              <p><strong>Learning Area:</strong> <span className="capitalize">{viewingReport.details.learning_area}</span></p>
-              <p><strong>Duration:</strong> {viewingReport.details.duration_minutes} minutes</p>
-              <p><strong>Assigned To:</strong> {viewingReport.details.assigned_to === 'class' ? 'Whole Class' : 'Individual'}</p>
-              <p><strong>Students Involved:</strong> {viewingReport.details.student_count}</p>
+              {viewingReport.details.learning_area && (
+                <p><strong>Learning Area:</strong> {LEARNING_AREA_LABELS[viewingReport.details.learning_area] || viewingReport.details.learning_area}</p>
+              )}
+              {viewingReport.details.duration_minutes != null && (
+                <p><strong>Duration:</strong> {viewingReport.details.duration_minutes} minutes</p>
+              )}
+              {viewingReport.details.assigned_to && (
+                <p><strong>Assigned To:</strong> {viewingReport.details.assigned_to === 'class' ? 'Whole Class' : 'Individual'}</p>
+              )}
+              {(viewingReport.details.student_count ?? viewingReport.details.results_summary?.student_count) != null && (
+                <p><strong>Students Involved:</strong> {viewingReport.details.student_count ?? viewingReport.details.results_summary?.student_count}</p>
+              )}
               {viewingReport.details.completed_at && (
                 <p><strong>Completed:</strong> {new Date(viewingReport.details.completed_at).toLocaleString()}</p>
               )}
             </div>
           )}
+
+          {/* Quiz Results for AI-insights reports (uses results_summary) */}
+          {viewingReport.details?.ai_insights && viewingReport.details?.results_summary?.total != null && (() => {
+            const rs = viewingReport.details.results_summary;
+            return (
+              <div className="border-t pt-5 space-y-4">
+                <h2 className="text-xl font-semibold">Quiz Results</h2>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center p-4 bg-emerald-50 rounded-lg border border-emerald-200 print:bg-white">
+                    <Trophy className="h-6 w-6 text-emerald-600 mx-auto mb-2" />
+                    <p className="text-3xl font-bold text-emerald-700">
+                      {rs.first_attempt_correct ?? 0}/{rs.total}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">Score{rs.score_percentage != null ? ` (${rs.score_percentage}%)` : ''}</p>
+                  </div>
+                  <div className="text-center p-4 bg-emerald-50 rounded-lg border border-emerald-200 print:bg-white">
+                    <Target className="h-6 w-6 text-emerald-600 mx-auto mb-2" />
+                    <p className="text-3xl font-bold text-emerald-700">
+                      {rs.score_percentage != null ? `${rs.score_percentage}%` : 'N/A'}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">Accuracy</p>
+                  </div>
+                  {rs.time_seconds != null && (
+                    <div className="text-center p-4 bg-emerald-50 rounded-lg border border-emerald-200 print:bg-white">
+                      <Clock className="h-6 w-6 text-emerald-600 mx-auto mb-2" />
+                      <p className="text-3xl font-bold text-emerald-700">
+                        {rs.time_seconds >= 60
+                          ? `${Math.floor(rs.time_seconds / 60)}m ${rs.time_seconds % 60}s`
+                          : `${rs.time_seconds}s`}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">Time Taken</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* AI Insights (new-format reports) */}
+          {viewingReport.details?.ai_insights && (() => {
+            const ins = viewingReport.details.ai_insights;
+            return (
+              <div className="border-t pt-5 space-y-5">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-emerald-600" />
+                  <h2 className="text-xl font-semibold">AI Insights</h2>
+                </div>
+
+                {/* Summary */}
+                {ins.summary && (
+                  <p className="text-sm text-gray-700 leading-relaxed bg-emerald-50 p-4 rounded-lg border border-emerald-200">{ins.summary}</p>
+                )}
+
+                {/* SPR Attainment */}
+                {ins.spr_attainment?.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1.5">
+                      <Target className="h-4 w-4 text-blue-600" />
+                      <p className="text-base font-semibold text-gray-800">SPR Attainment Levels</p>
+                    </div>
+                    {ins.spr_attainment.map((spr, i) => (
+                      <div key={i} className="p-4 bg-white rounded-lg border space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-semibold text-gray-800">{spr.spr_code}</span>
+                          <Badge className={`text-xs ${
+                            spr.suggested_level === 3 ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                            : spr.suggested_level === 2 ? 'bg-blue-100 text-blue-700 border-blue-200'
+                            : 'bg-amber-100 text-amber-700 border-amber-200'
+                          }`}>Level {spr.suggested_level}</Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{spr.spr_title}</p>
+                        <p className="text-xs text-gray-600 mt-1">{spr.justification}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Interventions */}
+                {ins.interventions?.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-1.5">
+                      <AlertTriangle className="h-4 w-4 text-amber-600" />
+                      <p className="text-base font-semibold text-gray-800">Flagged Observations</p>
+                    </div>
+                    {ins.interventions.map((item, i) => (
+                      <div key={i} className={`p-3 rounded-lg border text-sm ${
+                        item.severity === 'urgent' ? 'bg-red-50 border-red-200 text-red-800'
+                        : item.severity === 'flag' ? 'bg-amber-50 border-amber-200 text-amber-800'
+                        : 'bg-gray-50 border-gray-200 text-gray-700'
+                      }`}>
+                        {item.detail}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Strengths & Improvements */}
+                {(ins.strengths?.length > 0 || ins.areas_for_improvement?.length > 0) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {ins.strengths?.length > 0 && (
+                      <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200 space-y-2">
+                        <p className="text-sm font-semibold text-emerald-700 flex items-center gap-1.5"><TrendingUp className="h-4 w-4" /> Strengths</p>
+                        <ul className="text-sm text-gray-700 space-y-1">
+                          {ins.strengths.map((s, i) => <li key={i} className="flex gap-1.5"><span>•</span><span>{s}</span></li>)}
+                        </ul>
+                      </div>
+                    )}
+                    {ins.areas_for_improvement?.length > 0 && (
+                      <div className="p-4 bg-amber-50 rounded-lg border border-amber-200 space-y-2">
+                        <p className="text-sm font-semibold text-amber-700 flex items-center gap-1.5"><AlertCircle className="h-4 w-4" /> Areas to Improve</p>
+                        <ul className="text-sm text-gray-700 space-y-1">
+                          {ins.areas_for_improvement.map((a, i) => <li key={i} className="flex gap-1.5"><span>•</span><span>{a}</span></li>)}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Recommendations */}
+                {ins.recommendations?.length > 0 && (
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 space-y-2">
+                    <p className="text-sm font-semibold text-blue-700">Recommendations</p>
+                    <ul className="text-sm text-gray-700 space-y-1">
+                      {ins.recommendations.map((r, i) => <li key={i} className="flex gap-1.5"><span>•</span><span>{r}</span></li>)}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Quiz Performance */}
           {viewingReport.details?.quiz_score != null && (
@@ -288,7 +442,7 @@ export function ReportGeneration() {
 
           {/* Students list */}
           {viewingReport.students?.length > 0 && (
-            <div>
+            <div className="mb-3">
               <h2 className="text-xl font-semibold mb-3">Students Involved</h2>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {viewingReport.students.map(s => (
@@ -305,6 +459,10 @@ export function ReportGeneration() {
               </div>
             </div>
           )}
+
+            </CardContent>
+            {/* Print button moved to header */}
+          </Card>
         </main>
       </div>
     );
@@ -495,8 +653,8 @@ export function ReportGeneration() {
                       </p>
                       <div className="flex items-center gap-2 mt-2">
                         {report.activity_learning_area && (
-                          <Badge variant="outline" className="text-xs capitalize">
-                            {report.activity_learning_area}
+                          <Badge variant="outline" className="text-xs">
+                            {LEARNING_AREA_LABELS[report.activity_learning_area] || report.activity_learning_area}
                           </Badge>
                         )}
                         <span className="text-xs text-muted-foreground">

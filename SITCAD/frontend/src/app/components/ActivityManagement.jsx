@@ -56,6 +56,12 @@ import {
   BookText,
   RotateCcw,
   Save,
+  AlertCircle,
+  RefreshCw,
+  Target,
+  TrendingUp,
+  AlertTriangle,
+  Trophy,
 } from "lucide-react";
 
 
@@ -139,6 +145,27 @@ export function ActivityManagement() {
 
   // Delete confirmation
   const [deleteTargetId, setDeleteTargetId] = useState(null);
+
+  // Re-run analysis state
+  const [rerunningActivityId, setRerunningActivityId] = useState(null);
+
+  const handleRerunAnalysis = async (activityId) => {
+    setRerunningActivityId(activityId);
+    try {
+      const idToken = await getIdToken();
+      await fetch(`${API_BASE}/ai-integrations/analyze-activity`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_token: idToken, activity_id: activityId }),
+      });
+      toast.info('Re-running analysis…');
+      setTimeout(() => { fetchActivities(); setRerunningActivityId(null); }, 3000);
+      setTimeout(() => fetchActivities(), 15000);
+    } catch {
+      toast.error('Failed to re-run analysis');
+      setRerunningActivityId(null);
+    }
+  };
 
   useEffect(() => {
     if (state.step === "generating") {
@@ -812,7 +839,7 @@ export function ActivityManagement() {
                           <Clock className="h-3 w-3 mr-1" />{act.duration_minutes} min
                         </Badge>
                       )}
-                      <Badge variant="outline" className="text-xs capitalize gap-1">
+                      <Badge variant={act.status === "completed" ? "default" : "outline"} className="text-xs capitalize gap-1">
                         {act.status === "completed" && <CheckCircle2 className="h-3 w-3" />}
                         {act.status.replace("_", " ")}
                       </Badge>
@@ -831,16 +858,14 @@ export function ActivityManagement() {
                     {/* Generate Report Section (completed activities only) */}
                     {act.status === "completed" && (
                       <div className="border-t pt-5 space-y-4">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-emerald-600" />
-                        <h3 className="font-semibold text-lg">Generate Report</h3>
-                      </div>
 
-                      {act.quiz_score != null ? (
-                        <>
-                          <p className="text-sm text-muted-foreground">
-                            Quiz results were saved from Classroom Mode and will be included in the report.
-                          </p>
+                      {/* Quiz / Session results — always visible once completed */}
+                      {act.quiz_score != null && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Trophy className="h-4 w-4 text-emerald-600" />
+                            <h3 className="font-semibold">Quiz Results</h3>
+                          </div>
                           <div className="grid grid-cols-3 gap-3">
                             <div className="text-center p-3 bg-emerald-50 rounded-lg border border-emerald-200">
                               <p className="text-2xl font-bold text-emerald-700">{act.quiz_score}/{act.quiz_total}</p>
@@ -861,27 +886,210 @@ export function ActivityManagement() {
                               <p className="text-xs text-muted-foreground mt-1">Time Taken</p>
                             </div>
                           </div>
-                        </>
-                      ) : act.activity_type === 'image' || act.activity_type === 'story' ? (
-                        <>
-                          <p className="text-sm text-muted-foreground">
-                            {act.results_data?.time_seconds != null
-                              ? 'Activity duration was recorded from Classroom Mode.'
-                              : 'No duration data saved. The report will note this activity was completed.'}
-                          </p>
-                          {act.results_data?.time_seconds != null && (
-                            <div className="grid grid-cols-1 gap-3">
-                              <div className="text-center p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-                                <p className="text-2xl font-bold text-emerald-700">
-                                  {act.results_data.time_seconds >= 60
-                                    ? `${Math.floor(act.results_data.time_seconds / 60)}m ${act.results_data.time_seconds % 60}s`
-                                    : `${act.results_data.time_seconds}s`}
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1">Time Elapsed</p>
+                        </div>
+                      )}
+
+                      {/* Session duration for non-quiz activities */}
+                      {act.quiz_score == null && act.results_data?.time_seconds != null && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-emerald-600" />
+                            <h3 className="font-semibold">Session Duration</h3>
+                          </div>
+                          <div className="text-center p-3 bg-emerald-50 rounded-lg border border-emerald-200 w-40">
+                            <p className="text-2xl font-bold text-emerald-700">
+                              {act.results_data.time_seconds >= 60
+                                ? `${Math.floor(act.results_data.time_seconds / 60)}m ${act.results_data.time_seconds % 60}s`
+                                : `${act.results_data.time_seconds}s`}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">Time Elapsed</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Students involved */}
+                      {act.students?.length > 0 && (
+                        <div className="space-y-2">
+                          <h3 className="font-semibold text-sm">Students Involved</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {act.students.map(s => (
+                              <div key={s.id} className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 rounded-full">
+                                <div className="w-5 h-5 rounded-full bg-blue-200 flex items-center justify-center text-xs font-semibold text-blue-700">
+                                  {s.name.charAt(0).toUpperCase()}
+                                </div>
+                                <span className="text-xs font-medium">{s.name}</span>
                               </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* AI Insights Panel */}
+                      {(act.analysis_status === 'analyzing' || rerunningActivityId === act.id) && (
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                            <Loader2 className="h-5 w-5 text-blue-600 animate-spin shrink-0" />
+                            <div>
+                              <p className="text-sm font-semibold text-blue-800">AI is analysing results…</p>
+                              <p className="text-xs text-blue-600 mt-0.5">Insights will appear here once ready.</p>
                             </div>
-                          )}
-                        </>
+                          </div>
+                          {/* Skeleton placeholders */}
+                          <div className="h-16 bg-gray-100 rounded-lg animate-pulse" />
+                          <div className="space-y-2">
+                            <div className="h-4 bg-gray-100 rounded w-40 animate-pulse" />
+                            <div className="h-20 bg-gray-100 rounded-lg animate-pulse" />
+                            <div className="h-20 bg-gray-100 rounded-lg animate-pulse" />
+                          </div>
+                          <div className="space-y-2">
+                            <div className="h-4 bg-gray-100 rounded w-36 animate-pulse" />
+                            <div className="h-14 bg-gray-100 rounded-lg animate-pulse" />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="h-24 bg-gray-100 rounded-lg animate-pulse" />
+                            <div className="h-24 bg-gray-100 rounded-lg animate-pulse" />
+                          </div>
+                        </div>
+                      )}
+
+                      {act.analysis_status === 'failed' && (
+                        <div className="flex items-center gap-3 p-4 bg-red-50 rounded-lg border border-red-200">
+                          <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-red-800">AI analysis failed</p>
+                            {act.analysis_error && <p className="text-xs text-red-600 mt-0.5">{act.analysis_error}</p>}
+                          </div>
+                          <Button variant="outline" size="sm" className="shrink-0 border-red-200 text-red-700 hover:bg-red-50 cursor-pointer"
+                            disabled={rerunningActivityId === act.id}
+                            onClick={() => handleRerunAnalysis(act.id)}>
+                            {rerunningActivityId === act.id
+                              ? <><Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> Running…</>
+                              : <><RefreshCw className="h-3.5 w-3.5 mr-1" /> Retry</>}
+                          </Button>
+                        </div>
+                      )}
+
+                      {act.analysis_status === 'completed' && rerunningActivityId !== act.id && (
+                        <div className="border-t pt-5 space-y-4">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="h-5 w-5 text-emerald-600" />
+                            <h3 className="font-semibold text-lg">AI Insights</h3>
+                          </div>
+
+                          {/* Render insights from the most recent report's details.ai_insights */}
+                          {(() => {
+                            const insights = act._latestInsights;
+                            if (!insights) return <p className="text-sm text-muted-foreground">Insights saved to report. View in Reports page.</p>;
+                            return (
+                              <div className="space-y-4">
+                                {/* Summary */}
+                                <p className="text-sm text-gray-700 leading-relaxed bg-emerald-50 p-3 rounded-lg border border-emerald-200">{insights.summary}</p>
+
+                                {/* SPR Attainment */}
+                                {insights.spr_attainment?.length > 0 && (
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-1.5">
+                                      <Target className="h-4 w-4 text-blue-600" />
+                                      <p className="text-sm font-semibold text-gray-800">SPR Attainment Levels</p>
+                                    </div>
+                                    {insights.spr_attainment.map((spr, i) => (
+                                      <div key={i} className="p-3 bg-white rounded-lg border space-y-1">
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-sm font-semibold text-gray-800">{spr.spr_code}</span>
+                                          <Badge className={`text-xs ${
+                                            spr.suggested_level === 3 ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                                            : spr.suggested_level === 2 ? 'bg-blue-100 text-blue-700 border-blue-200'
+                                            : 'bg-amber-100 text-amber-700 border-amber-200'
+                                          }`}>Level {spr.suggested_level}</Badge>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">{spr.spr_title}</p>
+                                        <p className="text-xs text-gray-600 mt-1">{spr.justification}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* Interventions */}
+                                {insights.interventions?.length > 0 && (
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-1.5">
+                                      <AlertTriangle className="h-4 w-4 text-amber-600" />
+                                      <p className="text-sm font-semibold text-gray-800">Flagged Observations</p>
+                                    </div>
+                                    {insights.interventions.map((item, i) => (
+                                      <div key={i} className={`p-3 rounded-lg border text-sm ${
+                                        item.severity === 'urgent' ? 'bg-red-50 border-red-200 text-red-800'
+                                        : item.severity === 'flag' ? 'bg-amber-50 border-amber-200 text-amber-800'
+                                        : 'bg-gray-50 border-gray-200 text-gray-700'
+                                      }`}>
+                                        {item.detail}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* Strengths & Improvements */}
+                                <div className="grid grid-cols-2 gap-3">
+                                  {insights.strengths?.length > 0 && (
+                                    <div className="space-y-1">
+                                      <p className="text-xs font-semibold text-emerald-700 flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Strengths</p>
+                                      <ul className="text-xs text-gray-600 space-y-1">
+                                        {insights.strengths.map((s, i) => <li key={i} className="flex gap-1"><span>•</span><span>{s}</span></li>)}
+                                      </ul>
+                                    </div>
+                                  )}
+                                  {insights.areas_for_improvement?.length > 0 && (
+                                    <div className="space-y-1">
+                                      <p className="text-xs font-semibold text-amber-700 flex items-center gap-1"><AlertCircle className="h-3 w-3" /> To Improve</p>
+                                      <ul className="text-xs text-gray-600 space-y-1">
+                                        {insights.areas_for_improvement.map((a, i) => <li key={i} className="flex gap-1"><span>•</span><span>{a}</span></li>)}
+                                      </ul>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Recommendations */}
+                                {insights.recommendations?.length > 0 && (
+                                  <div className="space-y-1">
+                                    <p className="text-xs font-semibold text-blue-700">Recommendations</p>
+                                    <ul className="text-xs text-gray-600 space-y-1">
+                                      {insights.recommendations.map((r, i) => <li key={i} className="flex gap-1"><span>•</span><span>{r}</span></li>)}
+                                    </ul>
+                                  </div>
+                                )}
+
+                                {/* Re-run button */}
+                                <Button variant="outline" size="sm" className="text-xs cursor-pointer"
+                                  disabled={rerunningActivityId === act.id}
+                                  onClick={() => handleRerunAnalysis(act.id)}>
+                                  {rerunningActivityId === act.id
+                                    ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Running…</>
+                                    : <><RefreshCw className="h-3 w-3 mr-1" /> Re-run Analysis</>}
+                                </Button>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      )}
+
+                      {/* Manual report generation — only show if no AI analysis yet */}
+                      {!act.analysis_status && (
+                        <>
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-emerald-600" />
+                        <h3 className="font-semibold text-lg">Generate Report</h3>
+                      </div>
+
+                      {act.quiz_score != null ? (
+                        <p className="text-sm text-muted-foreground">
+                          Quiz results were saved from Classroom Mode and will be included in the report.
+                        </p>
+                      ) : act.activity_type === 'image' || act.activity_type === 'story' ? (
+                        <p className="text-sm text-muted-foreground">
+                          {act.results_data?.time_seconds != null
+                            ? 'Activity duration was recorded from Classroom Mode.'
+                            : 'No duration data saved. The report will note this activity was completed.'}
+                        </p>
                       ) : (
                         <>
                           <p className="text-sm text-muted-foreground">
@@ -914,6 +1122,8 @@ export function ActivityManagement() {
                           <><FileText className="mr-2 h-4 w-4" /> Generate Performance Report</>
                         )}
                       </Button>
+                        </>
+                      )}
                     </div>
                   )}
                   </div>

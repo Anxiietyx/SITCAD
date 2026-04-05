@@ -78,6 +78,18 @@ def _activity_to_dict(act: models.Activity, db: Session) -> dict:
         lp = db.query(models.LessonPlan).filter(models.LessonPlan.id == act.lesson_plan_id).first()
         lesson_plan_title = lp.title if lp else None
 
+    # Fetch latest AI insights if analysis is completed
+    latest_insights = None
+    if act.analysis_status == "completed":
+        latest_report = (
+            db.query(models.Report)
+            .filter(models.Report.activity_id == act.id)
+            .order_by(models.Report.created_at.desc())
+            .first()
+        )
+        if latest_report and latest_report.details:
+            latest_insights = latest_report.details.get("ai_insights")
+
     return {
         "id": act.id,
         "teacher_id": act.teacher_id,
@@ -98,6 +110,9 @@ def _activity_to_dict(act: models.Activity, db: Session) -> dict:
         "quiz_total": act.quiz_total,
         "quiz_time_seconds": act.quiz_time_seconds,
         "results_data": act.results_data,
+        "analysis_status": act.analysis_status,
+        "analysis_error": act.analysis_error,
+        "_latestInsights": latest_insights,
         "started_at": act.started_at.isoformat() if act.started_at else None,
         "created_at": act.created_at.isoformat() if act.created_at else None,
         "completed_at": act.completed_at.isoformat() if act.completed_at else None,

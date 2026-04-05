@@ -86,6 +86,8 @@ class Activity(Base):
   quiz_total = Column(Integer, nullable=True)
   quiz_time_seconds = Column(Integer, nullable=True)
   results_data = Column(JSON, nullable=True)                     # Activity results for AI analysis
+  analysis_status = Column(String, nullable=True)                 # null | "pending" | "analyzing" | "completed" | "failed"
+  analysis_error = Column(Text, nullable=True)
   started_at = Column(DateTime, nullable=True)
   created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
   completed_at = Column(DateTime, nullable=True)

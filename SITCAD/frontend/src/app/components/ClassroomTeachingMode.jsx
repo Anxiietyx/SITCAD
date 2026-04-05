@@ -16,7 +16,7 @@ import {
 import {
   ArrowLeft, Play, CheckCircle2, Users, Clock, Book, Calculator, Palette, Brain,
   Activity as ActivityIcon, Trophy, RotateCcw, ChevronRight, ChevronLeft, Star,
-  Image, BookOpen, HelpCircle,
+  Image, BookOpen, HelpCircle, Loader2, Sparkles, AlertCircle, RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -795,11 +795,24 @@ export function ClassroomTeachingMode() {
         body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error('Failed to complete');
-      setCompletedIds(prev => new Set([...prev, activeActivityId]));
+      const completedId = activeActivityId;
+      setCompletedIds(prev => new Set([...prev, completedId]));
       setActiveActivityId(null);
       setActivityPopupOpen(false);
-      toast.success('Activity completed!');
+      toast.success('Activity completed! AI is analysing the results…');
       fetchActivities();
+      // Fire-and-forget AI analysis
+      fetch(`${API_BASE}/ai-integrations/analyze-activity`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_token: idToken, activity_id: completedId }),
+      }).then(() => {
+        // Poll for completion after a delay
+        setTimeout(() => fetchActivities(), 12000);
+        setTimeout(() => fetchActivities(), 25000);
+      }).catch(() => {
+        // Silently fail — user can re-run from card
+      });
     } catch (err) {
       toast.error('Failed to complete activity');
     }
@@ -938,6 +951,43 @@ export function ClassroomTeachingMode() {
                     </div>
                   </CardHeader>
                   <CardContent className="pt-0 space-y-3">
+                    {/* AI Analysis Status */}
+                    {isCompleted && activity.analysis_status && (
+                      <div className={`flex items-center gap-2 text-sm px-3 py-2 rounded-lg border ${
+                        activity.analysis_status === 'analyzing' ? 'bg-blue-50 border-blue-200 text-blue-700'
+                        : activity.analysis_status === 'completed' ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                        : activity.analysis_status === 'failed' ? 'bg-red-50 border-red-200 text-red-700'
+                        : 'bg-gray-50 border-gray-200 text-gray-600'
+                      }`}>
+                        {activity.analysis_status === 'analyzing' && (
+                          <><Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" /><span>AI is analysing results…</span></>
+                        )}
+                        {activity.analysis_status === 'completed' && (
+                          <><Sparkles className="h-3.5 w-3.5 shrink-0" /><span>AI insights ready — view in Reports</span></>
+                        )}
+                        {activity.analysis_status === 'failed' && (
+                          <><AlertCircle className="h-3.5 w-3.5 shrink-0" /><span>Analysis failed</span>
+                            <Button variant="ghost" size="sm" className="ml-auto h-6 px-2 text-xs cursor-pointer"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                  const idToken = await getIdToken();
+                                  fetch(`${API_BASE}/ai-integrations/analyze-activity`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ id_token: idToken, activity_id: activity.id }),
+                                  });
+                                  toast.info('Re-running analysis…');
+                                  setTimeout(() => fetchActivities(), 2000);
+                                  setTimeout(() => fetchActivities(), 15000);
+                                } catch {} // eslint-disable-line no-empty
+                              }}>
+                              <RefreshCw className="h-3 w-3 mr-1" /> Retry
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    )}
                     <div>
                       {!isCompleted && !isActive && (
                         <Button onClick={() => startActivity(activity.id)} className="w-full cursor-pointer" size="sm">

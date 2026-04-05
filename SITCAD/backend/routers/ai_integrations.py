@@ -1,6 +1,7 @@
 import os
 import json
 import time
+import uuid
 import base64
 import asyncio
 import logging
@@ -667,3 +668,301 @@ async def generate_activities(request: GenerateActivitiesRequest, db: Session = 
         "lesson_plan_id": request.lesson_plan_id,
         "generated": list(results),
     }
+
+
+# ---------------------------------------------------------------------------
+# Activity analysis (Phase 3 – AI Insights)
+# ---------------------------------------------------------------------------
+
+class AnalyzeActivityRequest(BaseModel):
+    id_token: str
+    activity_id: str
+
+
+def _resolve_spr_context(learning_area: str, dskp_standards: list[dict]) -> str:
+    """
+    Given the LP's DSKP standards (list of {code, title}), load the relevant
+    curriculum files and build a context string containing only the SPR rubrics
+    that map to those standards.
+
+    Resolution: SPE code (e.g. BI 1.1.1) → SK code (BI 1.1) → SPR (BI 1).
+    """
+    primary_files = list(AREA_TO_FILES.get(learning_area, AREA_TO_FILES["cognitive"]))
+    curriculum_data = _load_curriculum_files(primary_files)
+    if not curriculum_data or not dskp_standards:
+        return ""
+
+    # Extract SPE codes from the LP's dskp_standards
+    spe_codes: set[str] = set()
+    for std in dskp_standards:
+        code = std.get("code", "") if isinstance(std, dict) else str(std)
+        if code:
+            spe_codes.add(code.strip())
+
+    # Derive parent SK codes by trimming trailing .N
+    sk_codes: set[str] = set()
+    for spe in spe_codes:
+        parts = spe.rsplit(".", 1)
+        if len(parts) == 2:
+            sk_codes.add(parts[0])
+
+    # Find matching SPRs
+    lines: list[str] = ["=== Relevant SPR (Assessment Rubric) Standards ==="]
+    found_any = False
+    for domain in curriculum_data:
+        for spr in domain.get("performance_metrics", []):
+            component_sks = set(spr.get("spr_component_sks", []))
+            if component_sks & sk_codes:
+                found_any = True
+                lines.append(f"\n[{spr['spr_code']}] {spr.get('spr_title', '')}")
+                lines.append(f"  Component SKs: {', '.join(spr.get('spr_component_sks', []))}")
+                for rubric in spr.get("spr_rubric", []):
+                    lines.append(f"  Level {rubric['level']}: {rubric['explanation']}")
+
+    # Also include the targeted SPE details for richer context
+    lines.append("\n=== Targeted DSKP Standards (SPEs) ===")
+    for std in dskp_standards:
+        code = std.get("code", "") if isinstance(std, dict) else str(std)
+        title = std.get("title", "") if isinstance(std, dict) else ""
+        lines.append(f"  [{code}] {title}")
+
+    return "\n".join(lines) if found_any else ""
+
+
+ANALYSIS_SYSTEM_PROMPT = """\
+You are SabahSprout AI, an expert Malaysian kindergarten assessment specialist.
+You analyse completed classroom activity data to generate insights for teachers.
+
+You will be given:
+1. Activity metadata (title, type, learning area)
+2. The activity content (questions/flashcards/story pages that were delivered)
+3. The results data (scores, timing, retry attempts, per-question/per-card/per-page metrics)
+4. The DSKP standards targeted by the lesson plan
+5. The SPR (Assessment Rubric) standards with their level descriptors (1, 2, 3)
+6. The list of participating students
+
+YOUR TASK:
+A. Analyse the performance data holistically.
+B. For each relevant SPR standard, suggest an attainment level (1, 2, or 3) with justification based on the actual data.
+C. Flag any anomalies that may need teacher intervention — for example:
+   - A question that took unusually long (near or exceeding the time limit)
+   - A question that required many retry attempts
+   - A story page that was skipped very quickly (< 3 seconds) or lingered on too long (> 60 seconds)
+   - A flashcard viewed for less than 2 seconds
+D. Provide overall strengths, areas for improvement, and actionable recommendations.
+
+CRITICAL: Base your analysis ONLY on the data provided. Do not invent scores or metrics.
+If data is insufficient for a particular SPR, say so.
+
+Return ONLY a single valid JSON object with this exact schema:
+{{
+  "summary": "<2-3 sentence overall performance narrative>",
+  "spr_attainment": [
+    {{
+      "spr_code": "<e.g. BI 1>",
+      "spr_title": "<the SPR title>",
+      "suggested_level": <1|2|3>,
+      "justification": "<2-3 sentences explaining why this level based on the data>"
+    }}
+  ],
+  "interventions": [
+    {{
+      "type": "<slow_response|many_retries|skipped_content|unusual_pattern>",
+      "detail": "<specific observation with data points>",
+      "severity": "<info|flag|urgent>"
+    }}
+  ],
+  "strengths": ["<strength 1>", "<strength 2>"],
+  "areas_for_improvement": ["<area 1>", "<area 2>"],
+  "recommendations": ["<actionable recommendation 1>", "<actionable recommendation 2>"]
+}}
+
+Do NOT wrap the JSON in markdown code fences. Return raw JSON only.
+"""
+
+
+@router.post("/analyze-activity")
+async def analyze_activity(request: AnalyzeActivityRequest, db: Session = Depends(get_db)):
+    """
+    Run AI analysis on a completed activity's results data.
+    Creates a Report with structured insights from Gemini.
+    """
+    teacher = _verify_teacher(request.id_token, db)
+
+    activity = db.query(models.Activity).filter(
+        models.Activity.id == request.activity_id,
+        models.Activity.teacher_id == teacher.id,
+    ).first()
+    if not activity:
+        raise HTTPException(status_code=404, detail="Activity not found")
+    if activity.status != "completed":
+        raise HTTPException(status_code=400, detail="Activity must be completed before analysis")
+    if not activity.results_data:
+        raise HTTPException(status_code=400, detail="No results data to analyse")
+
+    # If re-running, delete the old report
+    if activity.analysis_status in ("completed", "failed"):
+        old_reports = db.query(models.Report).filter(
+            models.Report.activity_id == activity.id,
+        ).all()
+        for old in old_reports:
+            db.query(models.ReportStudent).filter(models.ReportStudent.report_id == old.id).delete()
+            db.delete(old)
+        db.flush()
+
+    # Mark as analyzing
+    activity.analysis_status = "analyzing"
+    activity.analysis_error = None
+    db.commit()
+
+    # Gather context
+    lesson_plan = None
+    dskp_standards = []
+    if activity.lesson_plan_id:
+        lesson_plan = db.query(models.LessonPlan).filter(
+            models.LessonPlan.id == activity.lesson_plan_id
+        ).first()
+        if lesson_plan:
+            dskp_standards = lesson_plan.dskp_standards or []
+
+    student_links = db.query(models.ActivityStudent).filter(
+        models.ActivityStudent.activity_id == activity.id
+    ).all()
+    student_ids = [sl.student_id for sl in student_links]
+    students = db.query(models.Student).filter(
+        models.Student.id.in_(student_ids)
+    ).all() if student_ids else []
+
+    # Build SPR context from curriculum
+    spr_context = _resolve_spr_context(
+        activity.learning_area or (lesson_plan.learning_area if lesson_plan else "cognitive"),
+        dskp_standards,
+    )
+
+    # Build the user message with all activity data
+    activity_info = {
+        "title": activity.title,
+        "description": activity.description,
+        "activity_type": activity.activity_type,
+        "learning_area": activity.learning_area,
+        "duration_minutes": activity.duration_minutes,
+    }
+
+    user_message_parts = [
+        f"=== Activity ===\n{json.dumps(activity_info, indent=2)}",
+        f"\n=== Results Data ===\n{json.dumps(activity.results_data, indent=2)}",
+    ]
+
+    # Include the generated content (questions/cards/pages) but strip images to save tokens
+    if activity.generated_content:
+        content_for_analysis = _strip_images_for_analysis(activity.generated_content)
+        user_message_parts.append(
+            f"\n=== Activity Content (what was delivered) ===\n{json.dumps(content_for_analysis, indent=2)}"
+        )
+
+    if spr_context:
+        user_message_parts.append(f"\n{spr_context}")
+
+    if students:
+        student_info = [{"name": s.name, "age": s.age} for s in students]
+        user_message_parts.append(
+            f"\n=== Students ===\n{json.dumps(student_info, indent=2)}"
+        )
+
+    user_message = "\n".join(user_message_parts)
+
+    # Call Gemini
+    gemini_api_key = os.getenv("GEMINI_API_KEY")
+    if not gemini_api_key:
+        activity.analysis_status = "failed"
+        activity.analysis_error = "GEMINI_API_KEY not configured"
+        db.commit()
+        raise HTTPException(status_code=503, detail="GEMINI_API_KEY is not configured.")
+
+    try:
+        llm = ChatGoogleGenerativeAI(
+            model=GEMINI_MODEL,
+            api_key=gemini_api_key,
+            temperature=0.3,
+            max_tokens=4096,
+        )
+        response = await llm.ainvoke([
+            SystemMessage(content=ANALYSIS_SYSTEM_PROMPT),
+            HumanMessage(content=user_message),
+        ])
+        raw = _handle_response_content(response.content)
+        raw = _strip_json_fences(raw)
+        insights = json.loads(raw)
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse analysis JSON: {e}\nRaw: {raw[:500]}")
+        activity.analysis_status = "failed"
+        activity.analysis_error = "AI returned invalid JSON"
+        db.commit()
+        raise HTTPException(status_code=500, detail="AI returned an invalid response. Try re-running.")
+    except Exception as e:
+        logger.error(f"Analysis Gemini call failed: {e}")
+        activity.analysis_status = "failed"
+        activity.analysis_error = str(e)[:500]
+        db.commit()
+        raise HTTPException(status_code=502, detail=f"AI service error: {str(e)}")
+
+    # Build report details combining raw data + AI insights
+    score_pct = None
+    results = activity.results_data or {}
+    if results.get("activity_type") == "quiz" and results.get("total"):
+        first_correct = results.get("first_attempt_correct", 0)
+        score_pct = round(first_correct / results["total"] * 100, 1)
+
+    report_details = {
+        "ai_insights": insights,
+        "activity_title": activity.title,
+        "activity_type": activity.activity_type,
+        "learning_area": activity.learning_area,
+        "dskp_standards": dskp_standards,
+        "results_summary": {
+            "first_attempt_correct": results.get("first_attempt_correct"),
+            "total": results.get("total"),
+            "score_percentage": score_pct,
+            "time_seconds": results.get("time_seconds"),
+        },
+        "student_count": len(students),
+    }
+
+    report = models.Report(
+        id=str(uuid.uuid4()),
+        teacher_id=teacher.id,
+        activity_id=activity.id,
+        title=f"AI Insights: {activity.title}",
+        summary=insights.get("summary", ""),
+        details=report_details,
+    )
+    db.add(report)
+    db.flush()
+
+    for sid in student_ids:
+        db.add(models.ReportStudent(report_id=report.id, student_id=sid))
+
+    activity.analysis_status = "completed"
+    activity.analysis_error = None
+    db.commit()
+    db.refresh(activity)
+
+    return {
+        "activity_id": activity.id,
+        "analysis_status": "completed",
+        "report_id": report.id,
+        "insights": insights,
+    }
+
+
+def _strip_images_for_analysis(content: dict) -> dict:
+    """Remove base64 image data from generated content to reduce token usage."""
+    import copy
+    stripped = copy.deepcopy(content)
+    # Strip from flashcard images
+    for img in stripped.get("images", []):
+        img.pop("image_b64", None)
+    # Strip from story pages
+    for page in stripped.get("pages", []):
+        page.pop("image_b64", None)
+    return stripped
