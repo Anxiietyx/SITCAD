@@ -10,7 +10,8 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { LogOut, Users, AlertTriangle, TrendingUp, BookOpen, Calendar, Sparkles, FileText, MessageSquare, Monitor, Brain, UserPlus, Search } from 'lucide-react';
 import Duckpit from './Duckpit';
-import { useState, useEffect } from 'react';
+import { useEffect, useReducer } from 'react';
+import { teacherReducer, initialState } from '../reducers/teacherReducer';
 
 export function TeacherDashboard() {
   const { user, logout } = useAuth();
@@ -18,14 +19,8 @@ export function TeacherDashboard() {
 
   if (!user) return null;
 
-  const [students, setStudents] = useState([]);
-  const [isLoadingStudents, setIsLoadingStudents] = useState(true);
-  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
-  const [unassignedStudents, setUnassignedStudents] = useState([]);
-  const [selectedStudentId, setSelectedStudentId] = useState(null);
-  const [classroom, setClassroom] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingUnassigned, setIsLoadingUnassigned] = useState(false);
+  const [state, dispatch] = useReducer(teacherReducer, initialState);
+  const { students, isLoadingStudents, assignDialogOpen, unassignedStudents, selectedStudentId, classroom, isSubmitting, isLoadingUnassigned } = state;
 
   // Fetch teacher's students on mount
   useEffect(() => {
@@ -38,11 +33,11 @@ export function TeacherDashboard() {
           body: JSON.stringify({ id_token: idToken }),
         });
         const data = await res.json();
-        setStudents(data);
+        dispatch({ type: 'SET_STUDENTS', payload: data });
       } catch (error) {
         console.error('Error fetching students:', error);
       } finally {
-        setIsLoadingStudents(false);
+        dispatch({ type: 'SET_FIELD', field: 'isLoadingStudents', value: false });
       }
     };
 
@@ -52,8 +47,8 @@ export function TeacherDashboard() {
   const needsAttention = students.filter(s => s.needs_intervention);
 
   const handleOpenAssignDialog = async () => {
-    setAssignDialogOpen(true);
-    setIsLoadingUnassigned(true);
+    dispatch({ type: 'SET_ASSIGN_DIALOG_OPEN', payload: true });
+    dispatch({ type: 'SET_FIELD', field: 'isLoadingUnassigned', value: true });
     try {
       const idToken = await auth.currentUser.getIdToken();
       const res = await fetch('http://localhost:8000/teachers/unassigned', {
@@ -62,17 +57,17 @@ export function TeacherDashboard() {
         body: JSON.stringify({ id_token: idToken }),
       });
       const data = await res.json();
-      setUnassignedStudents(data);
+      dispatch({ type: 'SET_UNASSIGNED_STUDENTS', payload: data });
     } catch (error) {
       console.error('Error fetching unassigned students:', error);
     } finally {
-      setIsLoadingUnassigned(false);
+      dispatch({ type: 'SET_FIELD', field: 'isLoadingUnassigned', value: false });
     }
   };
 
   const handleAssignStudent = async () => {
     if (!selectedStudentId || !classroom) return;
-    setIsSubmitting(true);
+    dispatch({ type: 'SET_FIELD', field: 'isSubmitting', value: true });
     try {
       const idToken = await auth.currentUser.getIdToken();
       const res = await fetch('http://localhost:8000/teachers/assign', {
@@ -82,15 +77,12 @@ export function TeacherDashboard() {
       });
       if (res.ok) {
         const assignedStudent = await res.json();
-        setStudents([...students, assignedStudent]);
-        setSelectedStudentId(null);
-        setClassroom('');
-        setAssignDialogOpen(false);
+        dispatch({ type: 'ASSIGN_STUDENT_SUCCESS', payload: assignedStudent });
       }
     } catch (error) {
       console.error('Error assigning student:', error);
     } finally {
-      setIsSubmitting(false);
+      dispatch({ type: 'SET_FIELD', field: 'isSubmitting', value: false });
     }
   };
   const classroomStats = {
@@ -268,7 +260,7 @@ export function TeacherDashboard() {
                 <UserPlus className="h-4 w-4" />
                 Add Student
               </Button>
-              <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
+              <Dialog open={assignDialogOpen} onOpenChange={(val) => dispatch({ type: 'SET_ASSIGN_DIALOG_OPEN', payload: val })}>
                 <DialogContent className="max-w-lg">
                   <DialogHeader>
                     <DialogTitle>Add Student to Your Classroom</DialogTitle>
@@ -297,7 +289,7 @@ export function TeacherDashboard() {
                                 className={`w-full text-left px-4 py-3 hover:bg-green-50 transition-colors ${
                                   selectedStudentId === s.id ? 'bg-green-100 font-medium' : ''
                                 }`}
-                                onClick={() => setSelectedStudentId(s.id)}
+                                onClick={() => dispatch({ type: 'SET_FIELD', field: 'selectedStudentId', value: s.id })}
                               >
                                 <span className="font-medium">{s.name}</span>
                                 <span className="text-sm text-muted-foreground ml-2">Age {s.age}</span>
@@ -311,14 +303,14 @@ export function TeacherDashboard() {
                             id="assign-classroom"
                             placeholder="e.g. Class A"
                             value={classroom}
-                            onChange={(e) => setClassroom(e.target.value)}
+                            onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'classroom', value: e.target.value })}
                           />
                         </div>
                       </>
                     )}
                   </div>
                   <DialogFooter>
-                    <Button variant="outline" onClick={() => setAssignDialogOpen(false)}>
+                    <Button variant="outline" onClick={() => dispatch({ type: 'SET_ASSIGN_DIALOG_OPEN', payload: false })}>
                       Cancel
                     </Button>
                     {unassignedStudents.length > 0 && (

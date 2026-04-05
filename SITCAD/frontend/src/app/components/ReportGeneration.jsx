@@ -1,4 +1,4 @@
-import { useReducer, useEffect, useCallback, useState } from 'react';
+import { useReducer, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { auth } from '../lib/firebase';
@@ -27,9 +27,7 @@ export function ReportGeneration() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [state, dispatch] = useReducer(reportReducer, initialReportState);
-  const { reportType, reportPeriod, language, selectedStudents, generating, error, reports } = state;
-  const [pastReports, setPastReports] = useState([]);
-  const [viewingReport, setViewingReport] = useState(null);
+  const { reportType, reportPeriod, language, selectedStudents, generating, error, reports, pastReports, viewingReport } = state;
 
   const fetchReports = useCallback(async () => {
     try {
@@ -39,7 +37,7 @@ export function ReportGeneration() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id_token: idToken }),
       });
-      if (res.ok) setPastReports(await res.json());
+      if (res.ok) dispatch({ type: 'SET_PAST_REPORTS', payload: await res.json() });
     } catch (err) {
       console.error('Failed to fetch reports:', err);
     }
@@ -168,7 +166,7 @@ export function ReportGeneration() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="ghost" onClick={() => setViewingReport(null)} className="cursor-pointer">
+                <Button variant="ghost" onClick={() => dispatch({ type: 'SET_VIEWING_REPORT', payload: null })} className="cursor-pointer">
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Back to Reports
                 </Button>
@@ -469,7 +467,7 @@ export function ReportGeneration() {
                   <div
                     key={report.id}
                     className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                    onClick={() => setViewingReport(report)}
+                    onClick={() => dispatch({ type: 'SET_VIEWING_REPORT', payload: report })}
                   >
                     <div>
                       <p className="font-medium">{report.title}</p>

@@ -11,7 +11,8 @@ import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Heart, TrendingUp, MessageSquare, UserPlus, FileText, Clock, CheckCircle2, AlertTriangle, Users } from 'lucide-react';
 import Duckpit from './Duckpit';
-import { useState, useEffect } from 'react';
+import { useEffect, useReducer } from 'react';
+import { parentReducer, initialState } from '../reducers/parentReducer';
 
 export function ParentDashboard() {
   const { user, logout } = useAuth();
@@ -19,13 +20,8 @@ export function ParentDashboard() {
 
   if (!user) return null;
 
-  const [children, setChildren] = useState([]);
-  const [isLoadingChildren, setIsLoadingChildren] = useState(true);
-  const [addChildOpen, setAddChildOpen] = useState(false);
-  const [newChild, setNewChild] = useState({ name: '', age: '' });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [reports, setReports] = useState([]);
-  const [isLoadingReports, setIsLoadingReports] = useState(true);
+  const [state, dispatch] = useReducer(parentReducer, initialState);
+  const { children, isLoadingChildren, addChildOpen, newChild, isSubmitting, reports, isLoadingReports } = state;
 
   // Fetch children from API on mount
   useEffect(() => {
@@ -38,11 +34,11 @@ export function ParentDashboard() {
           body: JSON.stringify({ id_token: idToken }),
         });
         const data = await res.json();
-        setChildren(data);
+        dispatch({ type: 'SET_FIELD', field: 'children', value: data });
       } catch (error) {
         console.error('Error fetching children:', error);
       } finally {
-        setIsLoadingChildren(false);
+        dispatch({ type: 'SET_FIELD', field: 'isLoadingChildren', value: false });
       }
     };
 
@@ -59,11 +55,11 @@ export function ParentDashboard() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id_token: idToken }),
         });
-        if (res.ok) setReports(await res.json());
+        if (res.ok) dispatch({ type: 'SET_FIELD', field: 'reports', value: await res.json() });
       } catch (error) {
         console.error('Error fetching reports:', error);
       } finally {
-        setIsLoadingReports(false);
+        dispatch({ type: 'SET_FIELD', field: 'isLoadingReports', value: false });
       }
     };
     fetchReports();
@@ -71,7 +67,7 @@ export function ParentDashboard() {
 
   const handleAddChild = async () => {
     if (!newChild.name || !newChild.age) return;
-    setIsSubmitting(true);
+    dispatch({ type: 'SET_FIELD', field: 'isSubmitting', value: true });
     try {
       const idToken = await auth.currentUser.getIdToken();
       const res = await fetch('http://localhost:8000/parents/add-child', {
@@ -81,14 +77,12 @@ export function ParentDashboard() {
       });
       if (res.ok) {
         const newStudent = await res.json();
-        setChildren([...children, newStudent]);
-        setNewChild({ name: '', age: '' });
-        setAddChildOpen(false);
+        dispatch({ type: 'ADD_CHILD_SUCCESS', payload: newStudent });
       }
     } catch (error) {
       console.error('Error adding child:', error);
     } finally {
-      setIsSubmitting(false);
+      dispatch({ type: 'SET_FIELD', field: 'isSubmitting', value: false });
     }
   };
 
@@ -221,7 +215,7 @@ export function ParentDashboard() {
                   Click on a child to view their profile and learning progress
                 </CardDescription>
               </div>
-              <Dialog open={addChildOpen} onOpenChange={setAddChildOpen}>
+              <Dialog open={addChildOpen} onOpenChange={(value) => dispatch({ type: 'SET_FIELD', field: 'addChildOpen', value })}>
                 <DialogTrigger asChild>
                   <Button className="bg-[#3090A0] hover:bg-[#2FBFA5] text-white gap-2 cursor-pointer">
                     <UserPlus className="h-4 w-4" />
@@ -242,14 +236,14 @@ export function ParentDashboard() {
                         id="child-name"
                         placeholder="e.g. Ahmad Ibrahim"
                         value={newChild.name}
-                        onChange={(e) => setNewChild({ ...newChild, name: e.target.value })}
+                        onChange={(e) => dispatch({ type: 'SET_NEW_CHILD_FIELD', field: 'name', value: e.target.value })}
                       />
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="child-age">Age</Label>
                       <Select
                         value={newChild.age}
-                        onValueChange={(value) => setNewChild({ ...newChild, age: value })}
+                        onValueChange={(value) => dispatch({ type: 'SET_NEW_CHILD_FIELD', field: 'age', value: value })}
                       >
                         <SelectTrigger id="child-age">
                           <SelectValue placeholder="Select age" />
@@ -264,7 +258,7 @@ export function ParentDashboard() {
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button variant="outline" onClick={() => setAddChildOpen(false)}>
+                    <Button variant="outline" onClick={() => dispatch({ type: 'SET_FIELD', field: 'addChildOpen', value: false })}>
                       Cancel
                     </Button>
                     <Button

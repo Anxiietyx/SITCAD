@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useReducer } from 'react';
+import { onboardingReducer, initialState } from '../reducers/onboardingReducer';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
@@ -9,28 +10,26 @@ import { Loader2, GraduationCap, Users } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export function Onboarding() {
-  const [role, setRole] = useState(null);
-  const [acceptTerms, setAcceptTerms] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [state, dispatch] = useReducer(onboardingReducer, initialState);
+  const { role, acceptTerms, error, loading } = state;
   const { user, updateRole } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!role) return setError('Please select your role.');
-    if (!acceptTerms) return setError('Please accept the terms and conditions.');
+    if (!role) return dispatch({ type: 'SET_ERROR', payload: 'Please select your role.' });
+    if (!acceptTerms) return dispatch({ type: 'SET_ERROR', payload: 'Please accept the terms and conditions.' });
 
-    setLoading(true);
-    setError('');
+    dispatch({ type: 'SET_LOADING', payload: true });
+    dispatch({ type: 'SET_ERROR', payload: '' });
 
     try {
       await updateRole(role);
       navigate(role === 'teacher' ? '/teacher/dashboard' : '/parent/dashboard');
     } catch (err) {
-      setError(err.message || 'Something went wrong. Please try again.');
+      dispatch({ type: 'SET_ERROR', payload: err.message || 'Something went wrong. Please try again.' });
     } finally {
-      setLoading(false);
+      dispatch({ type: 'SET_LOADING', payload: false });
     }
   };
 
@@ -53,7 +52,7 @@ export function Onboarding() {
             <div className="grid grid-cols-2 gap-3 mt-2">
               <button
                 type="button"
-                onClick={() => setRole('teacher')}
+                onClick={() => dispatch({ type: 'SET_ROLE', payload: 'teacher' })}
                 className={`flex flex-col items-center gap-3 p-5 rounded-xl border-2 transition-all cursor-pointer ${
                   role === 'teacher'
                     ? 'border-[#3090A0] bg-[#3090A0]/10 text-[#3090A0]'
@@ -65,7 +64,7 @@ export function Onboarding() {
               </button>
               <button
                 type="button"
-                onClick={() => setRole('parent')}
+                onClick={() => dispatch({ type: 'SET_ROLE', payload: 'parent' })}
                 className={`flex flex-col items-center gap-3 p-5 rounded-xl border-2 transition-all cursor-pointer ${
                   role === 'parent'
                     ? 'border-[#3090A0] bg-[#3090A0]/10 text-[#3090A0]'
@@ -82,7 +81,7 @@ export function Onboarding() {
             <Checkbox
               id="terms"
               checked={acceptTerms}
-              onCheckedChange={(checked) => setAcceptTerms(checked)}
+              onCheckedChange={(checked) => dispatch({ type: 'SET_ACCEPT_TERMS', payload: checked })}
               className="mt-0.5 data-[state=checked]:bg-[#3090A0] data-[state=checked]:border-[#3090A0]shrink-0"
             />
             <label

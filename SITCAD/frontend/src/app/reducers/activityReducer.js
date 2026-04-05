@@ -10,6 +10,13 @@ export const initialState = {
   duration: "20",
   assignTo: "all",
   selectedStudents: [],
+  activities: [],
+  students: [],
+  lessonPlans: [],
+  reportScore: "",
+  reportTotal: "",
+  reportTime: "",
+  generatingReport: false,
 };
 
 export const activityReducer = (state, action) => {
@@ -27,6 +34,9 @@ export const activityReducer = (state, action) => {
       return {
         ...initialState,
         selectedActivity: state.selectedActivity, // Keep selectedActivity across resets
+        activities: state.activities,
+        students: state.students,
+        lessonPlans: state.lessonPlans,
       };
     case "SET_OPEN":
       return { ...state, open: action.payload };

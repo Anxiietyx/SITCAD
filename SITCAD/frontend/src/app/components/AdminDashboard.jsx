@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useCallback, useState } from 'react';
+import { useEffect, useReducer, useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -14,10 +14,7 @@ export function AdminDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [state, dispatch] = useReducer(adminReducer, initialState);
-  const [stats, setStats] = useState({ teacher: null, parent: null, admin: null, total: null });
-  const [users, setUsers] = useState([]);
-  const [roleFilter, setRoleFilter] = useState(null);
-  const [loadingUsers, setLoadingUsers] = useState(false);
+  const { stats, users, roleFilter, loadingUsers } = state;
 
   const fetchStats = useCallback(() => {
     dispatch({ type: 'SET_LOADING', payload: true });
@@ -25,7 +22,6 @@ export function AdminDashboard() {
       .then((res) => res.json())
       .then((data) => {
         dispatch({ type: 'SET_STATS', payload: data });
-        setStats(data);
       })
       .catch((err) => {
         console.error('Failed to fetch admin stats:', err);
@@ -34,13 +30,12 @@ export function AdminDashboard() {
   }, []);
 
   const fetchUsers = useCallback((role) => {
-    setLoadingUsers(true);
+    dispatch({ type: 'SET_LOADING_USERS', payload: true });
     const url = role ? `${API_BASE}/admin/users?role=${role}` : `${API_BASE}/admin/users`;
     fetch(url)
       .then((res) => res.json())
-      .then((data) => setUsers(data))
-      .catch((err) => console.error('Failed to fetch users:', err))
-      .finally(() => setLoadingUsers(false));
+      .then((data) => dispatch({ type: 'SET_USERS', payload: data }))
+      .catch((err) => console.error('Failed to fetch users:', err));
   }, []);
 
   useEffect(() => {
@@ -118,19 +113,19 @@ export function AdminDashboard() {
                 <p className="text-sm font-medium">Add Admin</p>
               </CardContent>
             </Card>
-            <Card className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle} onClick={() => setRoleFilter('teacher')}>
+            <Card className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle} onClick={() => dispatch({ type: 'SET_ROLE_FILTER', payload: 'teacher' })}>
               <CardContent className="pt-6 text-center">
                 <GraduationCap className="h-8 w-8 mx-auto mb-2 text-blue-600" />
                 <p className="text-sm font-medium">View Teachers</p>
               </CardContent>
             </Card>
-            <Card className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle} onClick={() => setRoleFilter('parent')}>
+            <Card className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle} onClick={() => dispatch({ type: 'SET_ROLE_FILTER', payload: 'parent' })}>
               <CardContent className="pt-6 text-center">
                 <Users className="h-8 w-8 mx-auto mb-2 text-green-600" />
                 <p className="text-sm font-medium">View Parents</p>
               </CardContent>
             </Card>
-            <Card className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle} onClick={() => setRoleFilter(null)}>
+            <Card className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle} onClick={() => dispatch({ type: 'SET_ROLE_FILTER', payload: null })}>
               <CardContent className="pt-6 text-center">
                 <ShieldCheck className="h-8 w-8 mx-auto mb-2 text-purple-600" />
                 <p className="text-sm font-medium">All Users</p>
@@ -205,7 +200,7 @@ export function AdminDashboard() {
                 </div>
                 <div className="flex items-center gap-2">
                   {roleFilter && (
-                    <Button variant="outline" size="sm" onClick={() => setRoleFilter(null)}>
+                    <Button variant="outline" size="sm" onClick={() => dispatch({ type: 'SET_ROLE_FILTER', payload: null })}>
                       Clear Filter
                     </Button>
                   )}

@@ -1,4 +1,4 @@
-import { useReducer, useEffect, useCallback, useState } from "react";
+import { useReducer, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
 import { auth } from "../lib/firebase";
@@ -77,17 +77,7 @@ export function ActivityManagement() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [state, dispatch] = useReducer(activityReducer, initialState);
-
-  // Backend data
-  const [activities, setActivities] = useState([]);
-  const [students, setStudents] = useState([]);
-  const [lessonPlans, setLessonPlans] = useState([]);
-
-  // Report generation state
-  const [reportScore, setReportScore] = useState("");
-  const [reportTotal, setReportTotal] = useState("");
-  const [reportTime, setReportTime] = useState("");
-  const [generatingReport, setGeneratingReport] = useState(false);
+  const { activities, students, lessonPlans, reportScore, reportTotal, reportTime, generatingReport } = state;
 
   const fetchActivities = useCallback(async () => {
     try {
@@ -97,7 +87,7 @@ export function ActivityManagement() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id_token: idToken }),
       });
-      if (res.ok) setActivities(await res.json());
+      if (res.ok) dispatch({ type: "SET_FIELD", field: "activities", value: await res.json() });
     } catch (err) {
       console.error("Failed to fetch activities:", err);
     }
@@ -111,7 +101,7 @@ export function ActivityManagement() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id_token: idToken }),
       });
-      if (res.ok) setStudents(await res.json());
+      if (res.ok) dispatch({ type: "SET_FIELD", field: "students", value: await res.json() });
     } catch (err) {
       console.error("Failed to fetch students:", err);
     }
@@ -125,7 +115,7 @@ export function ActivityManagement() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id_token: idToken }),
       });
-      if (res.ok) setLessonPlans(await res.json());
+      if (res.ok) dispatch({ type: "SET_FIELD", field: "lessonPlans", value: await res.json() });
     } catch (err) {
       console.error("Failed to fetch lesson plans:", err);
     }
@@ -223,7 +213,7 @@ export function ActivityManagement() {
     const total = activity?.quiz_total ?? (reportTotal ? parseInt(reportTotal) : undefined);
     const time = activity?.quiz_time_seconds ?? (reportTime ? parseInt(reportTime) : undefined);
 
-    setGeneratingReport(true);
+    dispatch({ type: "SET_FIELD", field: "generatingReport", value: true });
     try {
       const idToken = await getIdToken();
       const res = await fetch(`${API_BASE}/reports/generate`, {
@@ -243,13 +233,13 @@ export function ActivityManagement() {
       }
       toast.success("Report generated! View it in the Reports page.");
       dispatch({ type: "SELECT_ACTIVITY", payload: null });
-      setReportScore("");
-      setReportTotal("");
-      setReportTime("");
+      dispatch({ type: "SET_FIELD", field: "reportScore", value: "" });
+      dispatch({ type: "SET_FIELD", field: "reportTotal", value: "" });
+      dispatch({ type: "SET_FIELD", field: "reportTime", value: "" });
     } catch (err) {
       toast.error(err.message);
     } finally {
-      setGeneratingReport(false);
+      dispatch({ type: "SET_FIELD", field: "generatingReport", value: false });
     }
   };
 
@@ -731,7 +721,7 @@ export function ActivityManagement() {
                                 min="0"
                                 placeholder="e.g. 6"
                                 value={reportScore}
-                                onChange={(e) => setReportScore(e.target.value)}
+                                onChange={(e) => dispatch({ type: "SET_FIELD", field: "reportScore", value: e.target.value })}
                               />
                             </div>
                             <div className="space-y-1">
@@ -741,7 +731,7 @@ export function ActivityManagement() {
                                 min="1"
                                 placeholder="e.g. 8"
                                 value={reportTotal}
-                                onChange={(e) => setReportTotal(e.target.value)}
+                                onChange={(e) => dispatch({ type: "SET_FIELD", field: "reportTotal", value: e.target.value })}
                               />
                             </div>
                             <div className="space-y-1">
@@ -751,7 +741,7 @@ export function ActivityManagement() {
                                 min="0"
                                 placeholder="e.g. 90"
                                 value={reportTime}
-                                onChange={(e) => setReportTime(e.target.value)}
+                                onChange={(e) => dispatch({ type: "SET_FIELD", field: "reportTime", value: e.target.value })}
                               />
                             </div>
                           </div>

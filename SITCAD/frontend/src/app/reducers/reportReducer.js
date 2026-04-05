@@ -6,6 +6,8 @@ export const initialReportState = {
   generating: false,
   reports: [],
   error: null,
+  pastReports: [],
+  viewingReport: null,
 };
 
 export function reportReducer(state, action) {
@@ -37,6 +39,16 @@ export function reportReducer(state, action) {
         ...state,
         reports: action.payload,
         error: null,
+      };
+    case 'SET_PAST_REPORTS':
+      return {
+        ...state,
+        pastReports: action.payload,
+      };
+    case 'SET_VIEWING_REPORT':
+      return {
+        ...state,
+        viewingReport: action.payload,
       };
     case 'SET_ERROR':
       return {
