@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "./ui/button";
+import { motion } from "framer-motion";
 import {
   Card,
   CardContent,
@@ -22,6 +23,7 @@ import {
   Monitor,
   Heart,
   CheckCircle2,
+  BookCheck,
   Star,
   BookOpen,
   Lightbulb,
@@ -50,10 +52,16 @@ function FloatingIcon({ icon: Icon, className }) {
   );
 }
 
-const TOTAL_SLIDES = 4;
+const TOTAL_SLIDES = 6;
 
-// const slideLabels = ["Home", "Preview", "Features", "Benefits", "Join"];
-const slideLabels = ["Home", "Preview", "Features", "Join"];
+const slideLabels = [
+  "Home",
+  "Pricing",
+  "Features",
+  "How It Works",
+  "AI Engine",
+  "Join",
+];
 
 const CYCLE_WORDS = [
   { word: "Fun", color: "#F46197" },
@@ -243,8 +251,9 @@ export function LandingPage() {
     `}</style>
 
       <div
-        className={`h-screen w-screen overflow-hidden relative bg-white ${!isPlaying ? "cursor-pointer" : "cursor-default"
-          }`}
+        className={`h-screen w-screen overflow-hidden relative bg-white ${
+          !isPlaying ? "cursor-pointer" : "cursor-default"
+        }`}
       >
         {!isPlaying && (
           <div className="fixed top-20 right-6 bg-none/90 backdrop-blur-md px-4 py-2 rounded-full text-sm shadow-lg z-50 flex items-center gap-2 animate-fade-in">
@@ -406,7 +415,7 @@ export function LandingPage() {
               className="absolute bottom-10 left-[4%] w-36 lg:w-44 drop-shadow-lg animate-float pointer-events-none select-none"
             />
 
-            <div className="max-w-6xl w-full mx-auto space-y-4">
+            <div className="max-w-7xl w-full mx-auto space-y-2">
               {/* ===== HEADER ===== */}
               <div className="text-center">
                 <h2 className="text-4xl lg:text-4xl font-bold mb-2 font-serif">
@@ -427,10 +436,8 @@ export function LandingPage() {
                 <Card className="relative bg-transparent border-0 shadow-none">
                   <CardContent className="p-4 lg:p-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto items-stretch">
-
                       {/* ===== PARENT PLAN ===== */}
                       <div className="flex flex-col justify-between h-full rounded-xl border-2 border-[#3090A0]/50 backdrop-blur-md bg-white/40 p-6 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:scale-[1.03]">
-
                         <div>
                           <h3 className="text-2xl font-bold text-center mb-4 text-[#3090A0]">
                             Parent
@@ -438,7 +445,9 @@ export function LandingPage() {
 
                           <div className="text-center mb-5">
                             <p className="text-4xl font-bold">RM99</p>
-                            <p className="text-lg text-muted-foreground">per year</p>
+                            <p className="text-lg text-muted-foreground">
+                              per year
+                            </p>
                           </div>
 
                           <div className="space-y-2 text-lg">
@@ -446,7 +455,9 @@ export function LandingPage() {
                             <p>✔ Direct teacher communication</p>
                             <p>✔ Child development insights</p>
                             <p>✔ Activity recommendations</p>
-                            <p className="text-muted-foreground">✖ AI lesson tools</p>
+                            <p className="text-muted-foreground">
+                              ✖ AI lesson tools
+                            </p>
                           </div>
                         </div>
 
@@ -457,7 +468,6 @@ export function LandingPage() {
 
                       {/* ===== TEACHER PLAN (HIGHLIGHT) ===== */}
                       <div className="flex flex-col justify-between h-full rounded-xl border-2 border-[#3090A0]/50 backdrop-blur-md bg-white/40 p-6 transition-all duration-300 hover:-translate-y-3 hover:shadow-xl hover:scale-[1.03]">
-
                         <div>
                           <h3 className="text-2xl font-bold text-center mb-4 text-[#3090A0]">
                             Teacher
@@ -465,7 +475,9 @@ export function LandingPage() {
 
                           <div className="text-center mb-5">
                             <p className="text-4xl font-bold">RM199</p>
-                            <p className="text-lg text-muted-foreground">per year</p>
+                            <p className="text-lg text-muted-foreground">
+                              per year
+                            </p>
                           </div>
 
                           <div className="space-y-2 text-lg">
@@ -481,7 +493,6 @@ export function LandingPage() {
                           Choose Plan
                         </Button>
                       </div>
-
                     </div>
                   </CardContent>
                 </Card>
@@ -560,6 +571,224 @@ export function LandingPage() {
                   );
                 })}
               </div>
+            </div>
+          </section>
+
+          {/* ===== SLIDE 4 — HOW TEACHERS USE IT ===== */}
+          <section
+            className="w-screen h-screen flex-shrink-0 flex items-center justify-center relative px-8 pt-14"
+            style={{
+              background:
+                "linear-gradient(160deg, #ACFCD9 0%, #ffffff 65%, #FFF5F9 80%, #FFFDE7 100%)",
+            }}
+          >
+            <div className="max-w-6xl w-full mx-auto text-center space-y-10">
+              {/* HEADER */}
+              <div>
+                <h2 className="text-4xl lg:text-4xl font-bold mb-3 font-serif">
+                  How Teachers Use SabahSprout
+                </h2>
+                <p className="text-muted-foreground text-2xl font-medium max-w-2xl mx-auto">
+                  From planning lessons to understanding student progress — all
+                  in one smooth flow.
+                </p>
+              </div>
+
+              {/* STEPS */}
+              <div className="flex flex-col md:flex-row items-center justify-center gap-4">
+                {[
+                  { icon: Sparkles, title: "Generate Lesson Plan" },
+                  { icon: Calendar, title: "Create Activities" },
+                  { icon: Monitor, title: "Run in Classroom" },
+                  { icon: Brain, title: "Get AI Insights" },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center">
+                    <Card className="border-2 rounded-2xl p-5 w-48 h-40 flex flex-col items-center justify-center hover:shadow-lg">
+                      <item.icon className="w-12 h-12 text-[#3090A0] mb-1" />
+                      <p className="font-semibold text-center text-base">
+                        {item.title}
+                      </p>
+                    </Card>
+
+                    {i < 3 && (
+                      <ArrowRight className="hidden md:block mx-3 text-[#55D6BE]" />
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* DESCRIPTION */}
+              <div className="max-w-3xl mx-auto">
+                <p className="text-lg text-muted-foreground">
+                  Teachers generate lesson plans, create activities, run them in
+                  class, and instantly receive insights about student
+                  performance and learning needs.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* ===== SLIDE 5 — HOW THE AI WORKS (POLISHED) ===== */}
+          <section
+            className="w-screen h-screen flex-shrink-0 flex items-center justify-center relative px-8 pt-14"
+            style={{
+              background:
+                "linear-gradient(160deg, #ACFCD9 0%, #ffffff 65%, #FFF5F9 80%, #FFFDE7 100%)",
+            }}
+          >
+            <div className="max-w-7xl w-full mx-auto text-center space-y-2">
+              {/* HEADER */}
+              <div>
+                <h2 className="text-4xl lg:text-4xl font-bold mb-3 font-serif">
+                  How AI Supports Student Learning
+                </h2>
+                <p className="text-muted-foreground text-2xl font-medium max-w-5xl mx-auto leading-relaxed mb-4">
+                  Student activities are analyzed alongside national learning
+                  standards to provide clear and meaningful insights.
+                </p>
+              </div>
+
+              {/* FLOW */}
+              <div className="flex items-center justify-center gap-3 flex-wrap">
+                {[
+                  { icon: FileText, title: "Student Activities" },
+                  { icon: BookCheck, title: "Learning Standards (DSKP)" },
+                  { icon: Brain, title: "AI Analysis" },
+                  {
+                    icon: Sparkles,
+                    title: "Learning Insights",
+                    highlight: true,
+                  },
+                ].map((item, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.2 }}
+                    className="flex items-center"
+                  >
+                    <Card
+                      className={`border-2 rounded-2xl p-4 w-40 h-30 flex flex-col items-center justify-center transition-all ${
+                        item.highlight
+                          ? "border-[#55D6BE] shadow-lg scale-105 bg-white"
+                          : ""
+                      }`}
+                    >
+                      <div className="w-10 h-4 flex items-center justify-center">
+                        <item.icon
+                          className="w-10 h-10 text-[#3090A0]"
+                        />
+                      </div>
+                      <p className="font-medium text-sm text-center">
+                        {item.title}
+                      </p>
+                    </Card>
+
+                    {i < 3 && <ArrowRight className="mx-2 text-[#55D6BE]" />}
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* CONNECTION HINT */}
+              <div className="text-base font-bold text-[#348576] mt-6">
+                Insights Generated for Each Student ↓
+              </div>
+
+              {/* BRANCH OUTPUTS */}
+              <div className="relative flex flex-col items-center mt-2">
+                {/* SVG LINES (MATCH GRID WIDTH) */}
+                <svg className="absolute top-0" width="548" height="70">
+                  {/* center vertical */}
+                  <line
+                    x1="274"
+                    y1="0"
+                    x2="274"
+                    y2="25"
+                    stroke="#55D6BE"
+                    strokeWidth="2"
+                  />
+
+                  {/* horizontal */}
+                  <line
+                    x1="64"
+                    y1="25"
+                    x2="484"
+                    y2="25"
+                    stroke="#55D6BE"
+                    strokeWidth="2"
+                  />
+
+                  {/* branches aligned to each card center */}
+                  <line
+                    x1="64"
+                    y1="25"
+                    x2="64"
+                    y2="55"
+                    stroke="#55D6BE"
+                    strokeWidth="2"
+                  />
+                  <line
+                    x1="190"
+                    y1="25"
+                    x2="190"
+                    y2="55"
+                    stroke="#55D6BE"
+                    strokeWidth="2"
+                  />
+                  <line
+                    x1="358"
+                    y1="25"
+                    x2="358"
+                    y2="55"
+                    stroke="#55D6BE"
+                    strokeWidth="2"
+                  />
+                  <line
+                    x1="484"
+                    y1="25"
+                    x2="484"
+                    y2="55"
+                    stroke="#55D6BE"
+                    strokeWidth="2"
+                  />
+                </svg>
+
+                {/* OUTPUT CARDS */}
+                <div className="grid grid-cols-4 gap-3 mt-16">
+                  {[
+                    { icon: TrendingUp, text: "Learning Progress" },
+                    { icon: Lightbulb, text: "Suggested Support" },
+                    { icon: Heart, text: "Learning Interests" },
+                    { icon: Calendar, text: "Recommended Activities" },
+                  ].map((item, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, scale: 0.6 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.8 + i * 0.1 }}
+                    >
+                      <Card className="border-2 rounded-xl p-3 w-32 flex flex-col items-center justify-center gap-1">
+                        <item.icon className="w-7 h-7 text-[#F46197]" />
+                        <p className="text-sm text-center">{item.text}</p>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+
+              {/* DSKP EXPLANATION */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.8 }}
+                className="max-w-2xl mx-auto"
+              >
+                <p className="text-base text-muted-foreground max-w-5xl mx-auto leading-relaxed">
+                  Each insight is aligned with Malaysia’s preschool curriculum
+                  (DSKP KSPK Semakan 2026), ensuring student progress is
+                  evaluated based on official learning standards.
+                </p>
+              </motion.div>
             </div>
           </section>
 
@@ -720,7 +949,7 @@ export function LandingPage() {
           </div>
         </section> */}
 
-          {/* ===== SLIDE 5 — CTA + Footer ===== */}
+          {/* ===== SLIDE 6 — CTA + Footer ===== */}
           <section className="w-screen h-screen flex-shrink-0 flex flex-col ">
             {/* CTA — takes most of the space */}
             <div
@@ -845,10 +1074,11 @@ export function LandingPage() {
               aria-label={`Go to ${label}`}
             >
               <div
-                className={`rounded-full transition-all duration-300 ${i === current
+                className={`rounded-full transition-all duration-300 ${
+                  i === current
                     ? "w-8 h-3 bg-gradient-to-r from-[#55D6BE] to-[#55D6BE]"
                     : "w-3 h-3 bg-[#E3E3E3] hover:bg-[#ACFCD9]"
-                  }`}
+                }`}
               />
               {/* Tooltip */}
               <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] font-medium bg-foreground text-white px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">

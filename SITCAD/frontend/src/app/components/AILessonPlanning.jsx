@@ -2,7 +2,7 @@ import { useReducer, useEffect, useCallback, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
 import { auth } from "../lib/firebase";
-import Duckpit from './Duckpit';
+import Duckpit from "./Duckpit";
 import { Button } from "./ui/button";
 import {
   Card,
@@ -23,7 +23,12 @@ import {
 import { Textarea } from "./ui/textarea";
 import { Badge } from "./ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -92,9 +97,24 @@ const LOADING_MESSAGES = [
 ];
 
 const ACTIVITY_TYPE_OPTIONS = [
-  { value: "quiz", label: "Quiz", icon: Gamepad2, color: "bg-violet-100 text-violet-700 border-violet-200" },
-  { value: "image", label: "Flashcards", icon: ImageIcon, color: "bg-sky-100 text-sky-700 border-sky-200" },
-  { value: "story", label: "Text Story", icon: BookText, color: "bg-amber-100 text-amber-700 border-amber-200" },
+  {
+    value: "quiz",
+    label: "Quiz",
+    icon: Gamepad2,
+    color: "bg-violet-100 text-violet-700 border-violet-200",
+  },
+  {
+    value: "image",
+    label: "Flashcards",
+    icon: ImageIcon,
+    color: "bg-sky-100 text-sky-700 border-sky-200",
+  },
+  {
+    value: "story",
+    label: "Text Story",
+    icon: BookText,
+    color: "bg-amber-100 text-amber-700 border-amber-200",
+  },
 ];
 
 const LEARNING_AREA_LABELS = {
@@ -131,7 +151,9 @@ export function AILessonPlanning() {
     } else {
       if (mascotInterval.current) clearInterval(mascotInterval.current);
     }
-    return () => { if (mascotInterval.current) clearInterval(mascotInterval.current); };
+    return () => {
+      if (mascotInterval.current) clearInterval(mascotInterval.current);
+    };
   }, [state.step]);
 
   const fetchSavedPlans = useCallback(async () => {
@@ -180,8 +202,14 @@ export function AILessonPlanning() {
           learning_area: state.learningArea,
           duration: parseInt(state.duration),
           additional_notes: state.additionalNotes,
-          moral_education: state.learningArea === "social" ? state.moralEducation : "moral",
-          language: state.learningArea === "literacy_bm" ? "bm" : state.learningArea === "literacy_en" ? "en" : state.language,
+          moral_education:
+            state.learningArea === "social" ? state.moralEducation : "moral",
+          language:
+            state.learningArea === "literacy_bm"
+              ? "bm"
+              : state.learningArea === "literacy_en"
+                ? "en"
+                : state.language,
         }),
       });
 
@@ -196,7 +224,9 @@ export function AILessonPlanning() {
     } catch (err) {
       console.error(err);
       dispatch({ type: "FINISH_GENERATION", payload: null });
-      toast.error(err.message || "Failed to generate lesson plan. Please try again.");
+      toast.error(
+        err.message || "Failed to generate lesson plan. Please try again.",
+      );
     }
   };
 
@@ -285,760 +315,1166 @@ export function AILessonPlanning() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-slate-50">
       <div className="absolute inset-0 z-0 pointer-events-none">
-        <Duckpit count={24} gravity={0.5} friction={0.9975} wallBounce={0.9} className="h-full w-full opacity-100" />
+        <Duckpit
+          count={24}
+          gravity={0.5}
+          friction={0.9975}
+          wallBounce={0.9}
+          className="h-full w-full opacity-100"
+        />
       </div>
       <div className="absolute inset-0 z-0 bg-linear-to-b from-white/72 via-white/58 to-emerald-50/72" />
 
       <div className="relative z-10">
-      {/* Header */}
-      <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-8 h-8 bg-[#bafde0] rounded-lg flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-black" />
+        {/* Header */}
+        <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
+          <div className="max-w-7xl mx-auto px-6 py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-8 h-8 bg-[#bafde0] rounded-lg flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-black" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-semibold">
+                    Lesson Planning Assistant Powered by AI
+                  </h1>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Generate DSKP-aligned lesson plans powered by Gemini AI
+                  </p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-2xl font-semibold">Lesson Planning Assistant Powered by AI</h1>
-                <p className="text-sm text-muted-foreground mt-1">Generate DSKP-aligned lesson plans powered by Gemini AI</p>
-              </div>
+              <Button
+                variant="ghost"
+                onClick={() => navigate("/teacher")}
+                className="cursor-pointer"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Dashboard
+              </Button>
             </div>
-            <Button variant="ghost" onClick={() => navigate("/teacher")} className="cursor-pointer">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
-            </Button>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="generator" className="cursor-pointer">Generator</TabsTrigger>
-            <TabsTrigger value="list" className="cursor-pointer">My Lesson Plans</TabsTrigger>
-          </TabsList>
+        <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="space-y-6"
+          >
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="generator" className="cursor-pointer">
+                Generator
+              </TabsTrigger>
+              <TabsTrigger value="list" className="cursor-pointer">
+                My Lesson Plans
+              </TabsTrigger>
+            </TabsList>
 
-          {/* ══════════════════════════════════════════════════════════
+            {/* ══════════════════════════════════════════════════════════
               TAB 1: GENERATOR  (form → generating → review)
               ══════════════════════════════════════════════════════════ */}
-          <TabsContent value="generator" className="space-y-6">
-
-            {/* ─── STEP I: INPUT FORM ─── */}
-            {state.step === "form" && (
-              <Card className="border-2 border-indigo-200 shadow-md">
-                <CardHeader className="bg-linear-to-r from-indigo-100 to-purple-100">
-                  <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                    <Lightbulb className="h-5 w-5 text-[#3090A0]" />
-                    Lesson Plan Generator
-                  </CardTitle>
-                  <CardDescription className="text-sm text-gray-700 mb-2">
-                    Fill in your lesson details below. AI will generate a DSKP KSPK 2026-aligned lesson plan for you.
-                  </CardDescription>
-                  <div className="pb-3"></div>
-                </CardHeader>
-
-                <CardContent className="space-y-4 text-base">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-                    {/* Age Group */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-semibold">Age Group</Label>
-                      <Select value={state.ageGroup} onValueChange={(val) => dispatch({ type: "SET_FIELD", field: "ageGroup", value: val })}>
-                        <SelectTrigger className="text-sm font-medium">
-                          <SelectValue placeholder="Select age group" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="4">4 years old</SelectItem>
-                          <SelectItem value="5">5 years old</SelectItem>
-                          <SelectItem value="6">6 years old</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Learning Area */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-semibold">Learning Area</Label>
-                      <Select value={state.learningArea} onValueChange={(val) => {
-                        dispatch({ type: "SET_FIELD", field: "learningArea", value: val });
-                        // Auto-set language from literacy selection
-                        if (val === "literacy_bm") dispatch({ type: "SET_FIELD", field: "language", value: "bm" });
-                        else if (val === "literacy_en") dispatch({ type: "SET_FIELD", field: "language", value: "en" });
-                      }}>
-                        <SelectTrigger className="text-sm font-medium">
-                          <SelectValue placeholder="Select learning area" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="literacy_bm">Literacy (Bahasa Melayu)</SelectItem>
-                          <SelectItem value="literacy_en">Literacy (English)</SelectItem>
-                          <SelectItem value="numeracy">Numeracy</SelectItem>
-                          <SelectItem value="social">Social Skills</SelectItem>
-                          <SelectItem value="motor">Motor Skills</SelectItem>
-                          <SelectItem value="creative">Creative Arts</SelectItem>
-                          <SelectItem value="cognitive">Cognitive Development</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Moral Education Toggle — only for Social Skills */}
-                    {state.learningArea === "social" && (
-                      <div className="space-y-2">
-                        <Label className="text-sm font-semibold">Moral / Islam Education</Label>
-                        <Select value={state.moralEducation} onValueChange={(val) => dispatch({ type: "SET_FIELD", field: "moralEducation", value: val })}>
-                          <SelectTrigger className="text-sm font-medium">
-                            <SelectValue placeholder="Select education stream" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="moral">Pendidikan Moral</SelectItem>
-                            <SelectItem value="islam">Pendidikan Islam</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
-                    {/* Language of Delivery — not shown for Literacy (implicit) */}
-                    {state.learningArea !== "literacy_bm" && state.learningArea !== "literacy_en" && (
-                      <div className="space-y-2">
-                        <Label className="text-sm font-semibold">Language of Delivery</Label>
-                        <Select value={state.language} onValueChange={(val) => dispatch({ type: "SET_FIELD", field: "language", value: val })}>
-                          <SelectTrigger className="text-sm font-medium">
-                            <SelectValue placeholder="Select language" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="bm">Bahasa Malaysia</SelectItem>
-                            <SelectItem value="en">English</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
-                    {/* Duration */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-semibold">Duration (minutes)</Label>
-                      <Select value={state.duration} onValueChange={(val) => dispatch({ type: "SET_FIELD", field: "duration", value: val })}>
-                        <SelectTrigger className="text-sm font-medium">
-                          <SelectValue placeholder="Select duration" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="15">15 minutes</SelectItem>
-                          <SelectItem value="20">20 minutes</SelectItem>
-                          <SelectItem value="30">30 minutes</SelectItem>
-                          <SelectItem value="45">45 minutes</SelectItem>
-                          <SelectItem value="60">60 minutes</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold">Lesson Topic *</Label>
-                    <Textarea
-                      className="text-sm"
-                      placeholder="e.g., The letter 'B' and animals that start with B"
-                      rows={2}
-                      value={state.topic}
-                      onChange={(e) => dispatch({ type: "SET_FIELD", field: "topic", value: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold">Additional Notes (Optional)</Label>
-                    <Textarea
-                      className="text-sm"
-                      placeholder="Any specific requirements, student considerations, or resources you'd like to include..."
-                      rows={3}
-                      value={state.additionalNotes}
-                      onChange={(e) => dispatch({ type: "SET_FIELD", field: "additionalNotes", value: e.target.value })}
-                    />
-                  </div>
-
-                  <Button
-                    onClick={generateLessonPlan}
-                    disabled={state.loading}
-                    size="lg"
-                    className="w-full bg-[#3090A0] hover:bg-[#2FBFA5] text-white font-semibold text-base cursor-pointer"
-                  >
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Generate Lesson Plan
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* ─── STEP III: GENERATING (mascot loading) ─── */}
-            {state.step === "generating" && (
-              <Card className="border-2 border-indigo-200 shadow-md">
-                <CardContent className="pt-8 pb-20 flex flex-col items-center justify-center text-center space-y-8">
-                  <div className="relative w-48 h-48 flex items-center justify-center">
-                    {/* Spinning ring behind the mascot */}
-                    <div className="absolute inset-0 rounded-full border-4 border-[#3090A0]/20 border-t-[#3090A0] animate-spin" />
-                    <img
-                      key={mascotIndex}
-                      src={MASCOT_IMAGES[mascotIndex]}
-                      alt="SabahSprout mascot"
-                      className="w-32 h-32 object-contain animate-in fade-in zoom-in-95 duration-500"
-                      style={{ animation: "fade-in 500ms ease-out, mascotWobble 2s ease-in-out infinite" }}
-                    />
-                  </div>
-                  <div className="space-y-3 max-w-md">
-                    <h2 className="text-xl font-semibold text-gray-800">Generating Your Lesson Plan</h2>
-                    <p key={mascotIndex} className="text-sm text-muted-foreground animate-in fade-in duration-300">
-                      {LOADING_MESSAGES[mascotIndex]}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* ─── STEP IV: REVIEW & CUSTOMISE ─── */}
-            {state.step === "review" && state.lessonPlan && (
-              <div className="space-y-4 animate-in fade-in duration-500">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle2 className="h-6 w-6 text-green-600" />
-                    <h2 className="text-xl font-semibold text-gray-800">Review & Customise Your Lesson Plan</h2>
-                  </div>
-                </div>
-
-                {/* Title & Metadata */}
-                <Card className="shadow-md border border-indigo-200">
-                  <CardHeader className="bg-linear-to-r from-indigo-50 to-purple-50 pb-4">
-                    <div className="space-y-3">
-                      <Input
-                        className="text-2xl font-bold text-gray-800 border-dashed border-gray-300 bg-white/50"
-                        value={state.lessonPlan.title}
-                        onChange={(e) => dispatch({ type: "UPDATE_PLAN_FIELD", field: "title", value: e.target.value })}
-                      />
-                      {state.lessonPlan.topic && (
-                        <p className="text-sm text-muted-foreground">Topic: <span className="font-medium text-gray-700">{state.lessonPlan.topic}</span></p>
-                      )}
-                      <div className="flex flex-wrap gap-2 text-xs md:text-sm">
-                        <Badge className="bg-indigo-100 text-indigo-700"><Users className="h-3 w-3 mr-1" /> Ages {state.lessonPlan.age_group}</Badge>
-                        <Badge className="bg-blue-100 text-blue-700"><Clock className="h-3 w-3 mr-1" /> {state.lessonPlan.duration_minutes} minutes</Badge>
-                        <Badge className="bg-purple-100 text-purple-700 capitalize">{LEARNING_AREA_LABELS[state.lessonPlan.learning_area] || state.lessonPlan.learning_area}</Badge>
-                        <Badge className="bg-teal-100 text-teal-700">
-                          {state.lessonPlan.language === "en" ? "English" : "Bahasa Malaysia"}
-                        </Badge>
-                        {state.lessonPlan.learning_area === "social" && (
-                          <Badge className="bg-amber-100 text-amber-700">
-                            {state.lessonPlan.moral_education === "islam" ? "Pendidikan Islam" : "Pendidikan Moral"}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
+            <TabsContent value="generator" className="space-y-6">
+              {/* ─── STEP I: INPUT FORM ─── */}
+              {state.step === "form" && (
+                <Card className="border-2 border-indigo-200 shadow-md">
+                  <CardHeader className="bg-linear-to-r from-indigo-100 to-purple-100">
+                    <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                      <Lightbulb className="h-5 w-5 text-[#3090A0]" />
+                      Lesson Plan Generator
+                    </CardTitle>
+                    <CardDescription className="text-sm text-gray-700 mb-2">
+                      Fill in your lesson details below. AI will generate a DSKP
+                      KSPK 2026-aligned lesson plan for you.
+                    </CardDescription>
+                    <div className="pb-3"></div>
                   </CardHeader>
-                </Card>
 
-                {/* DSKP Standards */}
-                {state.lessonPlan.dskp_standards?.length > 0 && (
+                  <CardContent className="space-y-4 text-base">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                      {/* Age Group */}
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold">
+                          Age Group
+                        </Label>
+                        <Select
+                          value={state.ageGroup}
+                          onValueChange={(val) =>
+                            dispatch({
+                              type: "SET_FIELD",
+                              field: "ageGroup",
+                              value: val,
+                            })
+                          }
+                        >
+                          <SelectTrigger className="text-sm font-medium">
+                            <SelectValue placeholder="Select age group" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="4">4 years old</SelectItem>
+                            <SelectItem value="5">5 years old</SelectItem>
+                            <SelectItem value="6">6 years old</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Learning Area */}
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold">
+                          Learning Area
+                        </Label>
+                        <Select
+                          value={state.learningArea}
+                          onValueChange={(val) => {
+                            dispatch({
+                              type: "SET_FIELD",
+                              field: "learningArea",
+                              value: val,
+                            });
+                            // Auto-set language from literacy selection
+                            if (val === "literacy_bm")
+                              dispatch({
+                                type: "SET_FIELD",
+                                field: "language",
+                                value: "bm",
+                              });
+                            else if (val === "literacy_en")
+                              dispatch({
+                                type: "SET_FIELD",
+                                field: "language",
+                                value: "en",
+                              });
+                          }}
+                        >
+                          <SelectTrigger className="text-sm font-medium">
+                            <SelectValue placeholder="Select learning area" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="literacy_bm">
+                              Literacy (Bahasa Melayu)
+                            </SelectItem>
+                            <SelectItem value="literacy_en">
+                              Literacy (English)
+                            </SelectItem>
+                            <SelectItem value="numeracy">Numeracy</SelectItem>
+                            <SelectItem value="social">
+                              Social Skills
+                            </SelectItem>
+                            <SelectItem value="motor">Motor Skills</SelectItem>
+                            <SelectItem value="creative">
+                              Creative Arts
+                            </SelectItem>
+                            <SelectItem value="cognitive">
+                              Cognitive Development
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Moral Education Toggle — only for Social Skills */}
+                      {state.learningArea === "social" && (
+                        <div className="space-y-2">
+                          <Label className="text-sm font-semibold">
+                            Moral / Islam Education
+                          </Label>
+                          <Select
+                            value={state.moralEducation}
+                            onValueChange={(val) =>
+                              dispatch({
+                                type: "SET_FIELD",
+                                field: "moralEducation",
+                                value: val,
+                              })
+                            }
+                          >
+                            <SelectTrigger className="text-sm font-medium">
+                              <SelectValue placeholder="Select education stream" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="moral">
+                                Pendidikan Moral
+                              </SelectItem>
+                              <SelectItem value="islam">
+                                Pendidikan Islam
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
+                      {/* Language of Delivery — not shown for Literacy (implicit) */}
+                      {state.learningArea !== "literacy_bm" &&
+                        state.learningArea !== "literacy_en" && (
+                          <div className="space-y-2">
+                            <Label className="text-sm font-semibold">
+                              Language of Delivery
+                            </Label>
+                            <Select
+                              value={state.language}
+                              onValueChange={(val) =>
+                                dispatch({
+                                  type: "SET_FIELD",
+                                  field: "language",
+                                  value: val,
+                                })
+                              }
+                            >
+                              <SelectTrigger className="text-sm font-medium">
+                                <SelectValue placeholder="Select language" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="bm">
+                                  Bahasa Malaysia
+                                </SelectItem>
+                                <SelectItem value="en">English</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+
+                      {/* Duration */}
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold">
+                          Duration (minutes)
+                        </Label>
+                        <Select
+                          value={state.duration}
+                          onValueChange={(val) =>
+                            dispatch({
+                              type: "SET_FIELD",
+                              field: "duration",
+                              value: val,
+                            })
+                          }
+                        >
+                          <SelectTrigger className="text-sm font-medium">
+                            <SelectValue placeholder="Select duration" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="15">15 minutes</SelectItem>
+                            <SelectItem value="20">20 minutes</SelectItem>
+                            <SelectItem value="30">30 minutes</SelectItem>
+                            <SelectItem value="45">45 minutes</SelectItem>
+                            <SelectItem value="60">60 minutes</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">
+                        Lesson Topic *
+                      </Label>
+                      <Textarea
+                        className="text-sm"
+                        placeholder="e.g., The letter 'B' and animals that start with B"
+                        rows={2}
+                        value={state.topic}
+                        onChange={(e) =>
+                          dispatch({
+                            type: "SET_FIELD",
+                            field: "topic",
+                            value: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold">
+                        Additional Notes (Optional)
+                      </Label>
+                      <Textarea
+                        className="text-sm"
+                        placeholder="Any specific requirements, student considerations, or resources you'd like to include..."
+                        rows={3}
+                        value={state.additionalNotes}
+                        onChange={(e) =>
+                          dispatch({
+                            type: "SET_FIELD",
+                            field: "additionalNotes",
+                            value: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+
+                    <Button
+                      onClick={generateLessonPlan}
+                      disabled={state.loading}
+                      size="lg"
+                      className="w-full bg-[#3090A0] hover:bg-[#2FBFA5] text-white font-semibold text-base cursor-pointer"
+                    >
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Generate Lesson Plan
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* ─── STEP III: GENERATING (mascot loading) ─── */}
+              {state.step === "generating" && (
+                <Card className="border-2 border-indigo-200 shadow-md">
+                  <CardContent className="pt-8 pb-20 flex flex-col items-center justify-center text-center space-y-8">
+                    <div className="relative w-48 h-48 flex items-center justify-center">
+                      {/* Spinning ring behind the mascot */}
+                      <div className="absolute inset-0 rounded-full border-4 border-[#3090A0]/20 border-t-[#3090A0] animate-spin" />
+                      <img
+                        key={mascotIndex}
+                        src={MASCOT_IMAGES[mascotIndex]}
+                        alt="SabahSprout mascot"
+                        className="w-32 h-32 object-contain animate-in fade-in zoom-in-95 duration-500"
+                        style={{
+                          animation:
+                            "fade-in 500ms ease-out, mascotWobble 2s ease-in-out infinite",
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-3 max-w-md">
+                      <h2 className="text-xl font-semibold text-gray-800">
+                        Generating Your Lesson Plan
+                      </h2>
+                      <p
+                        key={mascotIndex}
+                        className="text-sm text-muted-foreground animate-in fade-in duration-300"
+                      >
+                        {LOADING_MESSAGES[mascotIndex]}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* ─── STEP IV: REVIEW & CUSTOMISE ─── */}
+              {state.step === "review" && state.lessonPlan && (
+                <div className="space-y-4 animate-in fade-in duration-500">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle2 className="h-6 w-6 text-green-600" />
+                      <h2 className="text-xl font-semibold text-gray-800">
+                        Review & Customise Your Lesson Plan
+                      </h2>
+                    </div>
+                  </div>
+
+                  {/* Title & Metadata */}
+                  <Card className="shadow-md border border-indigo-200">
+                    <CardHeader className="bg-linear-to-r from-indigo-50 to-purple-50 pb-4">
+                      <div className="space-y-3">
+                        <Input
+                          className="text-2xl font-bold text-gray-800 border-dashed border-gray-300 bg-white/50"
+                          value={state.lessonPlan.title}
+                          onChange={(e) =>
+                            dispatch({
+                              type: "UPDATE_PLAN_FIELD",
+                              field: "title",
+                              value: e.target.value,
+                            })
+                          }
+                        />
+                        {state.lessonPlan.topic && (
+                          <p className="text-sm text-muted-foreground">
+                            Topic:{" "}
+                            <span className="font-medium text-gray-700">
+                              {state.lessonPlan.topic}
+                            </span>
+                          </p>
+                        )}
+                        <div className="flex flex-wrap gap-2 text-xs md:text-sm">
+                          <Badge className="bg-indigo-100 text-indigo-700">
+                            <Users className="h-3 w-3 mr-1" /> Ages{" "}
+                            {state.lessonPlan.age_group}
+                          </Badge>
+                          <Badge className="bg-blue-100 text-blue-700">
+                            <Clock className="h-3 w-3 mr-1" />{" "}
+                            {state.lessonPlan.duration_minutes} minutes
+                          </Badge>
+                          <Badge className="bg-purple-100 text-purple-700 capitalize">
+                            {LEARNING_AREA_LABELS[
+                              state.lessonPlan.learning_area
+                            ] || state.lessonPlan.learning_area}
+                          </Badge>
+                          <Badge className="bg-teal-100 text-teal-700">
+                            {state.lessonPlan.language === "en"
+                              ? "English"
+                              : "Bahasa Malaysia"}
+                          </Badge>
+                          {state.lessonPlan.learning_area === "social" && (
+                            <Badge className="bg-amber-100 text-amber-700">
+                              {state.lessonPlan.moral_education === "islam"
+                                ? "Pendidikan Islam"
+                                : "Pendidikan Moral"}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </CardHeader>
+                  </Card>
+
+                  {/* DSKP Standards */}
+                  {state.lessonPlan.dskp_standards?.length > 0 && (
+                    <Card className="shadow-sm border border-gray-200">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                          <BookOpen className="h-5 w-5 text-emerald-600" />
+                          DSKP Standards Referenced
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <TooltipProvider>
+                          <div className="flex flex-wrap gap-2">
+                            {state.lessonPlan.dskp_standards.map((std, i) => {
+                              const code =
+                                typeof std === "object" ? std.code : std;
+                              const title =
+                                typeof std === "object" ? std.title : null;
+                              return (
+                                <div
+                                  key={i}
+                                  className="flex items-center gap-1"
+                                >
+                                  {title ? (
+                                    <Tooltip>
+                                      <TooltipTrigger className="cursor-help">
+                                        <Badge
+                                          variant="secondary"
+                                          className="bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono text-sm"
+                                        >
+                                          {code}
+                                        </Badge>
+                                      </TooltipTrigger>
+                                      <TooltipContent
+                                        side="top"
+                                        className="max-w-xs"
+                                      >
+                                        <p className="text-sm">{title}</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  ) : (
+                                    <Badge
+                                      variant="secondary"
+                                      className="bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono text-sm"
+                                    >
+                                      {code}
+                                    </Badge>
+                                  )}
+                                  <button
+                                    onClick={() =>
+                                      removePlanArrayItem("dskp_standards", i)
+                                    }
+                                    className="text-gray-400 hover:text-red-500 cursor-pointer"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </TooltipProvider>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Learning Objectives — editable */}
                   <Card className="shadow-sm border border-gray-200">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                        <BookOpen className="h-5 w-5 text-emerald-600" />
-                        DSKP Standards Referenced
+                        <Target className="h-5 w-5 text-emerald-600" />
+                        Learning Objectives
                       </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <TooltipProvider>
-                        <div className="flex flex-wrap gap-2">
-                          {state.lessonPlan.dskp_standards.map((std, i) => {
-                            const code = typeof std === "object" ? std.code : std;
-                            const title = typeof std === "object" ? std.title : null;
-                            return (
-                              <div key={i} className="flex items-center gap-1">
-                                {title ? (
-                                  <Tooltip>
-                                    <TooltipTrigger className="cursor-help">
-                                      <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono text-sm">
-                                        {code}
-                                      </Badge>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="top" className="max-w-xs">
-                                      <p className="text-sm">{title}</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                ) : (
-                                  <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono text-sm">
-                                    {code}
-                                  </Badge>
-                                )}
-                                <button onClick={() => removePlanArrayItem("dskp_standards", i)} className="text-gray-400 hover:text-red-500 cursor-pointer">
-                                  <X className="h-3 w-3" />
-                                </button>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </TooltipProvider>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Learning Objectives — editable */}
-                <Card className="shadow-sm border border-gray-200">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                      <Target className="h-5 w-5 text-emerald-600" />
-                      Learning Objectives
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {state.lessonPlan.objectives?.map((obj, i) => (
-                      <div key={i} className="flex items-start gap-2">
-                        <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-semibold shrink-0 mt-1">
-                          {i + 1}
-                        </div>
-                        <Input
-                          className="flex-1 text-sm border-dashed"
-                          value={obj}
-                          onChange={(e) => updatePlanArrayItem("objectives", i, e.target.value)}
-                        />
-                        <button onClick={() => removePlanArrayItem("objectives", i)} className="text-gray-400 hover:text-red-500 mt-1.5 cursor-pointer">
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
-                    <Button variant="ghost" size="sm" onClick={() => addPlanArrayItem("objectives", "")} className="text-indigo-600 cursor-pointer">
-                      <Plus className="h-4 w-4 mr-1" /> Add Objective
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                {/* Materials — editable */}
-                <Card className="shadow-sm border border-gray-200">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                      <Monitor className="h-5 w-5 text-emerald-600" />
-                      Digital Resources
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {state.lessonPlan.materials?.map((mat, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <span className="text-gray-400">•</span>
-                        <Input
-                          className="flex-1 text-sm border-dashed"
-                          value={mat}
-                          onChange={(e) => updatePlanArrayItem("materials", i, e.target.value)}
-                        />
-                        <button onClick={() => removePlanArrayItem("materials", i)} className="text-gray-400 hover:text-red-500 cursor-pointer">
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
-                    <Button variant="ghost" size="sm" onClick={() => addPlanArrayItem("materials", "")} className="text-indigo-600 cursor-pointer">
-                      <Plus className="h-4 w-4 mr-1" /> Add Resource
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                {/* Activity Steps — editable */}
-                <Card className="shadow-sm border border-gray-200">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                      <Layers className="h-5 w-5 text-emerald-600" />
-                      Activities
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {state.lessonPlan.activities?.map((activity, i) => {
-                      const typeOpt = ACTIVITY_TYPE_OPTIONS.find(t => t.value === activity.type);
-                      return (
-                        <div key={i} className="flex gap-3 p-4 border rounded-lg bg-gray-50 relative">
-                          <div className="flex-1 space-y-2">
-                            <div className="flex items-center justify-between gap-2">
-                              <Input
-                                className="font-semibold text-gray-800 border-dashed flex-1"
-                                value={activity.title}
-                                onChange={(e) => {
-                                  const newActs = [...state.lessonPlan.activities];
-                                  newActs[i] = { ...newActs[i], title: e.target.value };
-                                  dispatch({ type: "UPDATE_PLAN_FIELD", field: "activities", value: newActs });
-                                }}
-                              />
-                              <Input
-                                className="w-28 text-sm border-dashed text-blue-700"
-                                value={activity.duration}
-                                onChange={(e) => {
-                                  const newActs = [...state.lessonPlan.activities];
-                                  newActs[i] = { ...newActs[i], duration: e.target.value };
-                                  dispatch({ type: "UPDATE_PLAN_FIELD", field: "activities", value: newActs });
-                                }}
-                              />
-                            </div>
-                            <Textarea
-                              className="text-sm border-dashed"
-                              rows={2}
-                              value={activity.description}
-                              onChange={(e) => {
-                                const newActs = [...state.lessonPlan.activities];
-                                newActs[i] = { ...newActs[i], description: e.target.value };
-                                dispatch({ type: "UPDATE_PLAN_FIELD", field: "activities", value: newActs });
-                              }}
-                            />
-                            <div className="flex items-center gap-2 pt-1">
-                              <Label className="text-xs font-semibold text-gray-500 shrink-0">Activity Type</Label>
-                              <Select
-                                value={activity.type || "quiz"}
-                                onValueChange={(val) => {
-                                  const newActs = [...state.lessonPlan.activities];
-                                  newActs[i] = { ...newActs[i], type: val };
-                                  dispatch({ type: "UPDATE_PLAN_FIELD", field: "activities", value: newActs });
-                                }}
-                              >
-                                <SelectTrigger className="w-44 h-8 text-xs">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {ACTIVITY_TYPE_OPTIONS.map((opt) => (
-                                    <SelectItem key={opt.value} value={opt.value}>
-                                      <span className="flex items-center gap-1.5">
-                                        <opt.icon className="h-3.5 w-3.5" />
-                                        {opt.label}
-                                      </span>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
+                    <CardContent className="space-y-3">
+                      {state.lessonPlan.objectives?.map((obj, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-semibold shrink-0 mt-1">
+                            {i + 1}
                           </div>
-                          <button onClick={() => removePlanArrayItem("activities", i)} className="text-gray-400 hover:text-red-500 absolute top-2 right-2 cursor-pointer">
+                          <Input
+                            className="flex-1 text-sm border-dashed"
+                            value={obj}
+                            onChange={(e) =>
+                              updatePlanArrayItem(
+                                "objectives",
+                                i,
+                                e.target.value,
+                              )
+                            }
+                          />
+                          <button
+                            onClick={() => removePlanArrayItem("objectives", i)}
+                            className="text-gray-400 hover:text-red-500 mt-1.5 cursor-pointer"
+                          >
                             <X className="h-4 w-4" />
                           </button>
                         </div>
-                      );
-                    })}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => addPlanArrayItem("activities", { title: "", description: "", duration: "5 minutes", type: "quiz" })}
-                      className="text-indigo-600 cursor-pointer"
-                    >
-                      <Plus className="h-4 w-4 mr-1" /> Add Activity Step
-                    </Button>
-                  </CardContent>
-                </Card>
+                      ))}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => addPlanArrayItem("objectives", "")}
+                        className="text-indigo-600 cursor-pointer"
+                      >
+                        <Plus className="h-4 w-4 mr-1" /> Add Objective
+                      </Button>
+                    </CardContent>
+                  </Card>
 
-                {/* Assessment — editable */}
-                <Card className="shadow-sm border border-gray-200">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                      <ClipboardCheck className="h-5 w-5 text-emerald-600" />
-                      Assessment Strategy
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Textarea
-                      className="text-sm border-dashed"
-                      rows={3}
-                      value={state.lessonPlan.assessment}
-                      onChange={(e) => dispatch({ type: "UPDATE_PLAN_FIELD", field: "assessment", value: e.target.value })}
-                    />
-                  </CardContent>
-                </Card>
-
-                {/* Adaptations — editable */}
-                <Card className="shadow-sm border border-gray-200">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                      <Lightbulb className="h-5 w-5 text-emerald-600" />
-                      Adaptations
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {state.lessonPlan.adaptations?.map((adp, i) => (
-                      <div key={i} className="flex items-start gap-2">
-                        <Lightbulb className="h-4 w-4 text-indigo-600 shrink-0 mt-2" />
-                        <Input
-                          className="flex-1 text-sm border-dashed"
-                          value={adp}
-                          onChange={(e) => updatePlanArrayItem("adaptations", i, e.target.value)}
-                        />
-                        <button onClick={() => removePlanArrayItem("adaptations", i)} className="text-gray-400 hover:text-red-500 mt-1.5 cursor-pointer">
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
-                    <Button variant="ghost" size="sm" onClick={() => addPlanArrayItem("adaptations", "")} className="text-indigo-600 cursor-pointer">
-                      <Plus className="h-4 w-4 mr-1" /> Add Adaptation
-                    </Button>
-                  </CardContent>
-                </Card>
-
-                {/* Teacher Notes — editable */}
-                {state.lessonPlan.teacher_notes !== undefined && (
+                  {/* Materials — editable */}
                   <Card className="shadow-sm border border-gray-200">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                        <Pencil className="h-5 w-5 text-emerald-600" />
-                        Teacher Notes
+                        <Monitor className="h-5 w-5 text-emerald-600" />
+                        Digital Resources
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {state.lessonPlan.materials?.map((mat, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <span className="text-gray-400">•</span>
+                          <Input
+                            className="flex-1 text-sm border-dashed"
+                            value={mat}
+                            onChange={(e) =>
+                              updatePlanArrayItem(
+                                "materials",
+                                i,
+                                e.target.value,
+                              )
+                            }
+                          />
+                          <button
+                            onClick={() => removePlanArrayItem("materials", i)}
+                            className="text-gray-400 hover:text-red-500 cursor-pointer"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => addPlanArrayItem("materials", "")}
+                        className="text-indigo-600 cursor-pointer"
+                      >
+                        <Plus className="h-4 w-4 mr-1" /> Add Resource
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  {/* Activity Steps — editable */}
+                  <Card className="shadow-sm border border-gray-200">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                        <Layers className="h-5 w-5 text-emerald-600" />
+                        Activities
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {state.lessonPlan.activities?.map((activity, i) => {
+                        const typeOpt = ACTIVITY_TYPE_OPTIONS.find(
+                          (t) => t.value === activity.type,
+                        );
+                        return (
+                          <div
+                            key={i}
+                            className="flex gap-3 p-4 border rounded-lg bg-gray-50 relative"
+                          >
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center justify-between gap-2">
+                                <Input
+                                  className="font-semibold text-gray-800 border-dashed flex-1"
+                                  value={activity.title}
+                                  onChange={(e) => {
+                                    const newActs = [
+                                      ...state.lessonPlan.activities,
+                                    ];
+                                    newActs[i] = {
+                                      ...newActs[i],
+                                      title: e.target.value,
+                                    };
+                                    dispatch({
+                                      type: "UPDATE_PLAN_FIELD",
+                                      field: "activities",
+                                      value: newActs,
+                                    });
+                                  }}
+                                />
+                                <Input
+                                  className="w-28 text-sm border-dashed text-blue-700"
+                                  value={activity.duration}
+                                  onChange={(e) => {
+                                    const newActs = [
+                                      ...state.lessonPlan.activities,
+                                    ];
+                                    newActs[i] = {
+                                      ...newActs[i],
+                                      duration: e.target.value,
+                                    };
+                                    dispatch({
+                                      type: "UPDATE_PLAN_FIELD",
+                                      field: "activities",
+                                      value: newActs,
+                                    });
+                                  }}
+                                />
+                              </div>
+                              <Textarea
+                                className="text-sm border-dashed"
+                                rows={2}
+                                value={activity.description}
+                                onChange={(e) => {
+                                  const newActs = [
+                                    ...state.lessonPlan.activities,
+                                  ];
+                                  newActs[i] = {
+                                    ...newActs[i],
+                                    description: e.target.value,
+                                  };
+                                  dispatch({
+                                    type: "UPDATE_PLAN_FIELD",
+                                    field: "activities",
+                                    value: newActs,
+                                  });
+                                }}
+                              />
+                              <div className="flex items-center gap-2 pt-1">
+                                <Label className="text-xs font-semibold text-gray-500 shrink-0">
+                                  Activity Type
+                                </Label>
+                                <Select
+                                  value={activity.type || "quiz"}
+                                  onValueChange={(val) => {
+                                    const newActs = [
+                                      ...state.lessonPlan.activities,
+                                    ];
+                                    newActs[i] = { ...newActs[i], type: val };
+                                    dispatch({
+                                      type: "UPDATE_PLAN_FIELD",
+                                      field: "activities",
+                                      value: newActs,
+                                    });
+                                  }}
+                                >
+                                  <SelectTrigger className="w-44 h-8 text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {ACTIVITY_TYPE_OPTIONS.map((opt) => (
+                                      <SelectItem
+                                        key={opt.value}
+                                        value={opt.value}
+                                      >
+                                        <span className="flex items-center gap-1.5">
+                                          <opt.icon className="h-3.5 w-3.5" />
+                                          {opt.label}
+                                        </span>
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() =>
+                                removePlanArrayItem("activities", i)
+                              }
+                              className="text-gray-400 hover:text-red-500 absolute top-2 right-2 cursor-pointer"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          addPlanArrayItem("activities", {
+                            title: "",
+                            description: "",
+                            duration: "5 minutes",
+                            type: "quiz",
+                          })
+                        }
+                        className="text-indigo-600 cursor-pointer"
+                      >
+                        <Plus className="h-4 w-4 mr-1" /> Add Activity Step
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  {/* Assessment — editable */}
+                  <Card className="shadow-sm border border-gray-200">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                        <ClipboardCheck className="h-5 w-5 text-emerald-600" />
+                        Assessment Strategy
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <Textarea
                         className="text-sm border-dashed"
                         rows={3}
-                        value={state.lessonPlan.teacher_notes}
-                        onChange={(e) => dispatch({ type: "UPDATE_PLAN_FIELD", field: "teacher_notes", value: e.target.value })}
+                        value={state.lessonPlan.assessment}
+                        onChange={(e) =>
+                          dispatch({
+                            type: "UPDATE_PLAN_FIELD",
+                            field: "assessment",
+                            value: e.target.value,
+                          })
+                        }
                       />
                     </CardContent>
                   </Card>
-                )}
 
-                {/* Bottom save bar */}
-                <div className="flex justify-end gap-3 pb-8">
-                  <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" className="cursor-pointer">
-                        <RotateCcw className="mr-2 h-4 w-4" />
-                        Discard & Start Over
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will discard all changes to the lesson plan and return you to the form. This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <div className="flex justify-end gap-3">
-                        <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => {
-                            dispatch({ type: "RESET_FORM" });
-                            setShowResetDialog(false);
-                          }}
-                          className="bg-red-600 hover:bg-red-700 cursor-pointer"
-                        >
-                          Discard
-                        </AlertDialogAction>
-                      </div>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                  <Button
-                    onClick={saveLessonPlan}
-                    disabled={savingPlan}
-                    className="bg-[#3090A0] hover:bg-[#2FBFA5] text-white cursor-pointer"
-                  >
-                    {savingPlan ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    {savingPlan ? "Saving…" : "Save to My Plans"}
-                  </Button>
-                </div>
-              </div>
-            )}
-
-          </TabsContent>
-
-          {/* ══════════════════════════════════════════════════════════
-              TAB 2: MY PLANS LIST
-              ══════════════════════════════════════════════════════════ */}
-          <TabsContent value="list" className="space-y-6">
-
-            {/* Detail view of a saved plan */}
-            {viewingPlan ? (
-              <div className="space-y-4 animate-in fade-in duration-500">
-                <Card className="shadow-md border border-indigo-200">
-                  <CardHeader className="bg-linear-to-r from-indigo-50 to-purple-50 pb-5">
-                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                      <div className="space-y-2">
-                        <CardTitle className="text-2xl font-bold text-gray-800">{viewingPlan.title}</CardTitle>
-                        {viewingPlan.topic && (
-                          <p className="text-sm text-muted-foreground">Topic: <span className="font-medium text-gray-700">{viewingPlan.topic}</span></p>
-                        )}
-                        <div className="flex flex-wrap gap-2 text-xs md:text-sm">
-                          <Badge className="bg-indigo-100 text-indigo-700"><Users className="h-3 w-3 mr-1" /> Ages {viewingPlan.age_group}</Badge>
-                          <Badge className="bg-blue-100 text-blue-700"><Clock className="h-3 w-3 mr-1" /> {viewingPlan.duration_minutes} min</Badge>
-                          <Badge className="bg-purple-100 text-purple-700 capitalize">{LEARNING_AREA_LABELS[viewingPlan.learning_area] || viewingPlan.learning_area}</Badge>
-                        </div>
-                      </div>
-                      <Button variant="outline" onClick={() => setViewingPlan(null)} className="cursor-pointer">Back to List</Button>
-                    </div>
-                  </CardHeader>
-                </Card>
-
-                {/* DSKP Standards */}
-                {viewingPlan.dskp_standards?.length > 0 && (
+                  {/* Adaptations — editable */}
                   <Card className="shadow-sm border border-gray-200">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                        <BookOpen className="h-5 w-5 text-emerald-600" />
-                        DSKP Standards
+                        <Lightbulb className="h-5 w-5 text-emerald-600" />
+                        Adaptations
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {state.lessonPlan.adaptations?.map((adp, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <Lightbulb className="h-4 w-4 text-indigo-600 shrink-0 mt-2" />
+                          <Input
+                            className="flex-1 text-sm border-dashed"
+                            value={adp}
+                            onChange={(e) =>
+                              updatePlanArrayItem(
+                                "adaptations",
+                                i,
+                                e.target.value,
+                              )
+                            }
+                          />
+                          <button
+                            onClick={() =>
+                              removePlanArrayItem("adaptations", i)
+                            }
+                            className="text-gray-400 hover:text-red-500 mt-1.5 cursor-pointer"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => addPlanArrayItem("adaptations", "")}
+                        className="text-indigo-600 cursor-pointer"
+                      >
+                        <Plus className="h-4 w-4 mr-1" /> Add Adaptation
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  {/* Teacher Notes — editable */}
+                  {state.lessonPlan.teacher_notes !== undefined && (
+                    <Card className="shadow-sm border border-gray-200">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                          <Pencil className="h-5 w-5 text-emerald-600" />
+                          Teacher Notes
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Textarea
+                          className="text-sm border-dashed"
+                          rows={3}
+                          value={state.lessonPlan.teacher_notes}
+                          onChange={(e) =>
+                            dispatch({
+                              type: "UPDATE_PLAN_FIELD",
+                              field: "teacher_notes",
+                              value: e.target.value,
+                            })
+                          }
+                        />
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Bottom save bar */}
+                  <div className="flex justify-end gap-3 pb-8">
+                    <AlertDialog
+                      open={showResetDialog}
+                      onOpenChange={setShowResetDialog}
+                    >
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" className="cursor-pointer">
+                          <RotateCcw className="mr-2 h-4 w-4" />
+                          Discard & Start Over
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will discard all changes to the lesson plan and
+                            return you to the form. This action cannot be
+                            undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <div className="flex justify-end gap-3">
+                          <AlertDialogCancel className="cursor-pointer">
+                            Cancel
+                          </AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => {
+                              dispatch({ type: "RESET_FORM" });
+                              setShowResetDialog(false);
+                            }}
+                            className="bg-red-600 hover:bg-red-700 cursor-pointer"
+                          >
+                            Discard
+                          </AlertDialogAction>
+                        </div>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    <Button
+                      onClick={saveLessonPlan}
+                      disabled={savingPlan}
+                      className="bg-[#3090A0] hover:bg-[#2FBFA5] text-white cursor-pointer"
+                    >
+                      {savingPlan ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="mr-2 h-4 w-4" />
+                      )}
+                      {savingPlan ? "Saving…" : "Save to My Plans"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+
+            {/* ══════════════════════════════════════════════════════════
+              TAB 2: MY PLANS LIST
+              ══════════════════════════════════════════════════════════ */}
+            <TabsContent value="list" className="space-y-6">
+              {/* Detail view of a saved plan */}
+              {viewingPlan ? (
+                <div className="space-y-4 animate-in fade-in duration-500">
+                  <Card className="shadow-md border border-indigo-200">
+                    <CardHeader className="bg-linear-to-r from-indigo-50 to-purple-50 pb-5">
+                      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                        <div className="space-y-2">
+                          <CardTitle className="text-2xl font-bold text-gray-800">
+                            {viewingPlan.title}
+                          </CardTitle>
+                          {viewingPlan.topic && (
+                            <p className="text-sm text-muted-foreground">
+                              Topic:{" "}
+                              <span className="font-medium text-gray-700">
+                                {viewingPlan.topic}
+                              </span>
+                            </p>
+                          )}
+                          <div className="flex flex-wrap gap-2 text-xs md:text-sm">
+                            <Badge className="bg-indigo-100 text-indigo-700">
+                              <Users className="h-3 w-3 mr-1" /> Ages{" "}
+                              {viewingPlan.age_group}
+                            </Badge>
+                            <Badge className="bg-blue-100 text-blue-700">
+                              <Clock className="h-3 w-3 mr-1" />{" "}
+                              {viewingPlan.duration_minutes} min
+                            </Badge>
+                            <Badge className="bg-purple-100 text-purple-700 capitalize">
+                              {LEARNING_AREA_LABELS[
+                                viewingPlan.learning_area
+                              ] || viewingPlan.learning_area}
+                            </Badge>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() => setViewingPlan(null)}
+                          className="bg-[#3090A0] hover:bg-[#2FBFA5] text-white cursor-pointer"
+                        >
+                          Back to List
+                        </Button>
+                      </div>
+                    </CardHeader>
+                  </Card>
+
+                  {/* DSKP Standards */}
+                  {viewingPlan.dskp_standards?.length > 0 && (
+                    <Card className="shadow-sm border border-gray-200">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                          <BookOpen className="h-5 w-5 text-emerald-600" />
+                          DSKP Standards
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <TooltipProvider>
+                          <div className="flex flex-wrap gap-2">
+                            {viewingPlan.dskp_standards.map((std, i) => {
+                              const code =
+                                typeof std === "object" ? std.code : std;
+                              const title =
+                                typeof std === "object" ? std.title : null;
+                              return title ? (
+                                <Tooltip key={i}>
+                                  <TooltipTrigger className="cursor-help">
+                                    <Badge
+                                      variant="secondary"
+                                      className="bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono text-sm"
+                                    >
+                                      {code}
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent
+                                    side="top"
+                                    className="max-w-xs"
+                                  >
+                                    <p className="text-sm">{title}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              ) : (
+                                <Badge
+                                  key={i}
+                                  variant="secondary"
+                                  className="bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono text-sm"
+                                >
+                                  {code}
+                                </Badge>
+                              );
+                            })}
+                          </div>
+                        </TooltipProvider>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Objectives */}
+                  <Card className="shadow-sm border border-gray-200">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                        <Target className="h-5 w-5 text-emerald-600" /> Learning
+                        Objectives
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <TooltipProvider>
-                        <div className="flex flex-wrap gap-2">
-                          {viewingPlan.dskp_standards.map((std, i) => {
-                            const code = typeof std === "object" ? std.code : std;
-                            const title = typeof std === "object" ? std.title : null;
-                            return title ? (
-                              <Tooltip key={i}>
-                                <TooltipTrigger className="cursor-help">
-                                  <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono text-sm">{code}</Badge>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-xs">
-                                  <p className="text-sm">{title}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            ) : (
-                              <Badge key={i} variant="secondary" className="bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono text-sm">{code}</Badge>
-                            );
-                          })}
-                        </div>
-                      </TooltipProvider>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Objectives */}
-                <Card className="shadow-sm border border-gray-200">
-                  <CardHeader><CardTitle className="flex items-center gap-2 text-lg font-semibold"><Target className="h-5 w-5 text-emerald-600" /> Learning Objectives</CardTitle></CardHeader>
-                  <CardContent>
-                    <ul className="space-y-3">
-                      {(viewingPlan.objectives || []).map((obj, i) => (
-                        <li key={i} className="flex items-start gap-3">
-                          <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-semibold shrink-0 mt-0.5">{i + 1}</div>
-                          <span className="text-gray-700 font-medium">{obj}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-
-                {/* Digital Resources */}
-                {viewingPlan.materials?.length > 0 && (
-                  <Card className="shadow-sm border border-gray-200">
-                    <CardHeader><CardTitle className="flex items-center gap-2 text-lg font-semibold"><Monitor className="h-5 w-5 text-emerald-600" /> Digital Resources</CardTitle></CardHeader>
-                    <CardContent>
-                      <ul className="space-y-2">
-                        {viewingPlan.materials.map((mat, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                            <span className="text-emerald-500 mt-0.5">•</span>
-                            <span>{mat}</span>
+                      <ul className="space-y-3">
+                        {(viewingPlan.objectives || []).map((obj, i) => (
+                          <li key={i} className="flex items-start gap-3">
+                            <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-sm font-semibold shrink-0 mt-0.5">
+                              {i + 1}
+                            </div>
+                            <span className="text-gray-700 font-medium">
+                              {obj}
+                            </span>
                           </li>
                         ))}
                       </ul>
                     </CardContent>
                   </Card>
-                )}
 
-                {/* Activities */}
-                <Card className="shadow-sm border border-gray-200">
-                  <CardHeader><CardTitle className="flex items-center gap-2 text-lg font-semibold"><Layers className="h-5 w-5 text-emerald-600" /> Activities</CardTitle></CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {(viewingPlan.activities || []).map((act, i) => {
-                        const typeOpt = ACTIVITY_TYPE_OPTIONS.find(t => t.value === act.type);
-                        return (
-                          <div key={i} className="flex gap-3 p-3 border rounded-lg bg-gray-50">
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between mb-1">
-                                <h3 className="font-semibold text-gray-800">{act.title}</h3>
-                                <div className="flex items-center gap-2">
-                                  {typeOpt && (
-                                    <Badge className={typeOpt.color}>
-                                      <typeOpt.icon className="h-3 w-3 mr-1" />{typeOpt.label}
-                                    </Badge>
-                                  )}
-                                  <Badge className="bg-blue-50 text-blue-700 border border-blue-200"><Clock className="h-3 w-3 mr-1" />{act.duration}</Badge>
-                                </div>
-                              </div>
-                              <p className="text-sm text-gray-600">{act.description}</p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
+                  {/* Digital Resources */}
+                  {viewingPlan.materials?.length > 0 && (
+                    <Card className="shadow-sm border border-gray-200">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                          <Monitor className="h-5 w-5 text-emerald-600" />{" "}
+                          Digital Resources
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="space-y-2">
+                          {viewingPlan.materials.map((mat, i) => (
+                            <li
+                              key={i}
+                              className="flex items-start gap-2 text-sm text-gray-700"
+                            >
+                              <span className="text-emerald-500 mt-0.5">•</span>
+                              <span>{mat}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  )}
 
-                {/* Assessment */}
-                <Card className="shadow-sm border border-gray-200">
-                  <CardHeader><CardTitle className="flex items-center gap-2 text-lg font-semibold"><ClipboardCheck className="h-5 w-5 text-emerald-600" /> Assessment Strategy</CardTitle></CardHeader>
-                  <CardContent>
-                    <div className="p-3 bg-indigo-50 rounded-lg border border-indigo-200">
-                      <p className="text-sm text-gray-700">{viewingPlan.assessment}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Adaptations */}
-                {viewingPlan.adaptations?.length > 0 && (
+                  {/* Activities */}
                   <Card className="shadow-sm border border-gray-200">
-                    <CardHeader><CardTitle className="flex items-center gap-2 text-lg font-semibold"><Lightbulb className="h-5 w-5 text-emerald-600" /> Adaptations</CardTitle></CardHeader>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                        <Layers className="h-5 w-5 text-emerald-600" />{" "}
+                        Activities
+                      </CardTitle>
+                    </CardHeader>
                     <CardContent>
-                      <div className="space-y-3">
-                        {viewingPlan.adaptations.map((adp, i) => (
-                          <div key={i} className="flex items-start gap-3 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
-                            <Lightbulb className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5" />
-                            <p className="text-sm text-gray-700">{adp}</p>
-                          </div>
-                        ))}
+                      <div className="space-y-4">
+                        {(viewingPlan.activities || []).map((act, i) => {
+                          const typeOpt = ACTIVITY_TYPE_OPTIONS.find(
+                            (t) => t.value === act.type,
+                          );
+                          return (
+                            <div
+                              key={i}
+                              className="flex gap-3 p-3 border rounded-lg bg-gray-50"
+                            >
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between mb-1">
+                                  <h3 className="font-semibold text-gray-800">
+                                    {act.title}
+                                  </h3>
+                                  <div className="flex items-center gap-2">
+                                    {typeOpt && (
+                                      <Badge className={typeOpt.color}>
+                                        <typeOpt.icon className="h-3 w-3 mr-1" />
+                                        {typeOpt.label}
+                                      </Badge>
+                                    )}
+                                    <Badge className="bg-blue-50 text-blue-700 border border-blue-200">
+                                      <Clock className="h-3 w-3 mr-1" />
+                                      {act.duration}
+                                    </Badge>
+                                  </div>
+                                </div>
+                                <p className="text-sm text-gray-600">
+                                  {act.description}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </CardContent>
                   </Card>
-                )}
 
-                {/* Teacher Notes */}
-                {viewingPlan.teacher_notes && (
+                  {/* Assessment */}
                   <Card className="shadow-sm border border-gray-200">
-                    <CardHeader><CardTitle className="flex items-center gap-2 text-lg font-semibold"><Pencil className="h-5 w-5 text-emerald-600" /> Teacher Notes</CardTitle></CardHeader>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                        <ClipboardCheck className="h-5 w-5 text-emerald-600" />{" "}
+                        Assessment Strategy
+                      </CardTitle>
+                    </CardHeader>
                     <CardContent>
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{viewingPlan.teacher_notes}</p>
+                      <div className="p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                        <p className="text-sm text-gray-700">
+                          {viewingPlan.assessment}
+                        </p>
+                      </div>
                     </CardContent>
                   </Card>
-                )}
-              </div>
-            ) : (
-              /* Plans list */
-              <Card>
-                <CardHeader>
-                  <CardTitle>My Lesson Plans</CardTitle>
-                  <CardDescription>Click a plan to view details</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {savedPlans.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-8">
-                      No lesson plans yet. Go to the Generator tab to create one.
-                    </p>
-                  ) : (
-                    <div className="space-y-3">
-                      {savedPlans.map((plan) => (
-                        <div
-                          key={plan.id}
-                          className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                          onClick={() => setViewingPlan(plan)}
-                        >
-                          <div>
-                            <p className="font-medium">{plan.title}</p>
-                            <div className="flex gap-2 mt-1">
-                              <Badge variant="outline" className="text-xs capitalize">{LEARNING_AREA_LABELS[plan.learning_area] || plan.learning_area}</Badge>
-                              <Badge variant="outline" className="text-xs">{plan.duration_minutes} min</Badge>
-                              <Badge variant="outline" className="text-xs">Ages {plan.age_group}</Badge>
+
+                  {/* Adaptations */}
+                  {viewingPlan.adaptations?.length > 0 && (
+                    <Card className="shadow-sm border border-gray-200">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                          <Lightbulb className="h-5 w-5 text-emerald-600" />{" "}
+                          Adaptations
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {viewingPlan.adaptations.map((adp, i) => (
+                            <div
+                              key={i}
+                              className="flex items-start gap-3 p-3 bg-indigo-50 rounded-lg border border-indigo-200"
+                            >
+                              <Lightbulb className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5" />
+                              <p className="text-sm text-gray-700">{adp}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Teacher Notes */}
+                  {viewingPlan.teacher_notes && (
+                    <Card className="shadow-sm border border-gray-200">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                          <Pencil className="h-5 w-5 text-emerald-600" />{" "}
+                          Teacher Notes
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                          {viewingPlan.teacher_notes}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              ) : (
+                /* Plans list */
+                <Card>
+                  <CardHeader>
+                    <CardTitle>My Lesson Plans</CardTitle>
+                    <CardDescription>
+                      Click a plan to view details
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {savedPlans.length === 0 ? (
+                      <p className="text-center text-muted-foreground py-8">
+                        No lesson plans yet. Go to the Generator tab to create
+                        one.
+                      </p>
+                    ) : (
+                      <div className="space-y-3">
+                        {savedPlans.map((plan) => (
+                          <div
+                            key={plan.id}
+                            className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                            onClick={() => setViewingPlan(plan)}
+                          >
+                            <div>
+                              <p className="font-medium">{plan.title}</p>
+                              <div className="flex gap-2 mt-1">
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs capitalize"
+                                >
+                                  {LEARNING_AREA_LABELS[plan.learning_area] ||
+                                    plan.learning_area}
+                                </Badge>
+                                <Badge variant="outline" className="text-xs">
+                                  {plan.duration_minutes} min
+                                </Badge>
+                                <Badge variant="outline" className="text-xs">
+                                  Ages {plan.age_group}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">
+                                {plan.created_at
+                                  ? new Date(
+                                      plan.created_at,
+                                    ).toLocaleDateString()
+                                  : ""}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-500 hover:text-red-700 h-8 w-8 p-0 cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deletePlan(plan.id);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground">
-                              {plan.created_at ? new Date(plan.created_at).toLocaleDateString() : ""}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-red-500 hover:text-red-700 h-8 w-8 p-0 cursor-pointer"
-                              onClick={(e) => { e.stopPropagation(); deletePlan(plan.id); }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-          </TabsContent>
-        </Tabs>
-      </main>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          </Tabs>
+        </main>
       </div>
     </div>
   );
