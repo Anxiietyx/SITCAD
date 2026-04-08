@@ -122,6 +122,113 @@ def _strip_json_fences(raw: str) -> str:
     return raw
 
 
+def _is_503_error(exc: Exception) -> bool:
+    """Return True if the exception is a transient 503/UNAVAILABLE error from Gemini."""
+    err = str(exc)
+    return "503" in err or "UNAVAILABLE" in err or "high demand" in err.lower()
+
+
+async def _invoke_with_retry(llm, messages, max_retries: int = 3, base_delay: float = 5.0):
+    """
+    Invoke an LLM with exponential-backoff retry specifically for 503 UNAVAILABLE errors.
+    Non-retriable errors are raised immediately.
+    Raises the last exception if all retries are exhausted.
+    """
+    last_exc: Exception | None = None
+    for attempt in range(max_retries):
+        try:
+            return await llm.ainvoke(messages)
+        except Exception as exc:
+            if _is_503_error(exc):
+                last_exc = exc
+                delay = base_delay * (2 ** attempt)   # 5 s, 10 s, 20 s
+                logger.warning(
+                    "Gemini 503 on attempt %d/%d, retrying in %.0fs: %s",
+                    attempt + 1, max_retries, delay, exc,
+                )
+                await asyncio.sleep(delay)
+            else:
+                raise  # fail fast for non-retriable errors
+    raise last_exc
+
+
+def _generate_fallback_insights(
+    activity: "models.Activity",
+    results: dict,
+    students: list,
+    dskp_standards: list,
+) -> dict:
+    """
+    Build a basic rule-based analysis report when Gemini is unavailable.
+    Marks the report with ``_fallback: True`` so the frontend can surface a notice.
+    """
+    act_type = results.get("activity_type", activity.activity_type or "quiz")
+    strengths: list[str] = []
+    areas: list[str] = []
+    interventions: list[dict] = []
+
+    if act_type == "quiz":
+        total = results.get("total", 0)
+        first_correct = results.get("first_attempt_correct", 0)
+        pct = round(first_correct / total * 100) if total else 0
+        summary = (
+            f"The student(s) completed the quiz with {first_correct}/{total} correct on first attempt "
+            f"({pct}%). "
+        )
+        if pct >= 80:
+            summary += "Overall performance was strong."
+            strengths.append("Strong overall comprehension demonstrated.")
+        elif pct >= 60:
+            summary += "Performance was satisfactory with room for improvement."
+        else:
+            summary += "Performance suggests some concepts may need reinforcement."
+            areas.append("Core concepts may benefit from additional practice.")
+
+        per_q: list[dict] = results.get("per_question", [])
+        slow = [i + 1 for i, q in enumerate(per_q) if q.get("time_taken", 0) > 30]
+        if slow:
+            areas.append(f"Question(s) {slow} took longer than expected — consider revisiting.")
+            interventions.append({
+                "type": "slow_response",
+                "detail": f"Question(s) {slow} exceeded 30 seconds.",
+                "severity": "flag",
+            })
+        multi_retry = [i + 1 for i, q in enumerate(per_q) if q.get("retries", 0) > 1]
+        if multi_retry:
+            areas.append(f"Question(s) {multi_retry} required multiple attempts.")
+            interventions.append({
+                "type": "many_retries",
+                "detail": f"Question(s) {multi_retry} needed more than one retry.",
+                "severity": "flag",
+            })
+    else:
+        time_s = results.get("time_seconds", 0)
+        summary = f"Activity completed in {time_s} seconds."
+        strengths.append("Activity completed successfully.")
+
+    if not strengths:
+        strengths.append("Activity completed successfully.")
+    if not areas:
+        areas.append("Re-run AI analysis for personalised recommendations.")
+
+    return {
+        "summary": (
+            summary
+            + " (Note: Full AI insights are temporarily unavailable due to high demand. "
+            "Retry analysis when the service recovers for deeper recommendations.)"
+        ),
+        "spr_attainment": [],
+        "interventions": interventions,
+        "strengths": strengths,
+        "areas_for_improvement": areas,
+        "recommendations": [
+            "Retry AI analysis later for detailed DSKP-aligned insights.",
+            "Review any flagged questions above with the student(s).",
+        ],
+        "_fallback": True,
+    }
+
+
 def _verify_teacher(id_token: str, db: Session) -> models.User:
     try:
         decoded = firebase_auth.verify_id_token(id_token)
@@ -309,7 +416,7 @@ async def generate_lesson(request: GenerateLessonRequest, db: Session = Depends(
             temperature=0.7,
             max_tokens=4096,
         )
-        response = await llm.ainvoke([
+        response = await _invoke_with_retry(llm, [
             SystemMessage(content=system_prompt),
             HumanMessage(content=user_message),
         ])
@@ -562,7 +669,7 @@ async def _generate_single_activity(
         f"Generate the content now."
     )
 
-    response = await llm.ainvoke([
+    response = await _invoke_with_retry(llm, [
         SystemMessage(content=system_prompt),
         HumanMessage(content=user_message),
     ])
@@ -886,7 +993,7 @@ async def analyze_activity(request: AnalyzeActivityRequest, db: Session = Depend
             temperature=0.3,
             max_tokens=4096,
         )
-        response = await llm.ainvoke([
+        response = await _invoke_with_retry(llm, [
             SystemMessage(content=ANALYSIS_SYSTEM_PROMPT),
             HumanMessage(content=user_message),
         ])
@@ -901,10 +1008,17 @@ async def analyze_activity(request: AnalyzeActivityRequest, db: Session = Depend
         raise HTTPException(status_code=500, detail="AI returned an invalid response. Try re-running.")
     except Exception as e:
         logger.error(f"Analysis Gemini call failed: {e}")
-        activity.analysis_status = "failed"
-        activity.analysis_error = str(e)[:500]
-        db.commit()
-        raise HTTPException(status_code=502, detail=f"AI service error: {str(e)}")
+        if _is_503_error(e):
+            # Gemini is overloaded — generate a basic fallback report rather than failing
+            logger.info("Gemini 503 persisted after retries; generating fallback analysis")
+            insights = _generate_fallback_insights(
+                activity, activity.results_data or {}, students, dskp_standards
+            )
+        else:
+            activity.analysis_status = "failed"
+            activity.analysis_error = str(e)[:500]
+            db.commit()
+            raise HTTPException(status_code=502, detail=f"AI service error: {str(e)}")
 
     # Build report details combining raw data + AI insights
     score_pct = None

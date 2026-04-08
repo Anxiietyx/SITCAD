@@ -8,7 +8,6 @@ import { Label } from "./ui/label";
 import { activityReducer, initialState } from "../reducers/activityReducer";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Checkbox } from "./ui/checkbox";
 import { Input } from "./ui/input";
 import {
   Card,
@@ -131,6 +130,8 @@ export function ActivityManagement() {
   const [activities, setActivities] = useState([]);
   const [lessonPlans, setLessonPlans] = useState([]);
   const [activeTab, setActiveTab] = useState("create");
+  const [loadingActivities, setLoadingActivities] = useState(true);
+  const [loadingLessonPlans, setLoadingLessonPlans] = useState(true);
   const [savingActivities, setSavingActivities] = useState(false);
 
   // Report generation state
@@ -180,6 +181,7 @@ export function ActivityManagement() {
   }, [state.step]);
 
   const fetchActivities = useCallback(async () => {
+    setLoadingActivities(true);
     try {
       const idToken = await getIdToken();
       const res = await fetch(`${API_BASE}/activities/my-activities`, {
@@ -190,10 +192,13 @@ export function ActivityManagement() {
       if (res.ok) setActivities(await res.json());
     } catch (err) {
       console.error("Failed to fetch activities:", err);
+    } finally {
+      setLoadingActivities(false);
     }
   }, []);
 
   const fetchLessonPlans = useCallback(async () => {
+    setLoadingLessonPlans(true);
     try {
       const idToken = await getIdToken();
       const res = await fetch(`${API_BASE}/lesson-plans/my-plans`, {
@@ -204,6 +209,8 @@ export function ActivityManagement() {
       if (res.ok) setLessonPlans(await res.json());
     } catch (err) {
       console.error("Failed to fetch lesson plans:", err);
+    } finally {
+      setLoadingLessonPlans(false);
     }
   }, []);
 
@@ -539,7 +546,25 @@ export function ActivityManagement() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {lessonPlans.length === 0 ? (
+                    {loadingLessonPlans ? (
+                      <div className="space-y-3">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="border-2 border-gray-200 rounded-lg p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="space-y-2 flex-1">
+                                <div className="h-4 bg-gray-100 rounded animate-pulse w-2/5" />
+                                <div className="flex gap-2">
+                                  <div className="h-5 bg-gray-100 rounded-full animate-pulse w-24" />
+                                  <div className="h-5 bg-gray-100 rounded-full animate-pulse w-14" />
+                                  <div className="h-5 bg-gray-100 rounded-full animate-pulse w-16" />
+                                </div>
+                              </div>
+                              <div className="h-4 bg-gray-100 rounded animate-pulse w-20" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : lessonPlans.length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground">
                         <p>No lesson plans found. Create one in the Lesson Planning page first.</p>
                       </div>
@@ -582,11 +607,6 @@ export function ActivityManagement() {
                                         className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${isChecked ? "bg-indigo-50 border-indigo-300" : "bg-white border-gray-200 hover:bg-gray-50"}`}
                                         onClick={() => dispatch({ type: "TOGGLE_ACTIVITY", payload: idx })}
                                       >
-                                        <Checkbox
-                                          checked={isChecked}
-                                          className="mt-0.5"
-                                          onCheckedChange={() => dispatch({ type: "TOGGLE_ACTIVITY", payload: idx })}
-                                        />
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-center gap-2 mb-1">
                                             <h4 className="font-semibold text-sm text-gray-800">{act.title}</h4>
@@ -720,19 +740,29 @@ export function ActivityManagement() {
           <TabsContent value="list" className="space-y-6">
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-              {learningAreaStats.map(({ value, label, icon: Icon, color }) => (
-                <Card key={value}>
-                  <CardContent className="pt-4 pb-3">
-                    <div className={`w-10 h-10 rounded-lg ${color} flex items-center justify-center mb-2`}>
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <p className="text-3xl font-bold mb-0.5">
-                      {activities.filter((a) => a.learning_area === value).length}
-                    </p>
-                    <p className="text-xs font-medium text-muted-foreground">{label}</p>
-                  </CardContent>
-                </Card>
-              ))}
+              {loadingActivities
+                ? [1, 2, 3, 4, 5, 6, 7].map((i) => (
+                    <Card key={i}>
+                      <CardContent className="pt-4 pb-3">
+                        <div className="w-10 h-10 rounded-lg bg-gray-100 animate-pulse mb-2" />
+                        <div className="h-8 bg-gray-100 rounded animate-pulse w-8 mb-1" />
+                        <div className="h-3 bg-gray-100 rounded animate-pulse w-16" />
+                      </CardContent>
+                    </Card>
+                  ))
+                : learningAreaStats.map(({ value, label, icon: Icon, color }) => (
+                    <Card key={value}>
+                      <CardContent className="pt-4 pb-3">
+                        <div className={`w-10 h-10 rounded-lg ${color} flex items-center justify-center mb-2`}>
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <p className="text-3xl font-bold mb-0.5">
+                          {activities.filter((a) => a.learning_area === value).length}
+                        </p>
+                        <p className="text-xs font-medium text-muted-foreground">{label}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
             </div>
 
             {/* Activity list */}
@@ -742,7 +772,24 @@ export function ActivityManagement() {
                 <CardDescription>Click an activity to view details</CardDescription>
               </CardHeader>
               <CardContent>
-                {activities.length === 0 ? (
+                {loadingActivities ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex-1 space-y-2">
+                          <div className="h-4 bg-gray-100 rounded animate-pulse w-1/3" />
+                          <div className="h-3 bg-gray-100 rounded animate-pulse w-3/5" />
+                          <div className="flex gap-2 mt-2">
+                            <div className="h-5 bg-gray-100 rounded-full animate-pulse w-20" />
+                            <div className="h-5 bg-gray-100 rounded-full animate-pulse w-16" />
+                            <div className="h-5 bg-gray-100 rounded-full animate-pulse w-14" />
+                          </div>
+                        </div>
+                        <div className="h-4 bg-gray-100 rounded animate-pulse w-16 ml-4" />
+                      </div>
+                    ))}
+                  </div>
+                ) : activities.length === 0 ? (
                   <div className="flex items-center justify-center h-32 text-muted-foreground text-sm border border-dashed rounded-lg">
                     No activities yet. Go to the Create Activities tab to generate some.
                   </div>
@@ -982,6 +1029,16 @@ export function ActivityManagement() {
                             if (!insights) return <p className="text-sm text-muted-foreground">Insights saved to report. View in Reports page.</p>;
                             return (
                               <div className="space-y-4">
+                                {/* Fallback notice */}
+                                {insights._fallback && (
+                                  <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                                    <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-500" />
+                                    <span>
+                                      <span className="font-semibold">Basic analysis only</span> — Gemini was temporarily busy when this ran.
+                                      Use the <span className="font-semibold">Retry</span> button below to get full AI insights when the service recovers.
+                                    </span>
+                                  </div>
+                                )}
                                 {/* Summary */}
                                 <p className="text-sm text-gray-700 leading-relaxed bg-emerald-50 p-3 rounded-lg border border-emerald-200">{insights.summary}</p>
 

@@ -132,6 +132,7 @@ export function AILessonPlanning() {
   const navigate = useNavigate();
   const [state, dispatch] = useReducer(lessonReducer, initialState);
   const [savedPlans, setSavedPlans] = useState([]);
+  const [loadingPlans, setLoadingPlans] = useState(true);
   const [activeTab, setActiveTab] = useState("generator");
   const [savingPlan, setSavingPlan] = useState(false);
   const [viewingPlan, setViewingPlan] = useState(null); // for "My Plans" detail view
@@ -157,6 +158,7 @@ export function AILessonPlanning() {
   }, [state.step]);
 
   const fetchSavedPlans = useCallback(async () => {
+    setLoadingPlans(true);
     try {
       const idToken = await getIdToken();
       const res = await fetch(`${API_BASE}/lesson-plans/my-plans`, {
@@ -167,6 +169,8 @@ export function AILessonPlanning() {
       if (res.ok) setSavedPlans(await res.json());
     } catch (err) {
       console.error("Failed to fetch lesson plans:", err);
+    } finally {
+      setLoadingPlans(false);
     }
   }, []);
 
@@ -1414,7 +1418,23 @@ export function AILessonPlanning() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {savedPlans.length === 0 ? (
+                    {loadingPlans ? (
+                      <div className="space-y-3">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div className="space-y-2 flex-1">
+                              <div className="h-4 bg-gray-100 rounded animate-pulse w-2/5" />
+                              <div className="flex gap-2">
+                                <div className="h-5 bg-gray-100 rounded-full animate-pulse w-20" />
+                                <div className="h-5 bg-gray-100 rounded-full animate-pulse w-14" />
+                                <div className="h-5 bg-gray-100 rounded-full animate-pulse w-16" />
+                              </div>
+                            </div>
+                            <div className="h-4 bg-gray-100 rounded animate-pulse w-16 ml-4" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : savedPlans.length === 0 ? (
                       <p className="text-center text-muted-foreground py-8">
                         No lesson plans yet. Go to the Generator tab to create
                         one.
