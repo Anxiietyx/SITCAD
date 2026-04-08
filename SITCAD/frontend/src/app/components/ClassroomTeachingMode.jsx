@@ -837,7 +837,7 @@ export function ClassroomTeachingMode() {
     : 'bg-emerald-600';
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-50">
+    <div className="min-h-screen">
       <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between gap-4">

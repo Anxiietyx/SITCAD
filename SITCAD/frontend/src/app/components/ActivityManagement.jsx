@@ -2,7 +2,6 @@ import { useReducer, useEffect, useCallback, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
 import { auth } from "../lib/firebase";
-import Duckpit from './Duckpit';
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
 import { activityReducer, initialState } from "../reducers/activityReducer";
@@ -176,6 +175,7 @@ export function ActivityManagement() {
     } else {
       if (mascotInterval.current) clearInterval(mascotInterval.current);
     }
+    return () => { if (mascotInterval.current) clearInterval(mascotInterval.current); };
     return () => { if (mascotInterval.current) clearInterval(mascotInterval.current); };
   }, [state.step]);
 
@@ -485,13 +485,7 @@ export function ActivityManagement() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-50">
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <Duckpit count={24} gravity={0.5} friction={0.9975} wallBounce={0.9} className="h-full w-full opacity-100" />
-      </div>
-      <div className="absolute inset-0 z-0 bg-linear-to-b from-white/72 via-white/58 to-emerald-50/72" />
-
-      <div className="relative z-10">
+    <div className="min-h-screen">
       {/* Header */}
       <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -1174,7 +1168,6 @@ export function ActivityManagement() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      </div>
     </div>
   );
 }
