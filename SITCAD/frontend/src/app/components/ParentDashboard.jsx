@@ -2,6 +2,7 @@
 import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { auth } from '../lib/firebase';
+import { formatDateTime } from '../lib/utils';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -487,7 +488,7 @@ export function ParentDashboard() {
                         )}
 
                         <div className="text-xs text-muted-foreground pt-1 border-t">
-                          Last analysed: {analysis.created_at ? new Date(analysis.created_at).toLocaleDateString() : "N/A"}
+                          Last analysed: {formatDateTime(analysis.created_at)}
                         </div>
                       </CardContent>
                     </Card>
@@ -537,7 +538,7 @@ export function ParentDashboard() {
                               )}
                               <span className="text-xs text-muted-foreground flex items-center gap-1">
                                 <Clock className="h-3 w-3" />
-                                {new Date(report.created_at).toLocaleDateString()}
+                                {formatDateTime(report.created_at)}
                               </span>
                               {report.students?.length > 0 && (
                                 <span className="text-xs text-muted-foreground">

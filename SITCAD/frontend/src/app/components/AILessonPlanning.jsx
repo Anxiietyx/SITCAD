@@ -2,6 +2,7 @@ import { useReducer, useEffect, useCallback, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
 import { auth } from "../lib/firebase";
+import { formatDateTime } from "../lib/utils";
 import Duckpit from "./Duckpit";
 import { Button } from "./ui/button";
 import {
@@ -1468,9 +1469,7 @@ export function AILessonPlanning() {
                             <div className="flex items-center gap-2">
                               <span className="text-xs text-muted-foreground">
                                 {plan.created_at
-                                  ? new Date(
-                                      plan.created_at,
-                                    ).toLocaleDateString()
+                                  ? formatDateTime(plan.created_at)
                                   : ""}
                               </span>
                               <Button

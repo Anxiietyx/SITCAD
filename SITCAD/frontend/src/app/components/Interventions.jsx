@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
 import { auth } from "../lib/firebase";
+import { formatDateTime } from "../lib/utils";
 import { Button } from "./ui/button";
 import {
   Card,
@@ -245,7 +246,7 @@ export function Interventions() {
         {/* Status actions + date */}
         <div className="flex items-center justify-between pt-4 border-t text-sm text-muted-foreground">
           <span>
-            Created: {intervention.created_at ? new Date(intervention.created_at).toLocaleDateString() : "N/A"}
+            Created: {formatDateTime(intervention.created_at)}
           </span>
           <div className="flex gap-2">
             {intervention.status === "pending" && (
@@ -555,7 +556,7 @@ export function Interventions() {
 
                         {/* Footer */}
                         <div className="flex items-center justify-between pt-2 border-t text-xs text-muted-foreground">
-                          <span>Analysed: {analysis.created_at ? new Date(analysis.created_at).toLocaleDateString() : "N/A"}</span>
+                          <span>Analysed: {formatDateTime(analysis.created_at)}</span>
                           <Button
                             variant="outline"
                             size="sm"

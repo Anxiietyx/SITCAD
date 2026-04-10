@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { auth } from '../lib/firebase';
+import { formatDateTime } from '../lib/utils';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Progress } from './ui/progress';
@@ -164,7 +165,7 @@ export function StudentProfile() {
                           {student.classroom}
                         </span>
                       )}
-                      <span>Enrolled: {new Date(student.enrollment_date).toLocaleDateString()}</span>
+                      <span>Enrolled: {formatDateTime(student.enrollment_date)}</span>
                     </div>
                   </div>
                   {student.needs_intervention && (
@@ -212,7 +213,7 @@ export function StudentProfile() {
                   </div>
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-muted-foreground">Enrollment Date</p>
-                    <p className="text-lg font-semibold">{new Date(student.enrollment_date).toLocaleDateString()}</p>
+                    <p className="text-lg font-semibold">{formatDateTime(student.enrollment_date)}</p>
                   </div>
                 </div>
               </CardContent>
@@ -292,7 +293,7 @@ export function StudentProfile() {
                         </Badge>
                       )}
                       <span className="text-xs text-muted-foreground">
-                        Last analysed: {analysis.created_at ? new Date(analysis.created_at).toLocaleDateString() : "N/A"}
+                        Last analysed: {formatDateTime(analysis.created_at)}
                       </span>
                     </div>
                   </CardContent>

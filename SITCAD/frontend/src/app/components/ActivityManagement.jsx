@@ -2,6 +2,7 @@ import { useReducer, useEffect, useCallback, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
 import { auth } from "../lib/firebase";
+import { formatDateTime } from "../lib/utils";
 import Duckpit from './Duckpit';
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
@@ -836,7 +837,7 @@ export function ActivityManagement() {
                           </div>
                           <div className="flex items-center gap-2 ml-4 shrink-0">
                             <span className="text-xs text-muted-foreground">
-                              {activity.created_at ? new Date(activity.created_at).toLocaleDateString() : ""}
+                              {activity.created_at ? formatDateTime(activity.created_at) : ""}
                             </span>
                             <Button
                               variant="ghost"

@@ -2,6 +2,7 @@ import { useReducer, useEffect, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { auth } from '../lib/firebase';
+import { formatDateTime } from '../lib/utils';
 import { mockStudents, getActivitiesByStudent } from '../data/mockData';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -732,7 +733,7 @@ export function ReportGeneration() {
                           </Badge>
                         )}
                         <span className="text-xs text-muted-foreground">
-                          {new Date(report.created_at).toLocaleDateString()}
+                          {formatDateTime(report.created_at)}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {report.students?.length || 0} students
