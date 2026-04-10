@@ -588,15 +588,15 @@ export function Interventions() {
               {interventions.length > 0 ? (
                 <Tabs defaultValue="pending" className="space-y-6">
                   <TabsList className="grid w-full grid-cols-3 h-12">
-                    <TabsTrigger value="pending" className="text-base gap-2">
+                    <TabsTrigger value="pending" className="text-base gap-2 cursor-pointer">
                       <Clock className="h-4 w-4" />
                       Needs Review ({pendingInterventions.length})
                     </TabsTrigger>
-                    <TabsTrigger value="in_progress" className="text-base gap-2">
+                    <TabsTrigger value="in_progress" className="text-base gap-2 cursor-pointer">
                       <Target className="h-4 w-4" />
                       Active Support ({inProgressInterventions.length})
                     </TabsTrigger>
-                    <TabsTrigger value="resolved" className="text-base gap-2">
+                    <TabsTrigger value="resolved" className="text-base gap-2 cursor-pointer">
                       <CheckCircle className="h-4 w-4" />
                       Completed ({resolvedInterventions.length})
                     </TabsTrigger>

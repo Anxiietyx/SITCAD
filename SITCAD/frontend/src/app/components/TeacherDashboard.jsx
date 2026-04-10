@@ -185,7 +185,7 @@ export function TeacherDashboard() {
 
         <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
           {/* Quick Action Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          {/* <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
             <Card className="cursor-pointer border-white shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle} onClick={() => navigate('/teacher/activities')}>
               <CardContent className="pt-6 text-center">
                 <Calendar className="h-8 w-8 mx-auto mb-2 text-[#3090A0]" />
@@ -222,7 +222,7 @@ export function TeacherDashboard() {
                 <p className="text-sm font-medium">AI Analysis</p>
               </CardContent>
             </Card>
-          </div>
+          </div> */}
 
           {/* Statistics Overview */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

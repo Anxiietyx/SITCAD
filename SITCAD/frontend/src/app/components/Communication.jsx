@@ -231,7 +231,7 @@ export function Communication() {
           {loading ? renderSkeleton() : (
             <Tabs defaultValue="inbox" className="space-y-6">
               <TabsList className="grid w-full grid-cols-3 h-12">
-                <TabsTrigger value="inbox" className="text-base gap-2">
+                <TabsTrigger value="inbox" className="text-base gap-2 cursor-pointer">
                   <Inbox className="h-4 w-4" />
                   Inbox
                   {unreadCount > 0 && (
@@ -240,11 +240,11 @@ export function Communication() {
                     </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="sent" className="text-base gap-2">
+                <TabsTrigger value="sent" className="text-base gap-2 cursor-pointer">
                   <Mail className="h-4 w-4" />
                   Sent
                 </TabsTrigger>
-                <TabsTrigger value="compose" className="text-base gap-2">
+                <TabsTrigger value="compose" className="text-base gap-2 cursor-pointer">
                   <Send className="h-4 w-4" />
                   Compose
                 </TabsTrigger>
