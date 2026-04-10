@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router';
+import { useParams, useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { auth } from '../lib/firebase';
 import { formatDateTime } from '../lib/utils';
@@ -14,6 +14,7 @@ export function StudentProfile() {
   const { studentId } = useParams(); // Removed type annotation
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [student, setStudent] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -91,7 +92,13 @@ export function StudentProfile() {
             <p className="font-medium">{error || 'Student not found'}</p>
             <Button 
               className="mt-4 w-full" 
-              onClick={() => navigate(user.role === 'teacher' ? '/teacher' : '/parent')}
+              onClick={() => {
+                if (location.state?.from === 'interventions') {
+                  navigate('/teacher/interventions');
+                } else {
+                  navigate(user.role === 'teacher' ? '/teacher' : '/parent');
+                }
+              }}
             >
               Back to Dashboard
             </Button>
@@ -102,7 +109,12 @@ export function StudentProfile() {
   }
 
   const handleBack = () => {
-    navigate(user.role === 'teacher' ? '/teacher' : '/parent');
+    // If coming from interventions page, navigate back to interventions
+    if (location.state?.from === 'interventions') {
+      navigate('/teacher/interventions');
+    } else {
+      navigate(user.role === 'teacher' ? '/teacher' : '/parent');
+    }
   };
 
   const getCategoryColor = (category) => { // Removed type annotation
@@ -134,7 +146,7 @@ export function StudentProfile() {
             </div>
             <Button variant="ghost" onClick={handleBack} className="cursor-pointer">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
+              Back to {location.state?.from === 'interventions' ? 'Interventions' : 'Dashboard'}
             </Button>
           </div>
         </div>
@@ -233,7 +245,7 @@ export function StudentProfile() {
               </CardContent>
             </Card> */}
 
-            <Card>
+            {/* <Card>
               <CardHeader>
                 <CardTitle>Support Status</CardTitle>
               </CardHeader>
@@ -252,7 +264,7 @@ export function StudentProfile() {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
           </TabsContent>
 
           {/* AI Insights Tab */}

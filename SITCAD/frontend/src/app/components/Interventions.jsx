@@ -273,7 +273,7 @@ export function Interventions() {
               variant="outline"
               size="sm"
               className="px-3 border-2 cursor-pointer"
-              onClick={() => navigate(`/teacher/student/${intervention.student_id}`)}
+              onClick={() => navigate(`/teacher/student/${intervention.student_id}`, { state: { from: 'interventions' } })}
             >
               View Student
             </Button>
@@ -561,7 +561,7 @@ export function Interventions() {
                             variant="outline"
                             size="sm"
                             className="h-7 text-xs cursor-pointer"
-                            onClick={() => navigate(`/teacher/student/${analysis.student_id}`)}
+                            onClick={() => navigate(`/teacher/student/${analysis.student_id}`, { state: { from: 'interventions' } })}
                           >
                             View Profile
                           </Button>
