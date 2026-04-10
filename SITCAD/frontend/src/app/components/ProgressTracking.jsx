@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Badge } from './ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import { ArrowLeft, BookOpen, Brain, Heart, Palette, Activity, Languages, Loader2, AlertCircle, ChevronRight } from 'lucide-react';
+import { Progress } from './ui/progress';
 import { useState, useEffect } from 'react';
 
 const domainConfig = {
@@ -229,12 +230,37 @@ export function ProgressTracking() {
           </div>
         ) : (
           <div className="space-y-4">
+            {/* Overall fill progress */}
+            {!isLoadingScores && (() => {
+              const totalSpr = domains.reduce((sum, d) => sum + (d.spr_count || 0), 0);
+              const filledSpr = domains.reduce((sum, d) => {
+                const filled = Object.keys(scores).filter(k => k.startsWith(d.key + '::')).length;
+                return sum + Math.min(filled, d.spr_count || 0);
+              }, 0);
+              const pct = totalSpr > 0 ? Math.round((filledSpr / totalSpr) * 100) : 0;
+              return (
+                <Card className="border-2 border-[#bafde0] bg-[#edfff8]">
+                  <CardContent className="pt-5 pb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-base font-semibold">Overall SPR Progress</p>
+                      <span className="text-sm font-semibold text-green-700">{filledSpr} / {totalSpr} filled ({pct}%)</span>
+                    </div>
+                    <Progress value={pct} className="h-3" />
+                    <p className="text-xs text-muted-foreground mt-2">SPR = Standard Prestasi — assessment rubrics across all learning domains</p>
+                  </CardContent>
+                </Card>
+              );
+            })()}
             <h2 className="text-lg font-semibold">Tunjang Pembelajaran (Learning Domains)</h2>
             {domains.map(domain => {
               const config = domainConfig[domain.key] || defaultConfig;
               const Icon = config.icon;
               const isExpanded = expandedDomain === domain.key;
               const detail = domainDetail[domain.key];
+              const totalDomainSpr = domain.spr_count || 0;
+              const filledDomainSpr = !isLoadingScores
+                ? Object.keys(scores).filter(k => k.startsWith(domain.key + '::')).length
+                : null;
 
               return (
                 <Card key={domain.key} className={`border-2 ${isExpanded ? config.border : 'border-gray-200'} transition-all`}>
@@ -256,7 +282,22 @@ export function ProgressTracking() {
                           </CardDescription>
                         </div>
                       </div>
-                      <ChevronRight className={`h-5 w-5 transition-transform ${isExpanded ? 'rotate-90 text-white' : 'text-muted-foreground'}`} />
+                      <div className="flex items-center gap-3">
+                        {filledDomainSpr !== null && totalDomainSpr > 0 && (
+                          <div className="text-right">
+                            <span className={`text-xs font-semibold ${isExpanded ? 'text-white/90' : filledDomainSpr === totalDomainSpr ? 'text-green-600' : 'text-muted-foreground'}`}>
+                              {filledDomainSpr}/{totalDomainSpr} filled
+                            </span>
+                            <div className={`h-1.5 w-20 rounded-full mt-1 ${isExpanded ? 'bg-white/30' : 'bg-gray-200'}`}>
+                              <div
+                                className={`h-full rounded-full transition-all ${isExpanded ? 'bg-white' : 'bg-green-500'}`}
+                                style={{ width: `${Math.round((filledDomainSpr / totalDomainSpr) * 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                        <ChevronRight className={`h-5 w-5 transition-transform ${isExpanded ? 'rotate-90 text-white' : 'text-muted-foreground'}`} />
+                      </div>
                     </div>
                   </CardHeader>
 

@@ -8,7 +8,7 @@ import { Badge } from './ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { LogOut, Users, AlertTriangle, TrendingUp, BookOpen, Calendar, Sparkles, FileText, MessageSquare, Monitor, Brain, UserPlus, Search } from 'lucide-react';
+import { LogOut, Users, AlertTriangle, TrendingUp, TrendingDown, BookOpen, Calendar, Sparkles, FileText, MessageSquare, Monitor, Brain, UserPlus, Search, Star, GraduationCap, Minus } from 'lucide-react';
 import Duckpit from './Duckpit';
 import { useState, useEffect } from 'react';
 
@@ -20,6 +20,8 @@ export function TeacherDashboard() {
 
   const [students, setStudents] = useState([]);
   const [isLoadingStudents, setIsLoadingStudents] = useState(true);
+  const [interventionCount, setInterventionCount] = useState(0);
+  const [analyses, setAnalyses] = useState([]);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [unassignedStudents, setUnassignedStudents] = useState([]);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
@@ -27,18 +29,20 @@ export function TeacherDashboard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingUnassigned, setIsLoadingUnassigned] = useState(false);
 
-  // Fetch teacher's students on mount
+  // Fetch teacher's students and intervention count on mount
   useEffect(() => {
     const fetchStudents = async () => {
       try {
         const idToken = await auth.currentUser.getIdToken();
-        const res = await fetch('http://localhost:8000/teachers/my-students', {
+        const studentsRes = await fetch('http://localhost:8000/teachers/my-students', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id_token: idToken }),
         });
-        const data = await res.json();
-        setStudents(data);
+        if (studentsRes.ok) {
+          const data = await studentsRes.json();
+          setStudents(data);
+        }
       } catch (error) {
         console.error('Error fetching students:', error);
       } finally {
@@ -46,7 +50,35 @@ export function TeacherDashboard() {
       }
     };
 
+    const fetchInterventionCount = async () => {
+      try {
+        const idToken = await auth.currentUser.getIdToken();
+        const [interventionsRes, analysesRes] = await Promise.all([
+          fetch('http://localhost:8000/ai-integrations/all-interventions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id_token: idToken }),
+          }),
+          fetch('http://localhost:8000/ai-integrations/all-analyses', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id_token: idToken }),
+          }),
+        ]);
+        if (interventionsRes.ok) {
+          const interventions = await interventionsRes.json();
+          setInterventionCount(interventions.filter(i => i.status !== 'resolved').length);
+        }
+        if (analysesRes.ok) {
+          setAnalyses(await analysesRes.json());
+        }
+      } catch (error) {
+        console.warn('Could not fetch intervention data:', error);
+      }
+    };
+
     fetchStudents();
+    fetchInterventionCount();
   }, []);
 
   const needsAttention = students.filter(s => s.needs_intervention);
@@ -96,7 +128,7 @@ export function TeacherDashboard() {
   const classroomStats = {
     totalStudents: students.length,
     averageProgress: 0,
-    needingSupport: needsAttention.length,
+    needingSupport: interventionCount || needsAttention.length,
     onTrack: 0,
   };
 
@@ -153,7 +185,7 @@ export function TeacherDashboard() {
 
         <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
           {/* Quick Action Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          {/* <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
             <Card className="cursor-pointer border-white shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle} onClick={() => navigate('/teacher/activities')}>
               <CardContent className="pt-6 text-center">
                 <Calendar className="h-8 w-8 mx-auto mb-2 text-[#3090A0]" />
@@ -190,7 +222,7 @@ export function TeacherDashboard() {
                 <p className="text-sm font-medium">AI Analysis</p>
               </CardContent>
             </Card>
-          </div>
+          </div> */}
 
           {/* Statistics Overview */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -251,6 +283,75 @@ export function TeacherDashboard() {
               </CardContent>
             </Card>
           </div>
+
+          {/* AI Insights Summary */}
+          {analyses.length > 0 && (
+            <Card className="border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle}>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-amber-500" />
+                    AI Insights
+                  </CardTitle>
+                  <CardDescription>
+                    Latest intervention analysis per student
+                  </CardDescription>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="cursor-pointer"
+                  onClick={() => navigate('/teacher/interventions')}
+                >
+                  View All
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {analyses.slice(0, 6).map(a => (
+                    <div
+                      key={a.id}
+                      className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                      onClick={() => navigate(`/teacher/student/${a.student_id}`)}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium truncate">{a.student_name}</span>
+                        {a.improvement_data?.trend && (
+                          <Badge variant="outline" className={`text-xs gap-1 ${
+                            a.improvement_data.trend === 'improving' ? 'text-green-700 border-green-200' :
+                            a.improvement_data.trend === 'declining' ? 'text-red-700 border-red-200' :
+                            'text-gray-600 border-gray-200'
+                          }`}>
+                            {a.improvement_data.trend === 'improving' && <TrendingUp className="h-3 w-3" />}
+                            {a.improvement_data.trend === 'declining' && <TrendingDown className="h-3 w-3" />}
+                            {a.improvement_data.trend === 'stable' && <Minus className="h-3 w-3" />}
+                            {a.improvement_data.trend.replace('_', ' ')}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground line-clamp-2">{a.overall_summary}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        {a.inclinations?.length > 0 && (
+                          <Badge variant="outline" className="text-xs gap-1 text-purple-600 border-purple-200">
+                            <Star className="h-3 w-3" /> {a.inclinations.length} strength(s)
+                          </Badge>
+                        )}
+                        {a.school_readiness && (
+                          <Badge variant="outline" className={`text-xs gap-1 ${
+                            a.school_readiness.level === 'ready' ? 'text-green-600 border-green-200' :
+                            a.school_readiness.level === 'almost_ready' ? 'text-yellow-600 border-yellow-200' :
+                            'text-red-600 border-red-200'
+                          }`}>
+                            <GraduationCap className="h-3 w-3" /> {a.school_readiness.level?.replace('_', ' ')}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* All Students */}
           <Card className="border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle}>

@@ -2,6 +2,7 @@ import { useReducer, useEffect, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { auth } from '../lib/firebase';
+import { formatDateTime } from '../lib/utils';
 import { mockStudents, getActivitiesByStudent } from '../data/mockData';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -10,7 +11,7 @@ import { Progress } from './ui/progress';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Checkbox } from './ui/checkbox';
-import { ArrowLeft, FileText, Download, Sparkles, Loader2, Printer, TrendingUp, Award, Target, Trophy, AlertCircle, AlertTriangle, Clock } from 'lucide-react';
+import { ArrowLeft, FileText, Download, Sparkles, Loader2, Printer, TrendingUp, Award, Target, Trophy, AlertCircle, AlertTriangle, Clock, Save, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import Duckpit from './Duckpit';
 import { reportReducer, initialReportState } from '../reducers/reportReducer';
@@ -41,6 +42,40 @@ export function ReportGeneration() {
   const [pastReports, setPastReports] = useState([]);
   const [loadingReports, setLoadingReports] = useState(true);
   const [viewingReport, setViewingReport] = useState(null);
+  // key: `${studentId}::${sprCode}`, value: true (saved) | 'saving'
+  const [savedSprs, setSavedSprs] = useState({});
+
+  // SPR code prefix → domain_key mapping
+  const SPR_PREFIX_TO_DOMAIN = {
+    SE: 'sosioemosi', KF: 'kognitif', FK: 'fizikal_dan_kemahiran',
+    KE: 'kreativiti_dan_estetika', BM: 'lang_and_lit_malay',
+    BI: 'lang_and_lit_english', PI: 'knw_pendidikan_islam',
+    PM: 'knw_pendidikan_moral', KW: 'knw_pendidikan_kewarganegaraan',
+  };
+
+  const handleSaveSpr = async (sprCode, level, students) => {
+    const prefix = sprCode.split(' ')[0];
+    const domainKey = SPR_PREFIX_TO_DOMAIN[prefix];
+    if (!domainKey) { toast.error(`Unknown SPR domain for code ${sprCode}`); return; }
+    try {
+      const idToken = await getIdToken();
+      const saves = students.map(async (student) => {
+        const key = `${student.id}::${sprCode}`;
+        setSavedSprs(prev => ({ ...prev, [key]: 'saving' }));
+        const res = await fetch(`${API_BASE}/teachers/score`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id_token: idToken, student_id: student.id, domain_key: domainKey, spr_code: sprCode, level }),
+        });
+        if (res.ok) { setSavedSprs(prev => ({ ...prev, [key]: true })); }
+        else { setSavedSprs(prev => ({ ...prev, [key]: false })); }
+      });
+      await Promise.all(saves);
+      toast.success(`Saved ${sprCode} Level ${level} for ${students.length} student(s)`);
+    } catch (err) {
+      toast.error('Failed to save SPR score');
+    }
+  };
 
   const fetchReports = useCallback(async () => {
     setLoadingReports(true);
@@ -296,24 +331,64 @@ export function ReportGeneration() {
                 {/* SPR Attainment */}
                 {ins.spr_attainment?.length > 0 && (
                   <div className="space-y-2">
-                    <div className="flex items-center gap-1.5">
-                      <Target className="h-4 w-4 text-blue-600" />
-                      <p className="text-base font-semibold text-gray-800">SPR Attainment Levels</p>
-                    </div>
-                    {ins.spr_attainment.map((spr, i) => (
-                      <div key={i} className="p-4 bg-white rounded-lg border space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-semibold text-gray-800">{spr.spr_code}</span>
-                          <Badge className={`text-xs ${
-                            spr.suggested_level === 3 ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
-                            : spr.suggested_level === 2 ? 'bg-blue-100 text-blue-700 border-blue-200'
-                            : 'bg-amber-100 text-amber-700 border-amber-200'
-                          }`}>Level {spr.suggested_level}</Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground">{spr.spr_title}</p>
-                        <p className="text-xs text-gray-600 mt-1">{spr.justification}</p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <Target className="h-4 w-4 text-blue-600" />
+                        <p className="text-base font-semibold text-gray-800">SPR Attainment Levels</p>
                       </div>
-                    ))}
+                      {/* {viewingReport.students?.length > 0 && (
+                        <Button
+                          size="sm"
+                          className="text-xs bg-[#3090A0] hover:bg-[#2FBFA5] text-white gap-1.5 print:hidden cursor-pointer"
+                          onClick={() => ins.spr_attainment.forEach(spr =>
+                            handleSaveSpr(spr.spr_code, spr.suggested_level, viewingReport.students)
+                          )}
+                        >
+                          <Save className="h-3 w-3" /> Save All to Progress
+                        </Button>
+                      )} */}
+                    </div>
+                    {ins.spr_attainment.map((spr, i) => {
+                      const allSaved = viewingReport.students?.every(
+                        s => savedSprs[`${s.id}::${spr.spr_code}`] === true
+                      );
+                      const anySaving = viewingReport.students?.some(
+                        s => savedSprs[`${s.id}::${spr.spr_code}`] === 'saving'
+                      );
+                      return (
+                        <div key={i} className={`p-4 bg-white rounded-lg border space-y-1 transition-colors ${allSaved ? 'border-emerald-300 bg-emerald-50' : ''}`}>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm font-semibold text-gray-800">{spr.spr_code}</span>
+                            <div className="flex items-center gap-2">
+                              <Badge className={`text-xs ${
+                                spr.suggested_level === 3 ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                                : spr.suggested_level === 2 ? 'bg-blue-100 text-blue-700 border-blue-200'
+                                : 'bg-amber-100 text-amber-700 border-amber-200'
+                              }`}>Level {spr.suggested_level}</Badge>
+                              {viewingReport.students?.length > 0 && (
+                                allSaved ? (
+                                  <span className="flex items-center gap-1 text-xs text-emerald-600 font-medium print:hidden">
+                                    <CheckCircle2 className="h-3.5 w-3.5" /> Saved
+                                  </span>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    className="h-6 px-2.5 text-xs bg-[#3090A0] hover:bg-[#2FBFA5] text-white print:hidden cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled={anySaving}
+                                    onClick={() => handleSaveSpr(spr.spr_code, spr.suggested_level, viewingReport.students)}
+                                  >
+                                    {anySaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3 mr-1" />}
+                                    {anySaving ? 'Saving…' : 'Save'}
+                                  </Button>
+                                )
+                              )}
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted-foreground">{spr.spr_title}</p>
+                          <p className="text-xs text-gray-600 mt-1">{spr.justification}</p>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
@@ -658,7 +733,7 @@ export function ReportGeneration() {
                           </Badge>
                         )}
                         <span className="text-xs text-muted-foreground">
-                          {new Date(report.created_at).toLocaleDateString()}
+                          {formatDateTime(report.created_at)}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {report.students?.length || 0} students

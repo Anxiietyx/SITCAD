@@ -2,6 +2,7 @@ import { useReducer, useEffect, useCallback, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
 import { auth } from "../lib/firebase";
+import { formatDateTime } from "../lib/utils";
 import Duckpit from './Duckpit';
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
@@ -396,6 +397,13 @@ export function ActivityManagement() {
     <div className="space-y-4">
       {content.questions?.map((q, i) => (
         <div key={i} className="p-4 border rounded-lg bg-white space-y-2">
+          {q.image_url && (
+            <img
+              src={q.image_url}
+              alt={`Illustration for question ${i + 1}`}
+              className="w-full max-h-48 object-contain rounded-lg border border-gray-100 bg-gray-50"
+            />
+          )}
           <p className="font-semibold text-gray-800">Q{i + 1}: {q.question}</p>
           <div className="grid grid-cols-2 gap-2">
             {q.options?.map((opt, j) => (
@@ -829,7 +837,7 @@ export function ActivityManagement() {
                           </div>
                           <div className="flex items-center gap-2 ml-4 shrink-0">
                             <span className="text-xs text-muted-foreground">
-                              {activity.created_at ? new Date(activity.created_at).toLocaleDateString() : ""}
+                              {activity.created_at ? formatDateTime(activity.created_at) : ""}
                             </span>
                             <Button
                               variant="ghost"
@@ -977,7 +985,7 @@ export function ActivityManagement() {
                           <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
                             <Loader2 className="h-5 w-5 text-blue-600 animate-spin shrink-0" />
                             <div>
-                              <p className="text-sm font-semibold text-blue-800">AI is analysing results…</p>
+                              <p className="text-sm font-semibold text-blue-800">Analysing results…</p>
                               <p className="text-xs text-blue-600 mt-0.5">Insights will appear here once ready.</p>
                             </div>
                           </div>

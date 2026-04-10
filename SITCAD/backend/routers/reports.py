@@ -51,9 +51,14 @@ def _verify_user(id_token: str, db: Session) -> models.User:
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-def _report_to_dict(report: models.Report, db: Session) -> dict:
+def _report_to_dict(report: models.Report, db: Session, for_student_ids: list[str] | None = None) -> dict:
     student_links = db.query(models.ReportStudent).filter(models.ReportStudent.report_id == report.id).all()
     student_ids = [rl.student_id for rl in student_links]
+
+    # If for_student_ids is provided (e.g. parent's children), filter to only those students
+    if for_student_ids is not None:
+        student_ids = [sid for sid in student_ids if sid in for_student_ids]
+
     students = db.query(models.Student).filter(models.Student.id.in_(student_ids)).all() if student_ids else []
 
     # Get activity info
@@ -232,7 +237,9 @@ async def list_reports_for_student(student_id: str, request: AuthenticatedReques
         .order_by(models.Report.created_at.desc())
         .all()
     )
-    return [_report_to_dict(r, db) for r in reports]
+    # Parents only see their own child in each report
+    filter_ids = [student_id] if user.role == "parent" else None
+    return [_report_to_dict(r, db, for_student_ids=filter_ids) for r in reports]
 
 
 @router.post("/for-parent")
@@ -260,4 +267,5 @@ async def list_reports_for_parent(request: AuthenticatedRequest, db: Session = D
         .order_by(models.Report.created_at.desc())
         .all()
     )
-    return [_report_to_dict(r, db) for r in reports]
+    # Parents only see their own children in each report
+    return [_report_to_dict(r, db, for_student_ids=child_ids) for r in reports]

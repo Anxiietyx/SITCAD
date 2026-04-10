@@ -119,4 +119,56 @@ class ReportStudent(Base):
   id = Column(Integer, primary_key=True, autoincrement=True)
   report_id = Column(String, ForeignKey("reports.id"), nullable=False, index=True)
   student_id = Column(String, ForeignKey("students.id"), nullable=False, index=True)
+
+
+class InterventionAnalysis(Base):
+  """
+  Stores the complete AI intervention analysis for a student.
+  Created automatically after each activity analysis, or on-demand.
+  Contains: overall_summary, improvement tracking, school readiness, inclinations.
+  """
+  __tablename__ = "intervention_analyses"
+
+  id = Column(String, primary_key=True, index=True)
+  teacher_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+  student_id = Column(String, ForeignKey("students.id"), nullable=False, index=True)
+  trigger_report_id = Column(String, ForeignKey("reports.id"), nullable=True)  # report that triggered this
+  overall_summary = Column(Text, nullable=True)
+  improvement_data = Column(JSON, nullable=True)       # {trend, details, comparison data}
+  school_readiness = Column(JSON, nullable=True)        # {ready, assessment, areas, recommendations}
+  inclinations = Column(JSON, nullable=True)            # [{area, observation, suggestion}]
+  source_report_ids = Column(JSON, nullable=True)       # all report IDs used in analysis
+  created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class Intervention(Base):
+  __tablename__ = "interventions"
+
+  id = Column(String, primary_key=True, index=True)
+  teacher_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+  student_id = Column(String, ForeignKey("students.id"), nullable=False, index=True)
+  analysis_id = Column(String, ForeignKey("intervention_analyses.id"), nullable=True, index=True)
+  priority = Column(String, nullable=False, default="medium")           # "high" | "medium" | "low"
+  status = Column(String, nullable=False, default="pending")            # "pending" | "in_progress" | "resolved"
+  area = Column(String, nullable=False)                                  # learning area or developmental area
+  concern = Column(Text, nullable=False)
+  recommended_actions = Column(JSON, nullable=True)                      # list of action strings
+  inclinations = Column(JSON, nullable=True)                             # list of strength/inclination observations
+  source_report_ids = Column(JSON, nullable=True)                        # list of report IDs that informed this
+  ai_reasoning = Column(Text, nullable=True)                             # AI's justification
+  resolved_at = Column(DateTime, nullable=True)
+  created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+  updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+
+class Message(Base):
+  __tablename__ = "messages"
+
+  id = Column(String, primary_key=True, index=True)
+  sender_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+  recipient_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+  subject = Column(String, nullable=False)
+  body = Column(Text, nullable=False)
+  read = Column(Boolean, default=False)
+  created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
   

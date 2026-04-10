@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from routers import ai_integrations
-from routers import auth, admin, parents, teachers, curriculum, lesson_plans, activities, reports
+from routers import auth, admin, parents, teachers, curriculum, lesson_plans, activities, reports, messages
 
 _BACKEND_DIR = Path(__file__).resolve().parent
 load_dotenv(_BACKEND_DIR / ".env")
@@ -48,4 +48,5 @@ app.include_router(curriculum.router)
 app.include_router(lesson_plans.router)
 app.include_router(activities.router)
 app.include_router(reports.router)
+app.include_router(messages.router)
 #app.include_router(students.router)

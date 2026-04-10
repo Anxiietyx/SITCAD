@@ -1,6 +1,7 @@
 import { useEffect, useReducer, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
+import { formatDateTime } from '../lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -259,7 +260,7 @@ export function AdminDashboard() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <Clock className="h-3 w-3" />
-                            {u.created_at ? new Date(u.created_at).toLocaleDateString() : 'N/A'}
+                            {formatDateTime(u.created_at)}
                           </div>
                           {u.id !== user.id && (
                             <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50 h-7 px-2" onClick={() => handleDeleteUser(u.id)}>

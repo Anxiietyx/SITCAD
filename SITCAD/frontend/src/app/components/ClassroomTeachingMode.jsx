@@ -314,6 +314,17 @@ function QuizDelivery({ activity, onComplete }) {
         }`}>{qTimer}</div>
       </div>
 
+      {/* Quiz question image */}
+      {currentQ.image_url && (
+        <div className="flex justify-center">
+          <img
+            src={currentQ.image_url}
+            alt="Question illustration"
+            className="max-h-48 rounded-xl object-contain border-2 border-blue-100 shadow-sm"
+          />
+        </div>
+      )}
+
       <h3 className="text-xl font-bold text-gray-800 text-center">{currentQ.question}</h3>
 
       <div className="grid grid-cols-2 gap-3">
@@ -799,7 +810,7 @@ export function ClassroomTeachingMode() {
       setCompletedIds(prev => new Set([...prev, completedId]));
       setActiveActivityId(null);
       setActivityPopupOpen(false);
-      toast.success('Activity completed! AI is analysing the results…');
+      toast.success('Activity completed! Analysing the results…');
       fetchActivities();
       // Fire-and-forget AI analysis
       fetch(`${API_BASE}/ai-integrations/analyze-activity`, {
@@ -960,7 +971,7 @@ export function ClassroomTeachingMode() {
                         : 'bg-gray-50 border-gray-200 text-gray-600'
                       }`}>
                         {activity.analysis_status === 'analyzing' && (
-                          <><Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" /><span>AI is analysing results…</span></>
+                          <><Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" /><span>Analysing results…</span></>
                         )}
                         {activity.analysis_status === 'completed' && (
                           <><Sparkles className="h-3.5 w-3.5 shrink-0" /><span>AI insights ready — view in Reports</span></>
