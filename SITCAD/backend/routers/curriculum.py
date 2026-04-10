@@ -34,11 +34,13 @@ async def list_domains():
         try:
             data = _load_json(filename)
             overview = data.get("overview", {})
+            spr_count = len(data.get("performance_metrics", []))
             domains.append({
                 "key": key,
                 "domain": overview.get("domain"),
                 "domain_identifier": overview.get("domain_identifier"),
                 "description": overview.get("description", {}),
+                "spr_count": spr_count,
             })
         except FileNotFoundError:
             continue

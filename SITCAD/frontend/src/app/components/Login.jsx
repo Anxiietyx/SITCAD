@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Alert, AlertDescription } from './ui/alert';
-import { Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 
@@ -14,8 +14,13 @@ export function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetSending, setResetSending] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [resetError, setResetError] = useState('');
 
-  const { login, googleLogin, user, loading: authLoading } = useAuth();
+  const { login, googleLogin, resetPassword, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   // Wait for auth to resolve on initial load before deciding where to redirect.
@@ -43,6 +48,29 @@ export function Login() {
       setError('Failed to sign in with Google. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setResetError('');
+    setResetSending(true);
+    try {
+      await resetPassword(resetEmail);
+      setResetSent(true);
+    } catch (err) {
+      const code = err.code;
+      if (code === 'auth/user-not-found') {
+        setResetError('No account found with this email address.');
+      } else if (code === 'auth/invalid-email') {
+        setResetError('Please enter a valid email address.');
+      } else if (code === 'auth/too-many-requests') {
+        setResetError('Too many requests. Please try again later.');
+      } else {
+        setResetError('Failed to send reset email. Please try again.');
+      }
+    } finally {
+      setResetSending(false);
     }
   };
 
@@ -127,6 +155,81 @@ export function Login() {
         {/* Right Section - Form */}
         <div className="w-full md:w-7/12 bg-card p-8 md:p-12 lg:p-16 flex flex-col justify-center">
           <div className="max-w-md mx-auto w-full">
+            {forgotMode ? (
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-bold">Reset Password</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Enter your email address and we'll send you a link to reset your password.
+                  </p>
+                </div>
+
+                {resetSent ? (
+                  <div className="space-y-6">
+                    <Alert className="bg-green-50 border-green-200 text-green-800">
+                      <CheckCircle className="h-4 w-4" />
+                      <AlertDescription className="text-sm">
+                        Password reset email sent to {resetEmail}. Check your inbox and follow the link to reset your password.
+                      </AlertDescription>
+                    </Alert>
+                    <Button
+                      variant="outline"
+                      className="w-full h-12 cursor-pointer"
+                      onClick={() => { setForgotMode(false); setResetSent(false); setResetEmail(''); setResetError(''); }}
+                    >
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Back to Sign In
+                    </Button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleResetPassword} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="reset-email">Email</Label>
+                      <Input
+                        id="reset-email"
+                        type="email"
+                        placeholder="name@example.com"
+                        value={resetEmail}
+                        onChange={(e) => setResetEmail(e.target.value)}
+                        className="h-12 px-4 bg-muted/30 border-muted focus:bg-background transition-colors"
+                        required
+                      />
+                    </div>
+
+                    {resetError && (
+                      <Alert variant="destructive" className="bg-destructive/10 border-destructive/20 text-destructive">
+                        <AlertDescription className="text-sm">{resetError}</AlertDescription>
+                      </Alert>
+                    )}
+
+                    <Button
+                      type="submit"
+                      className="w-full h-12 text-lg font-bold bg-[#3090A0] hover:bg-[#2FBFA5] text-white rounded-lg shadow-lg hover:shadow-xl transition-all active:scale-[0.98] cursor-pointer"
+                      disabled={resetSending}
+                    >
+                      {resetSending ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        'Send Reset Link'
+                      )}
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="w-full cursor-pointer"
+                      onClick={() => { setForgotMode(false); setResetError(''); }}
+                    >
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Back to Sign In
+                    </Button>
+                  </form>
+                )}
+              </div>
+            ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -146,7 +249,8 @@ export function Login() {
                   <Label htmlFor="password">Password</Label>
                   <button
                     type="button"
-                    className="text-xs text-[#3090A0] hover:underline font-medium"
+                    className="text-xs text-[#3090A0] hover:underline font-medium cursor-pointer"
+                    onClick={() => { setForgotMode(true); setResetEmail(email); setResetSent(false); setResetError(''); }}
                   >
                     Forgot password?
                   </button>
@@ -226,6 +330,7 @@ export function Login() {
                 )}
               </Button>
             </form>
+            )}
           </div>
         </div>
       </motion.div>

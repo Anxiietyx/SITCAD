@@ -2,6 +2,7 @@
 import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { auth } from '../lib/firebase';
+import { formatDateTime } from '../lib/utils';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -9,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Heart, TrendingUp, MessageSquare, UserPlus, FileText, Clock, CheckCircle2, AlertTriangle, Users } from 'lucide-react';
+import { Heart, TrendingUp, TrendingDown, MessageSquare, UserPlus, FileText, Clock, CheckCircle2, AlertTriangle, Users, Star, GraduationCap, Sparkles, Target, Minus, Brain } from 'lucide-react';
 import Duckpit from './Duckpit';
 import { useState, useEffect } from 'react';
 
@@ -26,6 +27,8 @@ export function ParentDashboard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [reports, setReports] = useState([]);
   const [isLoadingReports, setIsLoadingReports] = useState(true);
+  const [childAnalyses, setChildAnalyses] = useState({});
+  const [isLoadingAnalyses, setIsLoadingAnalyses] = useState(false);
 
   // Fetch children from API on mount
   useEffect(() => {
@@ -68,6 +71,36 @@ export function ParentDashboard() {
     };
     fetchReports();
   }, []);
+
+  // Fetch analyses for each child once children are loaded
+  useEffect(() => {
+    if (children.length === 0) return;
+    const fetchAnalyses = async () => {
+      setIsLoadingAnalyses(true);
+      try {
+        const idToken = await auth.currentUser.getIdToken();
+        const results = await Promise.all(
+          children.map(child =>
+            fetch(`http://localhost:8000/ai-integrations/child-analysis/${child.id}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id_token: idToken }),
+            }).then(res => res.ok ? res.json() : null).catch(() => null)
+          )
+        );
+        const map = {};
+        results.forEach((analysis, i) => {
+          if (analysis) map[children[i].id] = analysis;
+        });
+        setChildAnalyses(map);
+      } catch (error) {
+        console.error('Error fetching child analyses:', error);
+      } finally {
+        setIsLoadingAnalyses(false);
+      }
+    };
+    fetchAnalyses();
+  }, [children]);
 
   const handleAddChild = async () => {
     if (!newChild.name || !newChild.age) return;
@@ -333,6 +366,138 @@ export function ParentDashboard() {
             </CardContent>
           </Card>
 
+          {/* Child AI Insights */}
+          {Object.keys(childAnalyses).length > 0 && (
+            <Card className="border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-amber-500" />
+                  Learning Insights
+                </CardTitle>
+                <CardDescription>AI-powered analysis of your child's learning progress, strengths, and development</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {children.map(child => {
+                  const analysis = childAnalyses[child.id];
+                  if (!analysis) return null;
+                  return (
+                    <Card key={child.id} className="border shadow-sm" style={dashboardCardShadeStyle}>
+                      <CardContent className="p-4 space-y-3">
+                        {/* Header */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center text-sm font-bold text-green-700">
+                              {child.name.charAt(0)}
+                            </div>
+                            <span className="font-medium">{child.name}</span>
+                          </div>
+                          {analysis.improvement_data?.trend && (
+                            <Badge variant="outline" className={`gap-1 text-xs ${
+                              analysis.improvement_data.trend === 'improving' ? 'text-green-700 border-green-200' :
+                              analysis.improvement_data.trend === 'declining' ? 'text-red-700 border-red-200' :
+                              'text-gray-600 border-gray-200'
+                            }`}>
+                              {analysis.improvement_data.trend === 'improving' && <TrendingUp className="h-3 w-3" />}
+                              {analysis.improvement_data.trend === 'declining' && <TrendingDown className="h-3 w-3" />}
+                              {analysis.improvement_data.trend === 'stable' && <Minus className="h-3 w-3" />}
+                              {analysis.improvement_data.trend.replace('_', ' ')}
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* Summary */}
+                        {analysis.overall_summary && (
+                          <p className="text-sm text-muted-foreground">{analysis.overall_summary}</p>
+                        )}
+
+                        {/* Strengths */}
+                        {analysis.inclinations?.length > 0 && (
+                          <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                            <p className="text-xs font-medium text-purple-900 mb-2 flex items-center gap-1">
+                              <Star className="h-3 w-3" /> Your Child's Strengths
+                            </p>
+                            <ul className="space-y-1">
+                              {analysis.inclinations.map((inc, i) => (
+                                <li key={i} className="text-xs text-purple-800">
+                                  <span className="font-medium">{inc.area}:</span> {inc.observation}
+                                  {inc.suggestion && <span className="text-purple-600 ml-1">— {inc.suggestion}</span>}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* School Readiness */}
+                        {analysis.school_readiness && (
+                          <div className={`p-3 rounded-lg border ${
+                            analysis.school_readiness.level === 'ready' ? 'bg-green-50 border-green-200' :
+                            analysis.school_readiness.level === 'almost_ready' ? 'bg-yellow-50 border-yellow-200' :
+                            'bg-red-50 border-red-200'
+                          }`}>
+                            <p className="text-xs font-medium mb-1 flex items-center gap-1">
+                              <GraduationCap className="h-3 w-3" /> School Readiness
+                              <Badge className={`ml-1 text-xs px-2 py-0 ${
+                                analysis.school_readiness.level === 'ready' ? 'bg-green-200 text-green-800' :
+                                analysis.school_readiness.level === 'almost_ready' ? 'bg-yellow-200 text-yellow-800' :
+                                'bg-red-200 text-red-800'
+                              }`}>
+                                {analysis.school_readiness.level?.replace('_', ' ')}
+                              </Badge>
+                            </p>
+                            <p className="text-xs">{analysis.school_readiness.assessment}</p>
+                            {analysis.school_readiness.recommendations?.length > 0 && (
+                              <div className="mt-2">
+                                <p className="text-xs font-medium mb-1">Recommendations:</p>
+                                <ul className="list-disc list-inside text-xs space-y-0.5">
+                                  {analysis.school_readiness.recommendations.map((rec, i) => (
+                                    <li key={i}>{rec}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Interventions */}
+                        {analysis.interventions?.length > 0 && (
+                          <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
+                            <p className="text-xs font-medium text-orange-900 mb-2 flex items-center gap-1">
+                              <Target className="h-3 w-3" /> Areas for Extra Support
+                            </p>
+                            {analysis.interventions.map((intv, i) => (
+                              <div key={i} className="mb-2 last:mb-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="text-xs font-medium">{intv.area}</span>
+                                  <Badge variant="outline" className={`text-xs px-1.5 py-0 ${
+                                    intv.priority === 'high' ? 'text-red-600 border-red-200' :
+                                    intv.priority === 'medium' ? 'text-orange-600 border-orange-200' :
+                                    'text-yellow-600 border-yellow-200'
+                                  }`}>{intv.priority}</Badge>
+                                </div>
+                                <p className="text-xs text-orange-800">{intv.concern}</p>
+                                {intv.recommended_actions?.length > 0 && (
+                                  <ul className="list-disc list-inside text-xs text-orange-700 mt-1 space-y-0.5">
+                                    {intv.recommended_actions.map((action, j) => (
+                                      <li key={j}>{action}</li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="text-xs text-muted-foreground pt-1 border-t">
+                          Last analysed: {formatDateTime(analysis.created_at)}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Reports */}
           <Card className="border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle}>
             <CardHeader>
@@ -373,11 +538,13 @@ export function ParentDashboard() {
                               )}
                               <span className="text-xs text-muted-foreground flex items-center gap-1">
                                 <Clock className="h-3 w-3" />
-                                {new Date(report.created_at).toLocaleDateString()}
+                                {formatDateTime(report.created_at)}
                               </span>
-                              <span className="text-xs text-muted-foreground">
-                                {report.students?.length || 0} student(s)
-                              </span>
+                              {report.students?.length > 0 && (
+                                <span className="text-xs text-muted-foreground">
+                                  {report.students.map(s => s.name).join(', ')}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>

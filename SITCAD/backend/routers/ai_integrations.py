@@ -10,6 +10,7 @@ from typing import Literal, Optional
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from firebase_admin import auth as firebase_auth
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -468,6 +469,7 @@ LANGUAGE REQUIREMENT (STRICT — NO EXCEPTIONS):
 - This includes: questions, all answer options, and explanations.
 - Do NOT mix languages. Do NOT use any other language, not even for a single word.
 - If {language_label} is English, write everything in English only. If Bahasa Malaysia, write everything in Bahasa Malaysia only.
+- The "image_prompt" field MUST always be written in English (required by the image generation model).
 
 RULES:
 - Generate exactly {num_questions} multiple-choice questions.
@@ -476,6 +478,11 @@ RULES:
 - Make every question EASY and OBVIOUS: the correct answer should be clearly identifiable, and the wrong options (distractors) should be clearly and unmistakably different from the correct answer.
 - Use very simple, short vocabulary. Avoid tricky wording or close distractors.
 - Include a short, encouraging explanation for the correct answer.
+- Each question MUST include an "image_prompt" field: a concise English description (under 50 words) for generating an illustrative image that helps the child understand the question.
+  • Begin with: "Bright colorful cartoon illustration, children's educational style, simple and cheerful,"
+  • Describe the key concept or object in the question clearly.
+  • Do NOT include any text, letters, numbers, or watermarks in the image description.
+  • Cultural context: Sabah, Malaysia where relevant.
 - Return ONLY a single valid JSON object with this schema:
 
 {{
@@ -484,7 +491,8 @@ RULES:
       "question": "<question text>",
       "options": ["<A>", "<B>", "<C>", "<D>"],
       "correct_answer": <0-3 index>,
-      "explanation": "<short explanation>"
+      "explanation": "<short explanation>",
+      "image_prompt": "<concise English prompt for image generation>"
     }}
   ]
 }}
@@ -692,6 +700,26 @@ async def _generate_single_activity(
         content_data["images"] = await _generate_flashcard_images(
             content_data["images"], api_key
         )
+
+    # For quiz activities: generate one image per question with Imagen 4
+    if activity.type == "quiz" and content_data.get("questions"):
+        questions_with_prompts = [
+            {
+                "image_prompt": q.get("image_prompt", ""),
+                "label": f"Q{i+1}",
+                "learning_point": "",
+            }
+            for i, q in enumerate(content_data["questions"])
+            if q.get("image_prompt")
+        ]
+        if questions_with_prompts:
+            generated = await _generate_flashcard_images(questions_with_prompts, api_key, aspect_ratio="1:1")
+            gen_iter = iter(generated)
+            for q in content_data["questions"]:
+                if q.get("image_prompt"):
+                    q["image_url"] = next(gen_iter).get("image_url")
+                    # Remove the prompt from final output
+                    q.pop("image_prompt", None)
 
     # For story activities: generate one image per page with Imagen 4
     if activity.type == "story" and content_data.get("pages"):
@@ -1066,11 +1094,32 @@ async def analyze_activity(request: AnalyzeActivityRequest, db: Session = Depend
     db.commit()
     db.refresh(activity)
 
+    # ── Auto-trigger Intervention Analysis for each student ──
+    il_results = []
+    for s in students:
+        try:
+            il_result = await _run_intervention_analysis(
+                student=s,
+                teacher_id=teacher.id,
+                db=db,
+                trigger_report_id=report.id,
+            )
+            il_results.append(il_result)
+        except Exception as e:
+            logger.warning(f"Auto-IL failed for student {s.id}: {e}")
+            # Roll back any aborted transaction so the session is clean for the next student
+            try:
+                db.rollback()
+            except Exception:
+                pass
+            il_results.append({"student_id": s.id, "error": str(e)})
+
     return {
         "activity_id": activity.id,
         "analysis_status": "completed",
         "report_id": report.id,
         "insights": insights,
+        "intervention_analyses": il_results,
     }
 
 
@@ -1086,4 +1135,561 @@ def _strip_images_for_analysis(content: dict) -> dict:
     for page in stripped.get("pages", []):
         page.pop("image_b64", None)
         page.pop("image_url", None)
+    # Strip from quiz question images
+    for q in stripped.get("questions", []):
+        q.pop("image_url", None)
     return stripped
+
+
+# ---------------------------------------------------------------------------
+# Student Intervention Analysis (Phase 4 — v2: auto-trigger, per-student)
+# ---------------------------------------------------------------------------
+
+class GenerateInterventionsRequest(BaseModel):
+    id_token: str
+    student_id: str
+
+
+INTERVENTION_SYSTEM_PROMPT = """\
+You are SabahSprout AI, an expert Malaysian kindergarten developmental specialist.
+You analyse a single student's holistic performance data to determine four things:
+
+  I.   **Improvement Over Time** — Has the child shown measurable improvement across sessions?
+  II.  **Intervention Needs** — Does the child require specific intervention in any learning area?
+  III. **Unique Inclinations & Strengths** — What areas does the child naturally excel in or show enthusiasm for?
+  IV.  **School Readiness** — For children aged 5 (transitioning to 6 or 7), is the child developmentally ready for formal primary school?
+
+You will be given:
+- The student's profile (name, age)
+- **Payload A: Current Report** — the latest activity report with AI insights, results data, and flagged observations
+- **Payload B: Historical Reports** — previous activity reports (up to 15, most recent first) for trend comparison
+- **Payload C: DSKP Progress** — StudentProgress SPR attainment scores across all learning domains (level 1 = needs support, 2 = developing, 3 = proficient)
+- **Payload D: Prior Interventions** — previously generated interventions with their current status (resolved, in_progress, or pending). Use this to understand what was already flagged and how the teacher responded.
+
+YOUR ANALYSIS MUST CONSIDER:
+A. **Academic performance** — quiz scores, accuracy across learning areas, first-attempt correctness.
+B. **Response patterns** — questions that took unusually long may indicate comprehension difficulty; very fast answers (<3s) may indicate rushing or strong confidence.
+C. **Engagement & screen time** — total session durations, time spent on flashcards (<2s = possible disinterest), story pages skipped quickly, overall attention patterns.
+D. **Interactivity as motor skills indicator** — ability to navigate the app, respond to taps/clicks, and complete drag/selection tasks reflects fine motor coordination.
+E. **Cross-domain patterns** — e.g. a child scoring poorly in numeracy but well in motor skills might thrive with kinesthetic/hands-on approaches.
+F. **Retry patterns** — frequent retries on certain question types indicate specific concept gaps.
+G. **Consistency & variance** — does the child perform consistently or show high variance across sessions?
+H. **Incomplete DSKP data** — if SPR scores are sparse or missing for certain domains, note the gap and base analysis on available data only. Do not assume performance where data is absent.
+
+SCHOOL READINESS ASSESSMENT (Objective IV):
+- Only generate a school readiness assessment if the child is aged 5, 6, or 7.
+- Evaluate: cognitive readiness, language proficiency (BM and BI), socioemotional maturity, fine/gross motor skills, attention span (inferred from session times), and ability to follow multi-step instructions (inferred from activity completion patterns).
+- Provide a readiness level: "ready", "almost_ready", or "not_yet_ready" with clear justification.
+- If the child is not aged 5-7, set school_readiness to null.
+
+IMPROVEMENT TRACKING (Objective I):
+- Compare the current report's performance with historical reports.
+- Note specific areas of improvement or regression.
+- Assign a trend: "improving", "stable", "declining", or "insufficient_data".
+
+PRIOR INTERVENTION AWARENESS (Payload D):
+- If Payload D shows interventions that were "resolved" by the teacher, do NOT re-flag the same area/concern **unless** the current data (Payloads A/B/C) shows clear evidence of regression in that specific area after the resolution date.
+- If a resolved intervention's area still shows difficulty, acknowledge the prior intervention and note that the concern has resurfaced, citing the new data.
+- If an intervention is still "in_progress" or "pending", do NOT create a duplicate — only flag a NEW concern in that area if it is materially different from the existing one.
+- When the student has cleared all prior interventions and current data shows adequate performance, return 0 interventions.
+
+RULES:
+- Generate 0-3 intervention items. Only flag genuine concerns — do NOT fabricate interventions if data shows the student is doing well.
+- For each intervention, assign a priority: "high" (urgent, significant gap), "medium" (notable concern), or "low" (minor, worth monitoring).
+- For each, list 2-4 specific, actionable recommended actions the teacher or parent can take.
+- Separately, identify 0-3 positive inclinations/strengths the student shows.
+- If the student is performing well overall, it is perfectly valid to return 0 interventions and only inclinations.
+
+Return ONLY a single valid JSON object with this exact schema:
+{{
+  "overall_summary": "<2-3 sentence holistic assessment of the child>",
+  "improvement_data": {{
+    "trend": "<improving|stable|declining|insufficient_data>",
+    "details": "<2-3 sentences describing the performance trajectory>",
+    "comparison_points": [
+      {{
+        "area": "<learning area>",
+        "previous": "<prior performance observation>",
+        "current": "<current performance observation>",
+        "direction": "<up|down|stable>"
+      }}
+    ]
+  }},
+  "school_readiness": null | {{
+    "level": "<ready|almost_ready|not_yet_ready>",
+    "assessment": "<2-3 sentence holistic readiness evaluation>",
+    "cognitive_readiness": "<brief note>",
+    "language_readiness": "<brief note>",
+    "socioemotional_readiness": "<brief note>",
+    "motor_readiness": "<brief note>",
+    "recommendations": ["<recommendation 1>", "<recommendation 2>"]
+  }},
+  "interventions": [
+    {{
+      "area": "<learning area or developmental area>",
+      "priority": "<high|medium|low>",
+      "concern": "<2-3 sentence description of the concern based on data>",
+      "recommended_actions": ["<action 1>", "<action 2>", ...],
+      "reasoning": "<why this was flagged, citing specific data points>"
+    }}
+  ],
+  "inclinations": [
+    {{
+      "area": "<area of strength>",
+      "observation": "<what the data shows>",
+      "suggestion": "<how to nurture this strength>"
+    }}
+  ]
+}}
+
+Do NOT wrap the JSON in markdown code fences. Return raw JSON only.
+"""
+
+
+async def _run_intervention_analysis(
+    student: models.Student,
+    teacher_id: str,
+    db: Session,
+    trigger_report_id: str | None = None,
+) -> dict:
+    """
+    Core intervention analysis logic (per-student).
+    Gathers payloads A/B/C, calls Gemini, persists InterventionAnalysis + Intervention records.
+    Returns the parsed AI result dict.
+    """
+    # Payload C: DSKP SPR scores
+    progress_records = db.query(models.StudentProgress).filter(
+        models.StudentProgress.student_id == student.id
+    ).all()
+    spr_scores = [
+        {"domain_key": p.domain_key, "spr_code": p.spr_code, "level": p.level}
+        for p in progress_records
+    ]
+
+    # Payload A + B: Reports involving this student
+    report_student_links = db.query(models.ReportStudent).filter(
+        models.ReportStudent.student_id == student.id
+    ).all()
+    report_ids = [rl.report_id for rl in report_student_links]
+
+    current_report_data = None
+    historical_reports = []
+
+    if report_ids:
+        report_rows = db.query(models.Report).filter(
+            models.Report.id.in_(report_ids)
+        ).order_by(models.Report.created_at.desc()).limit(15).all()
+
+        for r in report_rows:
+            report_data = {
+                "report_id": r.id,
+                "title": r.title,
+                "summary": r.summary,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+            if r.details:
+                report_data["ai_insights"] = r.details.get("ai_insights")
+                report_data["results_summary"] = r.details.get("results_summary")
+                report_data["activity_type"] = r.details.get("activity_type")
+                report_data["learning_area"] = r.details.get("learning_area")
+            # Payload A = trigger report or most recent
+            if trigger_report_id and r.id == trigger_report_id:
+                current_report_data = report_data
+            else:
+                historical_reports.append(report_data)
+
+        # If no explicit trigger report, use most recent as current
+        if current_report_data is None and report_rows:
+            first = report_rows[0]
+            current_report_data = {
+                "report_id": first.id,
+                "title": first.title,
+                "summary": first.summary,
+                "created_at": first.created_at.isoformat() if first.created_at else None,
+            }
+            if first.details:
+                current_report_data["ai_insights"] = first.details.get("ai_insights")
+                current_report_data["results_summary"] = first.details.get("results_summary")
+                current_report_data["activity_type"] = first.details.get("activity_type")
+                current_report_data["learning_area"] = first.details.get("learning_area")
+            # Remove it from historical if it ended up there
+            historical_reports = [h for h in historical_reports if h.get("report_id") != first.id]
+
+    if not current_report_data and not spr_scores:
+        # Nothing to analyse — skip silently
+        return {"skipped": True, "reason": "No performance data available"}
+
+    # Payload D: Prior interventions (so AI knows what was already flagged/resolved)
+    prior_interventions_data = []
+    prior_interventions = db.query(models.Intervention).filter(
+        models.Intervention.student_id == student.id,
+        models.Intervention.teacher_id == teacher_id,
+    ).order_by(models.Intervention.created_at.desc()).all()
+    for pi in prior_interventions:
+        prior_interventions_data.append({
+            "area": pi.area,
+            "concern": pi.concern,
+            "priority": pi.priority,
+            "status": pi.status,
+            "recommended_actions": pi.recommended_actions or [],
+            "created_at": pi.created_at.isoformat() if pi.created_at else None,
+            "resolved_at": pi.resolved_at.isoformat() if pi.resolved_at else None,
+        })
+
+    # Build user message
+    student_info = {"name": student.name, "age": student.age}
+    user_parts = [f"=== Student Profile ===\n{json.dumps(student_info, indent=2)}"]
+
+    if current_report_data:
+        user_parts.append(f"\n=== Payload A: Current Report ===\n{json.dumps(current_report_data, indent=2)}")
+
+    if historical_reports:
+        user_parts.append(f"\n=== Payload B: Historical Reports (most recent first, up to 14) ===\n{json.dumps(historical_reports, indent=2)}")
+
+    if spr_scores:
+        user_parts.append(f"\n=== Payload C: DSKP SPR Attainment Scores ===\n{json.dumps(spr_scores, indent=2)}")
+
+    if prior_interventions_data:
+        user_parts.append(f"\n=== Payload D: Prior Interventions ===\n{json.dumps(prior_interventions_data, indent=2)}")
+
+    user_message = "\n".join(user_parts)
+
+    # Call Gemini
+    gemini_api_key = os.getenv("GEMINI_API_KEY")
+    if not gemini_api_key:
+        raise HTTPException(status_code=503, detail="GEMINI_API_KEY is not configured.")
+
+    try:
+        llm = ChatGoogleGenerativeAI(
+            model=GEMINI_MODEL,
+            api_key=gemini_api_key,
+            temperature=0.3,
+            max_tokens=6144,
+        )
+        response = await _invoke_with_retry(llm, [
+            SystemMessage(content=INTERVENTION_SYSTEM_PROMPT),
+            HumanMessage(content=user_message),
+        ])
+        raw = _handle_response_content(response.content)
+        raw = _strip_json_fences(raw)
+        result = json.loads(raw)
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to parse intervention JSON: {e}\nRaw: {raw[:500]}")
+        raise HTTPException(status_code=500, detail="AI returned an invalid response. Try again.")
+    except Exception as e:
+        logger.error(f"Intervention analysis failed: {e}")
+        raise HTTPException(status_code=502, detail=f"AI service error: {str(e)}")
+
+    # Delete existing analysis + interventions for this student by this teacher (replace with fresh)
+    old_analyses = db.query(models.InterventionAnalysis).filter(
+        models.InterventionAnalysis.student_id == student.id,
+        models.InterventionAnalysis.teacher_id == teacher_id,
+    ).all()
+    old_analysis_ids = [a.id for a in old_analyses]
+
+    if old_analysis_ids:
+        db.query(models.Intervention).filter(
+            models.Intervention.analysis_id.in_(old_analysis_ids)
+        ).delete(synchronize_session=False)
+        db.query(models.InterventionAnalysis).filter(
+            models.InterventionAnalysis.id.in_(old_analysis_ids)
+        ).delete(synchronize_session=False)
+    # Also delete any legacy interventions without analysis_id
+    db.query(models.Intervention).filter(
+        models.Intervention.student_id == student.id,
+        models.Intervention.teacher_id == teacher_id,
+        models.Intervention.analysis_id == None,
+    ).delete(synchronize_session=False)
+    db.flush()
+
+    # Create InterventionAnalysis record
+    analysis_id = str(uuid.uuid4())
+    analysis = models.InterventionAnalysis(
+        id=analysis_id,
+        teacher_id=teacher_id,
+        student_id=student.id,
+        trigger_report_id=trigger_report_id,
+        overall_summary=result.get("overall_summary", ""),
+        improvement_data=result.get("improvement_data"),
+        school_readiness=result.get("school_readiness"),
+        inclinations=result.get("inclinations", []),
+        source_report_ids=report_ids[:15],
+    )
+    db.add(analysis)
+    db.flush()
+
+    # Persist individual interventions
+    created_interventions = []
+    for item in result.get("interventions", []):
+        intervention = models.Intervention(
+            id=str(uuid.uuid4()),
+            teacher_id=teacher_id,
+            student_id=student.id,
+            analysis_id=analysis_id,
+            priority=item.get("priority", "medium"),
+            status="pending",
+            area=item.get("area", "General"),
+            concern=item.get("concern", ""),
+            recommended_actions=item.get("recommended_actions", []),
+            ai_reasoning=item.get("reasoning", ""),
+            source_report_ids=report_ids[:15],
+        )
+        db.add(intervention)
+        created_interventions.append(intervention)
+
+    # Update student's needs_intervention flag
+    has_concerns = any(
+        item.get("priority") in ("high", "medium")
+        for item in result.get("interventions", [])
+    )
+    student.needs_intervention = has_concerns
+    db.commit()
+
+    return {
+        "student_id": student.id,
+        "student_name": student.name,
+        "analysis_id": analysis_id,
+        "overall_summary": result.get("overall_summary", ""),
+        "improvement_data": result.get("improvement_data"),
+        "school_readiness": result.get("school_readiness"),
+        "interventions": result.get("interventions", []),
+        "inclinations": result.get("inclinations", []),
+        "intervention_count": len(created_interventions),
+        "needs_intervention": has_concerns,
+    }
+
+
+@router.post("/generate-interventions")
+async def generate_interventions(request: GenerateInterventionsRequest, db: Session = Depends(get_db)):
+    """
+    Analyse a student's holistic performance data across all activities/reports
+    and generate AI-powered intervention recommendations.
+    Can be triggered manually by teacher or auto-triggered after activity analysis.
+    """
+    teacher = _verify_teacher(request.id_token, db)
+
+    student = db.query(models.Student).filter(
+        models.Student.id == request.student_id,
+        models.Student.teacher_id == teacher.id,
+    ).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found or not assigned to you")
+
+    return await _run_intervention_analysis(student, teacher.id, db)
+
+
+@router.post("/student-interventions")
+async def list_student_interventions(request: GenerateInterventionsRequest, db: Session = Depends(get_db)):
+    """List saved interventions for a student."""
+    teacher = _verify_teacher(request.id_token, db)
+
+    interventions = db.query(models.Intervention).filter(
+        models.Intervention.student_id == request.student_id,
+        models.Intervention.teacher_id == teacher.id,
+    ).order_by(models.Intervention.created_at.desc()).all()
+
+    return [
+        {
+            "id": i.id,
+            "student_id": i.student_id,
+            "analysis_id": i.analysis_id,
+            "priority": i.priority,
+            "status": i.status,
+            "area": i.area,
+            "concern": i.concern,
+            "recommended_actions": i.recommended_actions,
+            "inclinations": i.inclinations,
+            "ai_reasoning": i.ai_reasoning,
+            "created_at": i.created_at.isoformat() if i.created_at else None,
+        }
+        for i in interventions
+    ]
+
+
+class UpdateInterventionStatusRequest(BaseModel):
+    id_token: str
+    intervention_id: str
+    status: str  # "pending" | "in_progress" | "resolved"
+
+
+@router.post("/update-intervention-status")
+async def update_intervention_status(request: UpdateInterventionStatusRequest, db: Session = Depends(get_db)):
+    """Update the status of an intervention."""
+    teacher = _verify_teacher(request.id_token, db)
+
+    intervention = db.query(models.Intervention).filter(
+        models.Intervention.id == request.intervention_id,
+        models.Intervention.teacher_id == teacher.id,
+    ).first()
+    if not intervention:
+        raise HTTPException(status_code=404, detail="Intervention not found")
+
+    if request.status not in ("pending", "in_progress", "resolved"):
+        raise HTTPException(status_code=400, detail="Invalid status")
+
+    intervention.status = request.status
+    if request.status == "resolved":
+        intervention.resolved_at = func.now()
+
+    # Recalculate needs_intervention: true only if there are still active (non-resolved) interventions
+    remaining_active = db.query(models.Intervention).filter(
+        models.Intervention.student_id == intervention.student_id,
+        models.Intervention.teacher_id == teacher.id,
+        models.Intervention.id != intervention.id,
+        models.Intervention.status != "resolved",
+    ).count()
+    still_needs = remaining_active > 0 if request.status == "resolved" else True
+    student = db.query(models.Student).filter(
+        models.Student.id == intervention.student_id
+    ).first()
+    if student:
+        student.needs_intervention = still_needs
+
+    db.commit()
+    return {"id": intervention.id, "status": intervention.status, "needs_intervention": still_needs}
+
+
+class ListAllInterventionsRequest(BaseModel):
+    id_token: str
+
+
+@router.post("/all-interventions")
+async def list_all_interventions(request: ListAllInterventionsRequest, db: Session = Depends(get_db)):
+    """List all interventions for all students of this teacher."""
+    teacher = _verify_teacher(request.id_token, db)
+
+    interventions = db.query(models.Intervention).filter(
+        models.Intervention.teacher_id == teacher.id,
+    ).order_by(models.Intervention.created_at.desc()).all()
+
+    # Get student names
+    student_ids = list(set(i.student_id for i in interventions))
+    students = db.query(models.Student).filter(models.Student.id.in_(student_ids)).all() if student_ids else []
+    student_map = {s.id: s for s in students}
+
+    return [
+        {
+            "id": i.id,
+            "student_id": i.student_id,
+            "student_name": student_map.get(i.student_id, None) and student_map[i.student_id].name,
+            "analysis_id": i.analysis_id,
+            "priority": i.priority,
+            "status": i.status,
+            "area": i.area,
+            "concern": i.concern,
+            "recommended_actions": i.recommended_actions,
+            "inclinations": i.inclinations,
+            "ai_reasoning": i.ai_reasoning,
+            "created_at": i.created_at.isoformat() if i.created_at else None,
+        }
+        for i in interventions
+    ]
+
+
+@router.post("/all-analyses")
+async def list_all_analyses(request: ListAllInterventionsRequest, db: Session = Depends(get_db)):
+    """List latest InterventionAnalysis for each student of this teacher."""
+    teacher = _verify_teacher(request.id_token, db)
+
+    analyses = db.query(models.InterventionAnalysis).filter(
+        models.InterventionAnalysis.teacher_id == teacher.id,
+    ).order_by(models.InterventionAnalysis.created_at.desc()).all()
+
+    # Get student names
+    student_ids = list(set(a.student_id for a in analyses))
+    students = db.query(models.Student).filter(models.Student.id.in_(student_ids)).all() if student_ids else []
+    student_map = {s.id: s for s in students}
+
+    # Only return the latest per student
+    seen = set()
+    results = []
+    for a in analyses:
+        if a.student_id in seen:
+            continue
+        seen.add(a.student_id)
+        s = student_map.get(a.student_id)
+        results.append({
+            "id": a.id,
+            "student_id": a.student_id,
+            "student_name": s.name if s else None,
+            "student_age": s.age if s else None,
+            "overall_summary": a.overall_summary,
+            "improvement_data": a.improvement_data,
+            "school_readiness": a.school_readiness,
+            "inclinations": a.inclinations,
+            "trigger_report_id": a.trigger_report_id,
+            "created_at": a.created_at.isoformat() if a.created_at else None,
+        })
+
+    return results
+
+
+# ---------------------------------------------------------------------------
+# Parent-accessible intervention endpoints
+# ---------------------------------------------------------------------------
+
+class ParentAuthenticatedRequest(BaseModel):
+    id_token: str
+
+
+def _verify_parent_or_teacher(id_token: str, db: Session) -> models.User:
+    try:
+        decoded = firebase_auth.verify_id_token(id_token)
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+    user = db.query(models.User).filter(models.User.id == decoded["uid"]).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.role not in ("parent", "teacher"):
+        raise HTTPException(status_code=403, detail="Not authorized")
+    return user
+
+
+@router.post("/child-analysis/{student_id}")
+async def get_child_analysis(student_id: str, request: ParentAuthenticatedRequest, db: Session = Depends(get_db)):
+    """Get the latest InterventionAnalysis for a student (parent or teacher)."""
+    user = _verify_parent_or_teacher(request.id_token, db)
+
+    student = db.query(models.Student).filter(models.Student.id == student_id).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+    if user.role == "parent" and student.parent_id != user.id:
+        raise HTTPException(status_code=403, detail="Not your child")
+    if user.role == "teacher" and student.teacher_id != user.id:
+        raise HTTPException(status_code=403, detail="Not your student")
+
+    analysis = db.query(models.InterventionAnalysis).filter(
+        models.InterventionAnalysis.student_id == student_id,
+    ).order_by(models.InterventionAnalysis.created_at.desc()).first()
+
+    if not analysis:
+        return None
+
+    # Get associated interventions
+    interventions = db.query(models.Intervention).filter(
+        models.Intervention.analysis_id == analysis.id,
+    ).order_by(models.Intervention.created_at.desc()).all()
+
+    return {
+        "id": analysis.id,
+        "student_id": analysis.student_id,
+        "student_name": student.name,
+        "student_age": student.age,
+        "overall_summary": analysis.overall_summary,
+        "improvement_data": analysis.improvement_data,
+        "school_readiness": analysis.school_readiness,
+        "inclinations": analysis.inclinations,
+        "created_at": analysis.created_at.isoformat() if analysis.created_at else None,
+        "interventions": [
+            {
+                "id": i.id,
+                "priority": i.priority,
+                "status": i.status,
+                "area": i.area,
+                "concern": i.concern,
+                "recommended_actions": i.recommended_actions,
+                "ai_reasoning": i.ai_reasoning,
+            }
+            for i in interventions
+        ],
+    }
