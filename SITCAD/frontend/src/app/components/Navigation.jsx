@@ -35,12 +35,12 @@ const teacherNavItems = [
   { path: '/teacher/reports', icon: FileText, label: 'Reports' },
   // { path: '/teacher/ai-analysis', icon: Brain, label: 'AI Analysis' },
   { path: '/teacher/interventions', icon: AlertCircle, label: 'Interventions' },
-  { path: '/teacher/communication', icon: MessageSquare, label: 'Messages' },
+  // { path: '/teacher/communication', icon: MessageSquare, label: 'Messages' },
 ];
 
 const parentNavItems = [
   { path: '/parent', icon: Home, label: 'Dashboard', exact: true },
-  { path: '/parent/communication', icon: MessageSquare, label: 'Messages' },
+  // { path: '/parent/communication', icon: MessageSquare, label: 'Messages' },
 ];
 
 const adminNavItems = [
