@@ -1079,7 +1079,7 @@ async def analyze_activity(request: AnalyzeActivityRequest, db: Session = Depend
         id=str(uuid.uuid4()),
         teacher_id=teacher.id,
         activity_id=activity.id,
-        title=f"AI Insights: {activity.title}",
+        title=f"{activity.title}",
         summary=insights.get("summary", ""),
         details=report_details,
     )
@@ -1199,6 +1199,7 @@ RULES:
 - For each, list 2-4 specific, actionable recommended actions the teacher or parent can take.
 - Separately, identify 0-3 positive inclinations/strengths the student shows.
 - If the student is performing well overall, it is perfectly valid to return 0 interventions and only inclinations.
+- NEVER reference internal payload labels ("Payload A", "Payload B", "Payload C", "Payload D") anywhere in your output. Use plain language instead — e.g. "recent activity results", "past sessions", "DSKP progress records", "prior interventions".
 
 Return ONLY a single valid JSON object with this exact schema:
 {{

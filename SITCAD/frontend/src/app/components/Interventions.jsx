@@ -168,6 +168,19 @@ export function Interventions() {
     }
   };
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "pending":
+        return "text-base px-6 py-1 bg-orange-100 text-orange-700 border-orange-200";
+      case "in_progress":
+        return "text-base px-6 py-1 bg-blue-100 text-blue-700 border-blue-200";
+      case "resolved":
+        return "text-base px-6 py-1 bg-green-100 text-green-700 border-green-200";
+      default:
+        return "text-base px-6 py-1 bg-gray-100 text-gray-700 border-gray-200";
+    }
+  };
+
   const getStatusIcon = (status) => {
     switch (status) {
       case "pending":
@@ -196,11 +209,18 @@ export function Interventions() {
               {intervention.area}
             </CardDescription>
           </div>
-          <Badge
-            className={`${getPriorityColor(intervention.priority)} border`}
-          >
-            {intervention.priority} priority
-          </Badge>
+          <div className="flex flex-row gap-2 items-center">
+            <Badge
+              className={`${getStatusColor(intervention.status)} border capitalize`}
+            >
+              {intervention.status.replace("_", " ")}
+            </Badge>
+            <Badge
+              className={`${getPriorityColor(intervention.priority)} border`}
+            >
+              {intervention.priority.charAt(0).toUpperCase() + intervention.priority.slice(1)} Priority
+            </Badge>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -251,9 +271,8 @@ export function Interventions() {
           <div className="flex gap-2">
             {intervention.status === "pending" && (
               <Button
-                variant="outline"
                 size="sm"
-                className="px-3 border-2 text-blue-700 border-blue-200 hover:bg-blue-50 cursor-pointer"
+                className="px-3 bg-[#3090A0] text-white hover:bg-[#246178] cursor-pointer"
                 onClick={() => handleUpdateStatus(intervention.id, "in_progress")}
               >
                 <Target className="h-3 w-3 mr-1" /> Start Support
@@ -261,22 +280,13 @@ export function Interventions() {
             )}
             {intervention.status === "in_progress" && (
               <Button
-                variant="outline"
                 size="sm"
-                className="px-3 border-2 text-green-700 border-green-200 hover:bg-green-50 cursor-pointer"
+                className="px-3 bg-[#3090A0] text-white hover:bg-[#246178] cursor-pointer"
                 onClick={() => handleUpdateStatus(intervention.id, "resolved")}
               >
                 <CheckCircle className="h-3 w-3 mr-1" /> Mark Resolved
               </Button>
             )}
-            <Button
-              variant="outline"
-              size="sm"
-              className="px-3 border-2 cursor-pointer"
-              onClick={() => navigate(`/teacher/student/${intervention.student_id}`, { state: { from: 'interventions' } })}
-            >
-              View Student
-            </Button>
           </div>
         </div>
       </CardContent>
