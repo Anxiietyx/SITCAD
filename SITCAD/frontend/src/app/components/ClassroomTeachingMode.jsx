@@ -7,16 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from './ui/dialog';
-import {
   ArrowLeft, Play, CheckCircle2, Users, Clock, Book, Calculator, Palette, Brain,
   Activity as ActivityIcon, Trophy, RotateCcw, ChevronRight, ChevronLeft, Star,
-  Image, BookOpen, HelpCircle, Loader2, Sparkles, AlertCircle, RefreshCw,
+  Image, BookOpen, HelpCircle, Loader2, Sparkles, AlertCircle, RefreshCw, X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -57,6 +50,8 @@ const optionColors = [
   'bg-lime-600 hover:bg-lime-700',
 ];
 const optionShapes = ['▲', '◆', '●', '■'];
+
+const CONTENT_FONT = { fontFamily: "'Comic Sans MS', 'Comic Sans', 'Chalkboard SE', cursive" };
 
 // ─── Quiz Delivery ───────────────────────────────────────────────────
 
@@ -192,34 +187,34 @@ function QuizDelivery({ activity, onComplete }) {
   // Lobby
   if (!started) {
     return (
-      <div className="text-center space-y-6 py-6">
-        <div className="w-24 h-24 mx-auto bg-blue-100 rounded-2xl flex items-center justify-center">
-          <HelpCircle className="h-12 w-12 text-blue-700" />
+      <div className="text-center space-y-10 py-12">
+        <div className="w-32 h-32 mx-auto bg-blue-100 rounded-2xl flex items-center justify-center">
+          <HelpCircle className="h-20 w-20 text-blue-700" />
         </div>
         <div>
-          <h2 className="text-3xl font-bold text-gray-800">{activity.title}</h2>
+          <h2 className="text-5xl font-black text-gray-800 mb-2" style={CONTENT_FONT}>{activity.title}</h2>
           {activity.lesson_plan_title && (
-            <p className="text-sm text-muted-foreground mt-1">From: {activity.lesson_plan_title}</p>
+            <p className="text-xl text-muted-foreground mt-2" style={CONTENT_FONT}>From: {activity.lesson_plan_title}</p>
           )}
-          <p className="text-muted-foreground mt-3">{questions.length} questions &bull; 15 seconds each</p>
+          <p className="text-2xl text-muted-foreground mt-4" style={CONTENT_FONT}>{questions.length} questions &bull; 15 seconds each</p>
         </div>
         {activity.students?.length > 0 && (
           <div>
-            <p className="text-sm font-medium text-muted-foreground mb-3">{activity.students.length} students participating</p>
-            <div className="flex flex-wrap justify-center gap-3">
+            <p className="text-lg font-medium text-muted-foreground mb-4" style={CONTENT_FONT}>{activity.students.length} students participating</p>
+            <div className="flex flex-wrap justify-center gap-5">
               {activity.students.map((student) => (
                 <div key={student.id} className="flex flex-col items-center">
-                  <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-sm">
+                  <div className="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xl">
                     {student.name.charAt(0).toUpperCase()}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">{student.name}</p>
+                  <p className="text-base text-muted-foreground mt-2" style={CONTENT_FONT}>{student.name}</p>
                 </div>
               ))}
             </div>
           </div>
         )}
-        <Button size="lg" onClick={handleStart} className="bg-blue-600 hover:bg-blue-700 text-white text-lg px-10 py-6 cursor-pointer">
-          <Play className="mr-2 h-5 w-5" /> Start Quiz
+        <Button size="lg" onClick={handleStart} className="bg-blue-600 hover:bg-blue-700 text-white text-2xl px-14 py-7 cursor-pointer comic-delivery">
+          <Play className="mr-3 h-6 w-6" /> Start Quiz
         </Button>
       </div>
     );
@@ -320,12 +315,12 @@ function QuizDelivery({ activity, onComplete }) {
           <img
             src={currentQ.image_url}
             alt="Question illustration"
-            className="max-h-48 rounded-xl object-contain border-2 border-blue-100 shadow-sm"
+            className="max-h-72 rounded-xl object-contain border-2 border-blue-100 shadow-sm"
           />
         </div>
       )}
 
-      <h3 className="text-xl font-bold text-gray-800 text-center">{currentQ.question}</h3>
+      <h3 className="text-xl font-bold text-gray-800 text-center" style={CONTENT_FONT}>{currentQ.question}</h3>
 
       <div className="grid grid-cols-2 gap-3">
         {currentQ.options.map((option, idx) => {
@@ -337,7 +332,8 @@ function QuizDelivery({ activity, onComplete }) {
           }
           return (
             <button key={idx} onClick={() => handleAnswer(idx)} disabled={showResult}
-              className={`relative flex items-center justify-center gap-3 rounded-xl py-5 px-4 text-lg font-bold transition-all duration-200 cursor-pointer ${showResult ? '' : 'active:scale-95'} ${btnClass}`}>
+              className={`relative flex items-center justify-center gap-3 rounded-xl py-5 px-4 text-lg font-bold transition-all duration-200 cursor-pointer ${showResult ? '' : 'active:scale-95'} ${btnClass}`}
+              style={CONTENT_FONT}>
               <span className="text-white/60 text-sm">{optionShapes[idx]}</span>
               <span>{option}</span>
             </button>
@@ -356,7 +352,7 @@ function QuizDelivery({ activity, onComplete }) {
              : isCorrectAnswer ? '🎉 Correct! Great job!'
              : `❌ Not quite! The answer is "${currentQ.options[currentQ.correct_answer]}". You'll see this again.`}
           </div>
-          {currentQ.explanation && <p className="text-sm text-muted-foreground text-center italic">{currentQ.explanation}</p>}
+          {currentQ.explanation && <p className="text-sm text-muted-foreground text-center italic" style={CONTENT_FONT}>{currentQ.explanation}</p>}
           <Button onClick={nextQuestion} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold cursor-pointer" size="lg">
             {isLastAndCorrect
               ? <><Trophy className="mr-2 h-5 w-5" /> See Results</>
@@ -430,34 +426,34 @@ function ImageDelivery({ activity, onComplete }) {
   // Lobby
   if (!started) {
     return (
-      <div className="text-center space-y-6 py-6">
-        <div className="w-24 h-24 mx-auto bg-orange-100 rounded-2xl flex items-center justify-center">
-          <Image className="h-12 w-12 text-orange-700" />
+      <div className="text-center space-y-10 py-12">
+        <div className="w-32 h-32 mx-auto bg-orange-100 rounded-2xl flex items-center justify-center">
+          <Image className="h-20 w-20 text-orange-700" />
         </div>
         <div>
-          <h2 className="text-3xl font-bold text-gray-800">{activity.title}</h2>
+          <h2 className="text-5xl font-black text-gray-800 mb-2" style={CONTENT_FONT}>{activity.title}</h2>
           {activity.lesson_plan_title && (
-            <p className="text-sm text-muted-foreground mt-1">From: {activity.lesson_plan_title}</p>
+            <p className="text-xl text-muted-foreground mt-2" style={CONTENT_FONT}>From: {activity.lesson_plan_title}</p>
           )}
-          <p className="text-muted-foreground mt-3">{cards.length} flashcards to explore</p>
+          <p className="text-2xl text-muted-foreground mt-4" style={CONTENT_FONT}>{cards.length} flashcards to explore</p>
         </div>
         {activity.students?.length > 0 && (
           <div>
-            <p className="text-sm font-medium text-muted-foreground mb-3">{activity.students.length} students participating</p>
-            <div className="flex flex-wrap justify-center gap-3">
+            <p className="text-lg font-medium text-muted-foreground mb-4" style={CONTENT_FONT}>{activity.students.length} students participating</p>
+            <div className="flex flex-wrap justify-center gap-5">
               {activity.students.map((student) => (
                 <div key={student.id} className="flex flex-col items-center">
-                  <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-semibold text-sm">
+                  <div className="w-14 h-14 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-xl">
                     {student.name.charAt(0).toUpperCase()}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">{student.name}</p>
+                  <p className="text-base text-muted-foreground mt-2" style={CONTENT_FONT}>{student.name}</p>
                 </div>
               ))}
             </div>
           </div>
         )}
-        <Button size="lg" onClick={handleStart} className="bg-orange-500 hover:bg-orange-600 text-white text-lg px-10 py-6 cursor-pointer">
-          <Play className="mr-2 h-5 w-5" /> Start Flashcards
+        <Button size="lg" onClick={handleStart} className="bg-orange-500 hover:bg-orange-600 text-white text-2xl px-14 py-7 cursor-pointer comic-delivery">
+          <Play className="mr-3 h-6 w-6" /> Start Flashcards
         </Button>
       </div>
     );
@@ -494,7 +490,7 @@ function ImageDelivery({ activity, onComplete }) {
           <img
             src={card.image_url || `data:image/png;base64,${card.image_b64}`}
             alt={card.label}
-            className="w-full max-w-sm rounded-xl shadow-lg aspect-square object-cover"
+            className="w-full max-w-lg rounded-xl shadow-lg aspect-square object-cover"
           />
         ) : (
           <div className="w-full max-w-sm aspect-square bg-orange-50 rounded-xl flex items-center justify-center border-2 border-dashed border-orange-200">
@@ -502,7 +498,7 @@ function ImageDelivery({ activity, onComplete }) {
           </div>
         )}
 
-        <h3 className="text-2xl font-bold text-gray-800 mt-4">{card.label}</h3>
+        <h3 className="text-2xl font-bold text-gray-800 mt-4" style={CONTENT_FONT}>{card.label}</h3>
 
         {!showPoint && card.learning_point && (
           <Button variant="outline" onClick={() => setShowPoint(true)}
@@ -511,7 +507,7 @@ function ImageDelivery({ activity, onComplete }) {
           </Button>
         )}
         {showPoint && card.learning_point && (
-          <p className="mt-3 text-base text-gray-600 bg-orange-50 px-4 py-3 rounded-lg border border-orange-200 max-w-sm text-center animate-in fade-in duration-300">
+          <p className="mt-3 text-base text-gray-600 bg-orange-50 px-4 py-3 rounded-lg border border-orange-200 max-w-sm text-center animate-in fade-in duration-300" style={CONTENT_FONT}>
             {card.learning_point}
           </p>
         )}
@@ -591,34 +587,34 @@ function StoryDelivery({ activity, onComplete }) {
   // Lobby
   if (!started) {
     return (
-      <div className="text-center space-y-6 py-6">
-        <div className="w-24 h-24 mx-auto bg-purple-100 rounded-2xl flex items-center justify-center">
-          <BookOpen className="h-12 w-12 text-purple-700" />
+      <div className="text-center space-y-10 py-12">
+        <div className="w-32 h-32 mx-auto bg-purple-100 rounded-2xl flex items-center justify-center">
+          <BookOpen className="h-20 w-20 text-purple-700" />
         </div>
         <div>
-          <h2 className="text-3xl font-bold text-gray-800">{content.story_title || activity.title}</h2>
+          <h2 className="text-5xl font-black text-gray-800 mb-2" style={CONTENT_FONT}>{content.story_title || activity.title}</h2>
           {activity.lesson_plan_title && (
-            <p className="text-sm text-muted-foreground mt-1">From: {activity.lesson_plan_title}</p>
+            <p className="text-xl text-muted-foreground mt-2" style={CONTENT_FONT}>From: {activity.lesson_plan_title}</p>
           )}
-          <p className="text-muted-foreground mt-3">{pages.length} pages</p>
+          <p className="text-2xl text-muted-foreground mt-4" style={CONTENT_FONT}>{pages.length} pages</p>
         </div>
         {activity.students?.length > 0 && (
           <div>
-            <p className="text-sm font-medium text-muted-foreground mb-3">{activity.students.length} students participating</p>
-            <div className="flex flex-wrap justify-center gap-3">
+            <p className="text-lg font-medium text-muted-foreground mb-4" style={CONTENT_FONT}>{activity.students.length} students participating</p>
+            <div className="flex flex-wrap justify-center gap-5">
               {activity.students.map((student) => (
                 <div key={student.id} className="flex flex-col items-center">
-                  <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+                  <div className="w-14 h-14 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-xl">
                     {student.name.charAt(0).toUpperCase()}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">{student.name}</p>
+                  <p className="text-base text-muted-foreground mt-2" style={CONTENT_FONT}>{student.name}</p>
                 </div>
               ))}
             </div>
           </div>
         )}
-        <Button size="lg" onClick={handleStart} className="bg-purple-600 hover:bg-purple-700 text-white text-lg px-10 py-6 cursor-pointer">
-          <Play className="mr-2 h-5 w-5" /> Start Reading
+        <Button size="lg" onClick={handleStart} className="bg-purple-600 hover:bg-purple-700 text-white text-2xl px-14 py-7 cursor-pointer comic-delivery">
+          <Play className="mr-3 h-6 w-6" /> Start Reading
         </Button>
       </div>
     );
@@ -641,8 +637,8 @@ function StoryDelivery({ activity, onComplete }) {
             <div className="space-y-2">
               {content.vocabulary.map((v, i) => (
                 <div key={i} className="flex gap-2 items-baseline">
-                  <Badge variant="outline" className="bg-white shrink-0">{v.word}</Badge>
-                  <span className="text-sm text-gray-600">{v.definition}</span>
+                  <Badge variant="outline" className="bg-white shrink-0" style={CONTENT_FONT}>{v.word}</Badge>
+                  <span className="text-sm text-gray-600" style={CONTENT_FONT}>{v.definition}</span>
                 </div>
               ))}
             </div>
@@ -652,7 +648,7 @@ function StoryDelivery({ activity, onComplete }) {
         {content.moral && (
           <div className="p-4 bg-purple-50 rounded-lg border border-purple-200 text-center">
             <p className="text-sm font-semibold text-purple-800 mb-1">Moral of the Story</p>
-            <p className="text-gray-700 italic">{content.moral}</p>
+            <p className="text-gray-700 italic" style={CONTENT_FONT}>{content.moral}</p>
           </div>
         )}
 
@@ -667,10 +663,10 @@ function StoryDelivery({ activity, onComplete }) {
   const page = pages[pageIdx];
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">Page {pageIdx + 1} / {pages.length}</span>
-        <Progress value={((pageIdx + 1) / pages.length) * 100} className="h-2 flex-1" />
+    <div className="space-y-7">
+      <div className="flex items-center gap-4">
+        <span className="text-lg font-semibold text-muted-foreground whitespace-nowrap" style={CONTENT_FONT}>Page {pageIdx + 1} / {pages.length}</span>
+        <Progress value={((pageIdx + 1) / pages.length) * 100} className="h-3 flex-1" />
       </div>
 
       <div className="flex flex-col items-center">
@@ -686,19 +682,19 @@ function StoryDelivery({ activity, onComplete }) {
           </div>
         )}
 
-        <div className="mt-4 px-2 max-w-md">
-          <p className="text-lg text-gray-800 leading-relaxed text-center">{page.text}</p>
+        <div className="mt-6 px-2 max-w-2xl">
+          <p className="text-3xl text-gray-800 leading-relaxed text-center" style={CONTENT_FONT}>{page.text}</p>
         </div>
       </div>
 
-      <div className="flex gap-3">
-        <Button variant="outline" onClick={goPrev} disabled={pageIdx === 0} className="flex-1 cursor-pointer">
-          <ChevronLeft className="mr-2 h-4 w-4" /> Previous
+      <div className="flex gap-5 mt-2">
+        <Button variant="outline" onClick={goPrev} disabled={pageIdx === 0} className="flex-1 text-xl py-6 cursor-pointer comic-delivery">
+          <ChevronLeft className="mr-3 h-5 w-5" /> Previous
         </Button>
-        <Button onClick={goNext} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white cursor-pointer">
+        <Button onClick={goNext} className="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-xl py-6 cursor-pointer comic-delivery">
           {pageIdx + 1 >= pages.length
-            ? <><CheckCircle2 className="mr-2 h-4 w-4" /> Finish Story</>
-            : <><ChevronRight className="mr-2 h-4 w-4" /> Next Page</>}
+            ? <><CheckCircle2 className="mr-3 h-5 w-5" /> Finish Story</>
+            : <><ChevronRight className="mr-3 h-5 w-5" /> Next</>}
         </Button>
       </div>
     </div>
@@ -716,6 +712,7 @@ export function ClassroomTeachingMode() {
   const [loadingStudents, setLoadingStudents] = useState(true);
   const [activeActivityId, setActiveActivityId] = useState(null);
   const [activityPopupOpen, setActivityPopupOpen] = useState(false);
+  const [deliveryClosing, setDeliveryClosing] = useState(false);
   const [completedIds, setCompletedIds] = useState(new Set());
 
   const fetchActivities = useCallback(async () => {
@@ -974,7 +971,7 @@ export function ClassroomTeachingMode() {
                           <><Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" /><span>Analysing results…</span></>
                         )}
                         {activity.analysis_status === 'completed' && (
-                          <><Sparkles className="h-3.5 w-3.5 shrink-0" /><span>AI insights ready — view in Reports</span></>
+                          <><Sparkles className="h-3.5 w-3.5 shrink-0" /><span>Insights ready — view in Reports</span></>
                         )}
                         {activity.analysis_status === 'failed' && (
                           <><AlertCircle className="h-3.5 w-3.5 shrink-0" /><span>Analysis failed</span>
@@ -999,7 +996,7 @@ export function ClassroomTeachingMode() {
                         )}
                       </div>
                     )}
-                    <div>
+                    <div className="flex gap-2">
                       {!isCompleted && !isActive && (
                         <Button onClick={() => startActivity(activity.id)} className="w-full cursor-pointer" size="sm">
                           <Play className="mr-2 h-4 w-4" /> Start Activity
@@ -1056,16 +1053,46 @@ export function ClassroomTeachingMode() {
         </Card>
       </main>
 
-      {/* Activity Delivery Dialog */}
-      <Dialog open={activityPopupOpen} onOpenChange={setActivityPopupOpen}>
-        <DialogContent className="max-w-2xl p-0 overflow-hidden gap-0">
-          {activeActivity && (
-            <div className="pt-8 px-6 pb-6">
+      {/* Activity Delivery — full-screen overlay */}
+      {activityPopupOpen && activeActivity && (
+        <div
+          className={`fixed inset-0 z-50 bg-white flex flex-col overflow-hidden ${
+            deliveryClosing ? 'animate-delivery-close' : 'animate-delivery-open'
+          }`}
+          onAnimationEnd={() => {
+            if (deliveryClosing) {
+              setDeliveryClosing(false);
+              setActivityPopupOpen(false);
+            }
+          }}
+        >
+          {/* Header bar */}
+          <div className={`${headerColor} px-8 py-5 flex items-center justify-between shrink-0`}>
+            <div className="flex items-center gap-3">
+              {(() => {
+                const meta = ACTIVITY_TYPE_META[activeActivity.activity_type];
+                const Icon = meta?.icon;
+                return Icon ? <Icon className="h-6 w-6 text-white" /> : null;
+              })()}
+              <span className="text-white font-semibold text-xl comic-delivery">{activeActivity.title}</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="md"
+              onClick={() => setDeliveryClosing(true)}
+              className="text-white hover:bg-white/20 hover:text-white cursor-pointer gap-2 comic-delivery"
+            >
+              <X className="h-8 w-8" />
+            </Button>
+          </div>
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="max-w-6xl mx-auto px-2 py-10 comic-delivery">
               {renderDelivery()}
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

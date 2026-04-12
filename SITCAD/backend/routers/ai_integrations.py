@@ -6,6 +6,7 @@ import asyncio
 import logging
 from pathlib import Path
 from typing import Literal, Optional
+from urllib.parse import quote as _url_quote
 
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
@@ -253,6 +254,10 @@ LearningArea = Literal[
 MoralEducation = Literal["moral", "islam"]
 
 
+PlanType = Literal["subject", "unit"]
+ImageStyle = Literal["cartoon", "photorealistic"]
+
+
 class GenerateLessonRequest(BaseModel):
     id_token: str
     topic: str = Field(..., min_length=3)
@@ -262,6 +267,8 @@ class GenerateLessonRequest(BaseModel):
     additional_notes: str = Field(default="")
     moral_education: MoralEducation = Field(default="moral")
     language: Literal["bm", "en"] = Field(default="bm")
+    plan_type: PlanType = Field(default="subject")
+    duration_weeks: int = Field(default=1, ge=1, le=6)
 
 
 ActivityType = Literal["quiz", "image", "story"]
@@ -272,6 +279,7 @@ class ActivityToGenerate(BaseModel):
     description: str
     duration: str = ""
     type: ActivityType = "quiz"
+    image_style: ImageStyle = "cartoon"
 
 
 class GenerateActivitiesRequest(BaseModel):
@@ -282,6 +290,7 @@ class GenerateActivitiesRequest(BaseModel):
     learning_area: str = ""
     age_group: str = "5"
     language: Literal["bm", "en"] = "bm"
+    image_style: ImageStyle = "cartoon"
     activities: list[ActivityToGenerate] = Field(..., min_length=1)
 
 
@@ -330,6 +339,66 @@ CRITICAL RULES:
     }}
   ],
   "assessment": "<assessment strategy>",
+  "adaptations": ["<adaptation1>", "<adaptation2>", ...],
+  "teacher_notes": "<any important notes for the teacher>"
+}}
+
+Do NOT wrap the JSON in markdown code fences. Return raw JSON only.
+
+{dskp_context}
+"""
+
+UNIT_PLAN_SYSTEM_PROMPT_TEMPLATE = """\
+You are SabahSprout AI, an expert Malaysian kindergarten teacher and curriculum specialist.
+You help teachers design **multi-week unit plans** (project-based learning) that are:
+  1. Perfectly aligned with the DSKP KSPK Semakan 2026 curriculum.
+  2. Developmentally appropriate for children aged {age_group} years.
+  3. Engaging, playful, and culturally relevant to Sabah, Malaysia.
+  4. Structured across {duration_weeks} week(s) with {duration} minutes of total learning time per week.
+
+CRITICAL RULES:
+- The unit plan must be written in {language_label}. DSKP standard codes remain in their original form.
+- Always cite specific DSKP standard codes (e.g. BM 1.1.2, KF 2.3.1, PM 1.1) in the dskp_standards array. Each entry must be an object with "code" (the SPE code) and "title" (the SPE title from the DSKP document). A multi-week unit plan should cover MORE standards than a single lesson — aim for 6-12 SPE codes across the weeks.
+- Every objective must map to at least one DSKP standard.
+- This system generates content end-to-end from lesson plan to activities. Assume all activities are delivered digitally on-screen — do NOT include physical materials.
+- Each activity MUST be one of these three types:
+    • "quiz"  — an interactive multiple-choice quiz game played on screen.
+    • "image" — a set of educational flashcard images displayed on screen.
+    • "story" — a short illustrated text story read on screen.
+  Do NOT generate video, music, audio, or any other activity type.
+- The "weeks" array must contain exactly {duration_weeks} week objects. Each week should have a theme/focus, its own set of learning objectives, and 3-5 daily activities (one per day). Activities should build progressively — earlier weeks introduce concepts, later weeks deepen understanding and assess mastery.
+- DURATION RULE: The sum of all activity durations within a single week must equal approximately {duration} minutes total. For example, if the weekly budget is 30 minutes and there are 3 activities, assign durations like 8, 12, and 10 minutes — NOT 30 minutes each. Never assign the full weekly budget to every individual activity.
+- The "materials" array should list the specific digital resources needed across the entire unit.
+- Use Bahasa Melayu terminology for DSKP references when appropriate (you can add English in parentheses).
+- Adaptations must address diverse learners: visual, kinesthetic, EAL children, and children needing extra support.
+- Your entire response MUST be a single valid JSON object following this exact schema:
+
+{{
+  "title": "<engaging unit plan title>",
+  "unit_theme": "<overarching theme or driving question for the project>",
+  "dskp_standards": [
+    {{"code": "<SPE code>", "title": "<SPE title>"}},
+    ...
+  ],
+  "objectives": ["<objective1>", "<objective2>", ...],
+  "materials": ["<digital resource specific to an activity>", ...],
+  "weeks": [
+    {{
+      "week_number": 1,
+      "theme": "<weekly focus or sub-theme>",
+      "objectives": ["<weekly objective 1>", ...],
+      "activities": [
+        {{
+          "day": 1,
+          "title": "<activity name>",
+          "description": "<detailed description of what happens in this activity>",
+          "duration": "<X minutes>",
+          "type": "<quiz|image|story>"
+        }}
+      ]
+    }}
+  ],
+  "assessment": "<overall assessment strategy across the unit>",
   "adaptations": ["<adaptation1>", "<adaptation2>", ...],
   "teacher_notes": "<any important notes for the teacher>"
 }}
@@ -390,20 +459,33 @@ async def generate_lesson(request: GenerateLessonRequest, db: Session = Depends(
 
     language_label = "English" if request.language == "en" else "Bahasa Malaysia"
 
-    system_prompt = SYSTEM_PROMPT_TEMPLATE.format(
-        age_group=request.age_group,
-        duration=request.duration,
-        language_label=language_label,
-        dskp_context=dskp_context,
-    )
+    is_unit_plan = request.plan_type == "unit"
+
+    if is_unit_plan:
+        system_prompt = UNIT_PLAN_SYSTEM_PROMPT_TEMPLATE.format(
+            age_group=request.age_group,
+            duration=request.duration,
+            duration_weeks=request.duration_weeks,
+            language_label=language_label,
+            dskp_context=dskp_context,
+        )
+    else:
+        system_prompt = SYSTEM_PROMPT_TEMPLATE.format(
+            age_group=request.age_group,
+            duration=request.duration,
+            language_label=language_label,
+            dskp_context=dskp_context,
+        )
 
     user_message = (
-        f"Generate a lesson plan for the topic: '{request.topic}'.\n"
+        f"Generate a {'multi-week unit plan' if is_unit_plan else 'lesson plan'} for the topic: '{request.topic}'.\n"
         f"Learning area: {request.learning_area}.\n"
-        f"Duration: {request.duration} minutes.\n"
+        f"Session duration: {request.duration} minutes.\n"
         f"Age group: {request.age_group} years old.\n"
         f"Language of delivery: {'English' if request.language == 'en' else 'Bahasa Malaysia'}.\n"
     )
+    if is_unit_plan:
+        user_message += f"Number of weeks: {request.duration_weeks}.\n"
     if request.learning_area == "social":
         user_message += f"Moral/spiritual education stream: {request.moral_education}.\n"
     if request.additional_notes.strip():
@@ -414,7 +496,7 @@ async def generate_lesson(request: GenerateLessonRequest, db: Session = Depends(
             model=GEMINI_MODEL,
             api_key=gemini_api_key,
             temperature=0.7,
-            max_tokens=4096,
+            max_tokens=8192 if is_unit_plan else 4096,
         )
         response = await _invoke_with_retry(llm, [
             SystemMessage(content=system_prompt),
@@ -437,7 +519,7 @@ async def generate_lesson(request: GenerateLessonRequest, db: Session = Depends(
         raise HTTPException(status_code=500, detail="AI returned an invalid response. Please try again.")
 
     # Normalise and return — NOT saved to DB yet (teacher reviews first)
-    return {
+    result = {
         "title": lesson_data.get("title", f"{request.topic} Exploration"),
         "age_group": request.age_group,
         "learning_area": request.learning_area,
@@ -446,14 +528,30 @@ async def generate_lesson(request: GenerateLessonRequest, db: Session = Depends(
         "additional_notes": request.additional_notes,
         "moral_education": request.moral_education,
         "language": request.language,
+        "plan_type": request.plan_type,
+        "duration_weeks": request.duration_weeks if is_unit_plan else 1,
         "dskp_standards": lesson_data.get("dskp_standards", []),
         "objectives": lesson_data.get("objectives", []),
         "materials": lesson_data.get("materials", []),
-        "activities": lesson_data.get("activities", []),
         "assessment": lesson_data.get("assessment", ""),
         "adaptations": lesson_data.get("adaptations", []),
         "teacher_notes": lesson_data.get("teacher_notes", ""),
     }
+
+    if is_unit_plan:
+        result["unit_theme"] = lesson_data.get("unit_theme", "")
+        result["weeks"] = lesson_data.get("weeks", [])
+        # Flatten all weekly activities into the top-level activities list for compatibility
+        all_activities = []
+        for week in result["weeks"]:
+            for act in week.get("activities", []):
+                act["week_number"] = week.get("week_number", 1)
+                all_activities.append(act)
+        result["activities"] = all_activities
+    else:
+        result["activities"] = lesson_data.get("activities", [])
+
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -479,7 +577,7 @@ RULES:
 - Use very simple, short vocabulary. Avoid tricky wording or close distractors.
 - Include a short, encouraging explanation for the correct answer.
 - Each question MUST include an "image_prompt" field: a concise English description (under 50 words) for generating an illustrative image that helps the child understand the question.
-  • Begin with: "Bright colorful cartoon illustration, children's educational style, simple and cheerful,"
+  {image_style_instruction}
   • Describe the key concept or object in the question clearly.
   • Do NOT include any text, letters, numbers, or watermarks in the image description.
   • Cultural context: Sabah, Malaysia where relevant.
@@ -513,8 +611,8 @@ LANGUAGE REQUIREMENT (STRICT — NO EXCEPTIONS):
 RULES:
 - Generate exactly {num_images} flashcard entries.
 - Each entry should teach a specific concept related to the activity.
-- The "image_prompt" must be a concise, vivid English description optimised for photorealistic image generation.
-  • Begin with: "Ultra-realistic photograph, bright natural lighting, vibrant colors, sharp focus, educational."
+- The "image_prompt" must be a concise, vivid English description optimised for image generation.
+  {image_style_instruction}
   • Describe the main subject clearly (what it is, key details, colors, setting).
   • Add cultural context for Sabah, Malaysia where relevant (e.g. local foods, plants, settings).
   • Keep it under 60 words and do NOT request any text, labels, or watermarks in the image.
@@ -533,16 +631,32 @@ RULES:
 Do NOT wrap in markdown code fences. Return raw JSON only.
 """
 
-# Fixed illustration style for all story page images — matches the target child-friendly cartoon aesthetic.
-STORY_IMAGE_STYLE = (
+# Fixed illustration style prefixes for image generation
+STORY_IMAGE_STYLE_CARTOON = (
     "Bright, colorful flat vector cartoon illustration in a children's educational storybook style, "
     "bold black outlines, vibrant saturated colors, round-faced Southeast Asian child characters with "
     "big expressive eyes and rosy cheeks, clean detailed backgrounds, smooth cel-shading, "
     "fully visible characters within frame, no text or watermarks."
 )
 
+STORY_IMAGE_STYLE_PHOTO = (
+    "Ultra-realistic photograph, bright natural lighting, vibrant colors, sharp focus, "
+    "Southeast Asian children, warm educational setting, Sabah Malaysia cultural context, "
+    "no text or watermarks."
+)
+
+# Style instruction snippets injected into activity system prompts
+IMAGE_STYLE_INSTRUCTIONS = {
+    "cartoon": '• Begin with: "Bright colorful cartoon illustration, children\'s educational style, simple and cheerful,"',
+    "photorealistic": '• Begin with: "Ultra-realistic photograph, bright natural lighting, vibrant colors, sharp focus, educational."',
+}
+
+
+def _get_story_image_prefix(image_style: str) -> str:
+    return STORY_IMAGE_STYLE_PHOTO if image_style == "photorealistic" else STORY_IMAGE_STYLE_CARTOON
+
 STORY_SYSTEM_PROMPT = """\
-You are SabahSprout AI, writing a short, engaging story for kindergarten children aged {age_group} years.
+You are SabahSprout AI, writing a short, simple story for kindergarten children aged {age_group} years.
 The story supports a lesson: "{lesson_title}" (topic: {topic}, area: {learning_area}).
 
 LANGUAGE REQUIREMENT (STRICT — NO EXCEPTIONS):
@@ -552,11 +666,13 @@ LANGUAGE REQUIREMENT (STRICT — NO EXCEPTIONS):
 - If {language_label} is English, write everything in English only. If Bahasa Malaysia, write everything in Bahasa Malaysia only.
 
 RULES:
-- Write a short story with exactly {num_pages} pages (each page is 2-4 sentences of simple language).
-- The story must be age-appropriate, engaging, and teach the relevant concept.
-- Include a simple moral or learning outcome.
+- Write a short story with exactly {num_pages} pages (each page is 2-3 very short, simple sentences).
+- Use only words a young child aged {age_group} already knows. Avoid long words, difficult vocabulary, or complex sentences.
+- Each sentence must be short (under 10 words). Use simple Subject-Verb-Object structure (e.g. "Ali sees a cat.").
+- The story must be cheerful, fun, and easy to follow. Children should understand every sentence immediately.
 - Characters should be relatable to children in Sabah, Malaysia.
-- Include 3-5 vocabulary words with simple definitions.
+- Include a simple, one-sentence moral that a child can understand.
+- Include 3-5 vocabulary words with very simple, one-sentence definitions written for young children.
 - Each page MUST include an "image_prompt" field: a concise English description (under 40 words) of ONLY what is happening in that specific scene — characters, actions, objects, setting.
   • Describe the main character's appearance consistently across all pages (e.g. same name, clothing, features).
   • Cultural context: Sabah, Malaysia.
@@ -632,10 +748,15 @@ async def _generate_flashcard_images(
             blob_name = f"activity-images/{uuid.uuid4()}.png"
             blob = bucket.blob(blob_name)
             blob.upload_from_string(image_bytes, content_type="image/png")
-            blob.make_public()
-            image_url = blob.public_url
+            # Use Firebase Storage download URL (works with Storage Security Rules).
+            # Requires the 'activity-images' path to allow public reads in storage.rules.
+            encoded_path = _url_quote(blob_name, safe="")
+            image_url = (
+                f"https://firebasestorage.googleapis.com/v0/b/{bucket.name}"
+                f"/o/{encoded_path}?alt=media"
+            )
         except Exception as exc:
-            logger.warning(f"Imagen generation failed for '{img_data.get('label')}': {exc}")
+            logger.warning(f"Image generation failed for '{img_data.get('label')}': {exc}")
 
         return {
             "label": img_data.get("label", ""),
@@ -656,15 +777,18 @@ async def _generate_single_activity(
     language: str,
     llm: ChatGoogleGenerativeAI,
     api_key: str,
+    image_style: str = "cartoon",
 ) -> dict:
     """Generate content for a single activity based on its type."""
     language_label = "English" if language == "en" else "Bahasa Malaysia"
+    style_instruction = IMAGE_STYLE_INSTRUCTIONS.get(image_style, IMAGE_STYLE_INSTRUCTIONS["cartoon"])
     common_vars = dict(
         age_group=age_group,
         lesson_title=lesson_title,
         topic=topic,
         learning_area=learning_area,
         language_label=language_label,
+        image_style_instruction=style_instruction,
     )
 
     if activity.type == "quiz":
@@ -725,7 +849,7 @@ async def _generate_single_activity(
     if activity.type == "story" and content_data.get("pages"):
         pages_with_prompts = [
             {
-                "image_prompt": f"{STORY_IMAGE_STYLE} {p.get('image_prompt', '')}".strip(),
+                "image_prompt": f"{_get_story_image_prefix(image_style)} {p.get('image_prompt', '')}".strip(),
                 "label": f"Page {p.get('page_number', i+1)}",
                 "learning_point": "",
             }
@@ -782,6 +906,7 @@ async def generate_activities(request: GenerateActivitiesRequest, db: Session = 
     )
 
     # Fan out — generate all activities concurrently
+    # Per-activity image_style takes precedence; request-level is the fallback default
     tasks = [
         _generate_single_activity(
             activity=act,
@@ -792,6 +917,7 @@ async def generate_activities(request: GenerateActivitiesRequest, db: Session = 
             language=request.language,
             llm=llm,
             api_key=gemini_api_key,
+            image_style=act.image_style or request.image_style,
         )
         for act in request.activities
     ]
@@ -940,14 +1066,13 @@ async def analyze_activity(request: AnalyzeActivityRequest, db: Session = Depend
     if not activity.results_data:
         raise HTTPException(status_code=400, detail="No results data to analyse")
 
-    # If re-running, delete the old report
+    # If re-running, soft-delete the old reports
     if activity.analysis_status in ("completed", "failed"):
         old_reports = db.query(models.Report).filter(
             models.Report.activity_id == activity.id,
         ).all()
         for old in old_reports:
-            db.query(models.ReportStudent).filter(models.ReportStudent.report_id == old.id).delete()
-            db.delete(old)
+            old.is_deleted = True
         db.flush()
 
     # Mark as analyzing
@@ -1079,7 +1204,7 @@ async def analyze_activity(request: AnalyzeActivityRequest, db: Session = Depend
         id=str(uuid.uuid4()),
         teacher_id=teacher.id,
         activity_id=activity.id,
-        title=f"AI Insights: {activity.title}",
+        title=f"{activity.title}",
         summary=insights.get("summary", ""),
         details=report_details,
     )
@@ -1199,6 +1324,7 @@ RULES:
 - For each, list 2-4 specific, actionable recommended actions the teacher or parent can take.
 - Separately, identify 0-3 positive inclinations/strengths the student shows.
 - If the student is performing well overall, it is perfectly valid to return 0 interventions and only inclinations.
+- NEVER reference internal payload labels ("Payload A", "Payload B", "Payload C", "Payload D") anywhere in your output. Use plain language instead — e.g. "recent activity results", "past sessions", "DSKP progress records", "prior interventions".
 
 Return ONLY a single valid JSON object with this exact schema:
 {{
@@ -1277,7 +1403,8 @@ async def _run_intervention_analysis(
 
     if report_ids:
         report_rows = db.query(models.Report).filter(
-            models.Report.id.in_(report_ids)
+            models.Report.id.in_(report_ids),
+            models.Report.is_deleted == False,
         ).order_by(models.Report.created_at.desc()).limit(15).all()
 
         for r in report_rows:

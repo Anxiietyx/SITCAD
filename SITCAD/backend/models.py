@@ -64,6 +64,11 @@ class LessonPlan(Base):
   dskp_standards = Column(JSON, nullable=True)   # ["BM 1.1.2", "KO 2.3.1", ...]
   teacher_notes = Column(Text, nullable=True)
   language = Column(String, nullable=True)          # "bm" or "en"
+  plan_type = Column(String, nullable=True, default="subject")  # "subject" or "unit"
+  duration_weeks = Column(Integer, nullable=True)               # 1-6 for unit plans
+  unit_theme = Column(String, nullable=True)                    # overarching unit theme
+  weeks = Column(JSON, nullable=True)                           # [{week, theme, activities}] for unit plans
+  image_style = Column(String, nullable=True, default="cartoon") # "cartoon" or "photorealistic"
   created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
@@ -88,6 +93,7 @@ class Activity(Base):
   results_data = Column(JSON, nullable=True)                     # Activity results for AI analysis
   analysis_status = Column(String, nullable=True)                 # null | "pending" | "analyzing" | "completed" | "failed"
   analysis_error = Column(Text, nullable=True)
+  is_deleted = Column(Boolean, nullable=False, default=False)    # soft-delete flag
   started_at = Column(DateTime, nullable=True)
   created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
   completed_at = Column(DateTime, nullable=True)
@@ -110,6 +116,7 @@ class Report(Base):
   title = Column(String, nullable=False)
   summary = Column(Text, nullable=True)
   details = Column(JSON, nullable=True)
+  is_deleted = Column(Boolean, nullable=False, default=False)  # soft-delete flag
   created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 

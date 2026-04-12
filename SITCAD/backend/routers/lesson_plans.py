@@ -32,6 +32,11 @@ class CreateLessonPlanRequest(BaseModel):
     dskp_standards: Optional[list] = None
     teacher_notes: Optional[str] = None
     language: Optional[str] = None
+    plan_type: Optional[str] = "subject"
+    duration_weeks: Optional[int] = None
+    unit_theme: Optional[str] = None
+    weeks: Optional[list] = None
+    image_style: Optional[str] = "cartoon"
 
 
 # ── Helpers ───────────────────────────────────────────────────────
@@ -73,6 +78,11 @@ async def save_lesson_plan(request: CreateLessonPlanRequest, db: Session = Depen
         dskp_standards=request.dskp_standards or [],
         teacher_notes=request.teacher_notes or "",
         language=request.language,
+        plan_type=request.plan_type or "subject",
+        duration_weeks=request.duration_weeks,
+        unit_theme=request.unit_theme,
+        weeks=request.weeks,
+        image_style=request.image_style or "cartoon",
     )
     db.add(plan)
     db.commit()
@@ -140,5 +150,10 @@ def _plan_to_dict(plan: models.LessonPlan) -> dict:
         "dskp_standards": plan.dskp_standards,
         "teacher_notes": plan.teacher_notes,
         "language": plan.language,
+        "plan_type": plan.plan_type,
+        "duration_weeks": plan.duration_weeks,
+        "unit_theme": plan.unit_theme,
+        "weeks": plan.weeks,
+        "image_style": plan.image_style,
         "created_at": plan.created_at.isoformat() if plan.created_at else None,
     }

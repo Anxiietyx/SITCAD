@@ -1,12 +1,20 @@
 import uuid
+import io
+import re
+import zipfile
+import asyncio
+import logging
 import models
-from firebase_admin import auth as firebase_auth
-from fastapi import APIRouter, Depends, HTTPException
+from firebase_admin import auth as firebase_auth, storage as fb_storage
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime, timezone
+from urllib.parse import unquote as _url_unquote
 from dependencies import get_db
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/activities", tags=["activities"])
 
@@ -169,11 +177,14 @@ async def create_activity(request: CreateActivityRequest, db: Session = Depends(
 
 @router.post("/my-activities")
 async def list_activities(request: AuthenticatedRequest, db: Session = Depends(get_db)):
-    """List all activities for the authenticated teacher."""
+    """List all activities for the authenticated teacher (excludes soft-deleted)."""
     teacher = _verify_teacher(request.id_token, db)
     activities = (
         db.query(models.Activity)
-        .filter(models.Activity.teacher_id == teacher.id)
+        .filter(
+            models.Activity.teacher_id == teacher.id,
+            models.Activity.is_deleted == False,
+        )
         .order_by(models.Activity.created_at.desc())
         .all()
     )
@@ -182,13 +193,14 @@ async def list_activities(request: AuthenticatedRequest, db: Session = Depends(g
 
 @router.post("/classroom-activities")
 async def list_classroom_activities(request: AuthenticatedRequest, db: Session = Depends(get_db)):
-    """List activities assigned to the whole class (for classroom mode)."""
+    """List activities assigned to the whole class (for classroom mode, excludes soft-deleted)."""
     teacher = _verify_teacher(request.id_token, db)
     activities = (
         db.query(models.Activity)
         .filter(
             models.Activity.teacher_id == teacher.id,
             models.Activity.assigned_to == "class",
+            models.Activity.is_deleted == False,
         )
         .order_by(models.Activity.created_at.desc())
         .all()
@@ -240,7 +252,8 @@ async def complete_activity(activity_id: str, request: CompleteActivityRequest, 
 
 @router.post("/{activity_id}/delete")
 async def delete_activity(activity_id: str, request: AuthenticatedRequest, db: Session = Depends(get_db)):
-    """Delete an activity and its student links."""
+    """Soft-delete an activity so it no longer appears in lists.
+    Reports linked to the activity are preserved for AI analysis history."""
     teacher = _verify_teacher(request.id_token, db)
     activity = db.query(models.Activity).filter(
         models.Activity.id == activity_id,
@@ -248,8 +261,7 @@ async def delete_activity(activity_id: str, request: AuthenticatedRequest, db: S
     ).first()
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
-    db.query(models.ActivityStudent).filter(models.ActivityStudent.activity_id == activity_id).delete()
-    db.delete(activity)
+    activity.is_deleted = True
     db.commit()
     return {"detail": "Activity deleted"}
 
@@ -277,8 +289,142 @@ async def list_activities_for_student(student_id: str, request: AuthenticatedReq
 
     activities = (
         db.query(models.Activity)
-        .filter(models.Activity.id.in_(activity_ids))
+        .filter(
+            models.Activity.id.in_(activity_ids),
+            models.Activity.is_deleted == False,
+        )
         .order_by(models.Activity.created_at.desc())
         .all()
     )
     return [_activity_to_dict(a, db) for a in activities]
+
+
+# ── Flashcard ZIP download ─────────────────────────────────────────
+
+def _blob_name_from_storage_url(url: str) -> str | None:
+    """Extract the GCS object path from a Firebase Storage URL.
+    e.g. .../o/activity-images%2Fuuid.png?alt=media → activity-images/uuid.png
+    """
+    m = re.search(r"/o/([^?#]+)", url)
+    return _url_unquote(m.group(1)) if m else None
+
+
+def _build_flashcard_image(image_bytes: bytes, label: str) -> bytes:
+    """
+    Composite a flashcard: original image on top, white label bar below.
+    Returns the final PNG as bytes.
+    """
+    from PIL import Image, ImageDraw, ImageFont
+
+    img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    W, H = img.size
+
+    # Label bar: 12% of image height, minimum 80 px
+    bar_h = max(80, int(H * 0.12))
+    font_size = max(24, int(bar_h * 0.52))
+
+    # Try Comic Sans MS first, then fall back to other bold sans-serif fonts
+    font = None
+    for candidate in [
+        "/usr/share/fonts/truetype/msttcorefonts/Comic_Sans_MS_Bold.ttf",
+        "/usr/share/fonts/truetype/msttcorefonts/comicbd.ttf",
+        "/usr/share/fonts/msttcore/comicbd.ttf",
+        "C:/Windows/Fonts/comicbd.ttf",
+        "/Library/Fonts/Comic Sans MS Bold.ttf",
+        "/System/Library/Fonts/Supplemental/Comic Sans MS Bold.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
+        "/System/Library/Fonts/Helvetica.ttc",
+        "C:/Windows/Fonts/arialbd.ttf",
+    ]:
+        try:
+            font = ImageFont.truetype(candidate, font_size)
+            break
+        except (IOError, OSError):
+            continue
+    if font is None:
+        font = ImageFont.load_default()
+
+    # Create composite canvas
+    canvas = Image.new("RGB", (W, H + bar_h), (255, 255, 255))
+    canvas.paste(img, (0, 0))
+
+    draw = ImageDraw.Draw(canvas)
+
+    # Measure text and centre it
+    bbox = draw.textbbox((0, 0), label, font=font)
+    text_w = bbox[2] - bbox[0]
+    text_h = bbox[3] - bbox[1]
+    text_x = (W - text_w) // 2
+    text_y = H + (bar_h - text_h) // 2 - bbox[1]
+
+    draw.text((text_x, text_y), label, fill=(31, 41, 55), font=font)
+
+    out = io.BytesIO()
+    canvas.save(out, format="PNG")
+    return out.getvalue()
+
+
+@router.post("/{activity_id}/download-flashcard-zip")
+async def download_flashcard_zip(
+    activity_id: str,
+    request: AuthenticatedRequest,
+    db: Session = Depends(get_db),
+):
+    """Build a ZIP of composite flashcard images (photo + label) server-side."""
+    teacher = _verify_teacher(request.id_token, db)
+
+    activity = db.query(models.Activity).filter(
+        models.Activity.id == activity_id,
+        models.Activity.teacher_id == teacher.id,
+    ).first()
+    if not activity:
+        raise HTTPException(status_code=404, detail="Activity not found")
+    if activity.activity_type != "image":
+        raise HTTPException(status_code=400, detail="Not a flashcard activity")
+
+    content = activity.generated_content or {}
+    cards = content.get("images", [])
+    if not cards:
+        raise HTTPException(status_code=404, detail="No flashcard content found")
+
+    bucket = fb_storage.bucket()
+    loop = asyncio.get_event_loop()
+
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        for i, card in enumerate(cards):
+            prefix = str(i + 1).zfill(2)
+            label = card.get("label") or f"Card {i + 1}"
+            safe = re.sub(r"[^a-zA-Z0-9]+", "_", label)[:40]
+
+            image_url = card.get("image_url")
+            if not image_url:
+                logger.warning(f"Card {i+1} '{label}' has no image_url — skipping")
+                continue
+
+            blob_name = _blob_name_from_storage_url(image_url)
+            if not blob_name:
+                logger.warning(f"Could not extract blob path from URL: {image_url}")
+                continue
+
+            try:
+                blob = bucket.blob(blob_name)
+                image_bytes = await loop.run_in_executor(None, blob.download_as_bytes)
+                composite = await loop.run_in_executor(
+                    None, _build_flashcard_image, image_bytes, label
+                )
+                zf.writestr(f"{prefix}_{safe}.png", composite)
+            except Exception as exc:
+                logger.warning(f"Could not build flashcard image for '{label}': {exc}")
+
+    zip_data = zip_buffer.getvalue()
+    safe_title = re.sub(r"[^a-zA-Z0-9]+", "_", activity.title or "flashcards")[:50]
+    return Response(
+        content=zip_data,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{safe_title}_flashcards.zip"'
+        },
+    )

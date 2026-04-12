@@ -62,9 +62,14 @@ import {
   Gamepad2,
   ImageIcon,
   BookText,
+  Calendar,
+  Download,
+  FileDown,
+  HelpCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { lessonReducer, initialState } from "../reducers/lessonReducer";
+import { downloadLessonPlanPDF } from "../lib/downloads";
 
 const API_BASE = "http://localhost:8000";
 
@@ -137,7 +142,12 @@ export function AILessonPlanning() {
   const [activeTab, setActiveTab] = useState("generator");
   const [savingPlan, setSavingPlan] = useState(false);
   const [viewingPlan, setViewingPlan] = useState(null); // for "My Plans" detail view
+
+  // Terminology helper — used throughout the generation flow
+  const planLabel = state.planType === "unit" ? "Unit Plan" : "Lesson Plan";
   const [showResetDialog, setShowResetDialog] = useState(false);
+  const [activeWeekTab, setActiveWeekTab] = useState(0);
+  const [viewingWeekTab, setViewingWeekTab] = useState(0);
 
   // Loading mascot carousel state
   const [mascotIndex, setMascotIndex] = useState(0);
@@ -215,22 +225,24 @@ export function AILessonPlanning() {
               : state.learningArea === "literacy_en"
                 ? "en"
                 : state.language,
+          plan_type: state.planType,
+          duration_weeks: state.planType === "unit" ? parseInt(state.durationWeeks) : 1,
         }),
       });
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || "Failed to generate lesson plan");
+        throw new Error(err.detail || `Failed to generate ${planLabel.toLowerCase()}`);
       }
 
       const plan = await res.json();
       dispatch({ type: "FINISH_GENERATION", payload: plan });
-      toast.success("Lesson plan generated!");
+      toast.success(`${planLabel} generated!`);
     } catch (err) {
       console.error(err);
       dispatch({ type: "FINISH_GENERATION", payload: null });
       toast.error(
-        err.message || "Failed to generate lesson plan. Please try again.",
+        err.message || `Failed to generate ${planLabel.toLowerCase()}. Please try again.`,
       );
     }
   };
@@ -263,25 +275,31 @@ export function AILessonPlanning() {
           dskp_standards: lp.dskp_standards,
           teacher_notes: lp.teacher_notes,
           language: lp.language,
+          plan_type: lp.plan_type || state.planType,
+          duration_weeks: lp.duration_weeks || (state.planType === "unit" ? parseInt(state.durationWeeks) : null),
+          unit_theme: lp.unit_theme,
+          weeks: lp.weeks,
+          image_style: lp.image_style || state.imageStyle,
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to save lesson plan");
+      if (!res.ok) throw new Error(`Failed to save ${planLabel.toLowerCase()}`);
 
-      toast.success("Lesson plan saved!");
+      toast.success(`${planLabel} saved!`);
       dispatch({ type: "RESET_FORM" });
       fetchSavedPlans();
       setActiveTab("list");
     } catch (err) {
       console.error(err);
-      toast.error("Failed to save lesson plan");
+      toast.error(`Failed to save ${planLabel.toLowerCase()}`);
     } finally {
       setSavingPlan(false);
     }
   };
 
-  const deletePlan = async (planId) => {
-    if (!window.confirm("Delete this lesson plan?")) return;
+  const deletePlan = async (planId, planType) => {
+    const label = planType === "unit" ? "Unit Plan" : "Lesson Plan";
+    if (!window.confirm(`Delete this ${label}?`)) return;
     try {
       const idToken = await getIdToken();
       const res = await fetch(`${API_BASE}/lesson-plans/${planId}/delete`, {
@@ -290,7 +308,7 @@ export function AILessonPlanning() {
         body: JSON.stringify({ id_token: idToken }),
       });
       if (res.ok) {
-        toast.success("Lesson plan deleted");
+        toast.success(`${label} deleted`);
         if (viewingPlan?.id === planId) setViewingPlan(null);
         fetchSavedPlans();
       }
@@ -371,7 +389,7 @@ export function AILessonPlanning() {
                 Generator
               </TabsTrigger>
               <TabsTrigger value="list" className="cursor-pointer">
-                My Lesson Plans
+                My Plans
               </TabsTrigger>
             </TabsList>
 
@@ -385,17 +403,83 @@ export function AILessonPlanning() {
                   <CardHeader className="bg-linear-to-r from-indigo-100 to-purple-100">
                     <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                       <Lightbulb className="h-5 w-5 text-[#3090A0]" />
-                      Lesson Plan Generator
+                      {planLabel} Generator
                     </CardTitle>
                     <CardDescription className="text-sm text-gray-700 mb-2">
                       Fill in your lesson details below. AI will generate a DSKP
-                      KSPK 2026-aligned lesson plan for you.
+                      KSPK 2026-aligned {planLabel.toLowerCase()} for you.
                     </CardDescription>
                     <div className="pb-3"></div>
                   </CardHeader>
 
                   <CardContent className="space-y-4 text-base">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                      {/* Plan Type */}
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold">
+                          Plan Type
+                        </Label>
+                        <Select
+                          value={state.planType}
+                          onValueChange={(val) =>
+                            dispatch({
+                              type: "SET_FIELD",
+                              field: "planType",
+                              value: val,
+                            })
+                          }
+                        >
+                          <SelectTrigger className="text-sm font-medium">
+                            <SelectValue placeholder="Select plan type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="subject">Single Topic</SelectItem>
+                            <SelectItem value="unit">Unit Plan (Multi-Week)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Duration Weeks — only for unit plans */}
+                      {state.planType === "unit" && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-1">
+                            <Label className="text-sm font-semibold">
+                              Unit Plan Duration
+                            </Label>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger className="cursor-help" type="button">
+                                  <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                                </TooltipTrigger>
+                                <TooltipContent side="right" className="max-w-xs">
+                                  <p className="text-sm">How many weeks will this unit plan span?</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                          <Select
+                            value={state.durationWeeks}
+                            onValueChange={(val) =>
+                              dispatch({
+                                type: "SET_FIELD",
+                                field: "durationWeeks",
+                                value: val,
+                              })
+                            }
+                          >
+                            <SelectTrigger className="text-sm font-medium">
+                              <SelectValue placeholder="Select weeks" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="3">3 weeks</SelectItem>
+                              <SelectItem value="4">4 weeks</SelectItem>
+                              <SelectItem value="5">5 weeks</SelectItem>
+                              <SelectItem value="6">6 weeks</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
                       {/* Age Group */}
                       <div className="space-y-2">
                         <Label className="text-sm font-semibold">
@@ -536,11 +620,29 @@ export function AILessonPlanning() {
                           </div>
                         )}
 
-                      {/* Duration */}
+                      {/* Duration (minutes) */}
                       <div className="space-y-2">
-                        <Label className="text-sm font-semibold">
-                          Duration (minutes)
-                        </Label>
+                        <div className="flex items-center gap-1">
+                          <Label className="text-sm font-semibold">
+                            {state.planType === "unit"
+                              ? "Weekly Duration"
+                              : "Session Duration"}
+                          </Label>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger className="cursor-help" type="button">
+                                <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                              </TooltipTrigger>
+                              <TooltipContent side="right" className="max-w-xs">
+                                <p className="text-sm">
+                                  {state.planType === "unit"
+                                    ? "Total learning time per week. Activities will be designed to fit within this time budget each week."
+                                    : "Total duration of this single lesson session."}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                         <Select
                           value={state.duration}
                           onValueChange={(val) =>
@@ -610,7 +712,9 @@ export function AILessonPlanning() {
                       className="w-full bg-[#3090A0] hover:bg-[#2FBFA5] text-white font-semibold text-base cursor-pointer"
                     >
                       <Sparkles className="mr-2 h-4 w-4" />
-                      Generate Lesson Plan
+                      {state.planType === "unit"
+                        ? `Generate ${state.durationWeeks}-Week Unit Plan`
+                        : "Generate Lesson Plan"}
                     </Button>
                   </CardContent>
                 </Card>
@@ -636,7 +740,7 @@ export function AILessonPlanning() {
                     </div>
                     <div className="space-y-3 max-w-md">
                       <h2 className="text-xl font-semibold text-gray-800">
-                        Generating Your Lesson Plan
+                        Generating Your {planLabel}
                       </h2>
                       <p
                         key={mascotIndex}
@@ -656,7 +760,7 @@ export function AILessonPlanning() {
                     <div className="flex items-center gap-3">
                       <CheckCircle2 className="h-6 w-6 text-green-600" />
                       <h2 className="text-xl font-semibold text-gray-800">
-                        Review & Customise Your Lesson Plan
+                        Review & Customise Your {planLabel}
                       </h2>
                     </div>
                   </div>
@@ -708,6 +812,12 @@ export function AILessonPlanning() {
                               {state.lessonPlan.moral_education === "islam"
                                 ? "Pendidikan Islam"
                                 : "Pendidikan Moral"}
+                            </Badge>
+                          )}
+                          {state.lessonPlan.plan_type === "unit" && (
+                            <Badge className="bg-orange-100 text-orange-700">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              {state.lessonPlan.duration_weeks || state.durationWeeks}-Week Unit Plan
                             </Badge>
                           )}
                         </div>
@@ -872,138 +982,358 @@ export function AILessonPlanning() {
                         <Layers className="h-5 w-5 text-emerald-600" />
                         Activities
                       </CardTitle>
+                      {state.lessonPlan.plan_type === "unit" &&
+                        state.lessonPlan.unit_theme && (
+                          <CardDescription className="text-sm text-gray-700 font-medium">
+                            Unit Theme: {state.lessonPlan.unit_theme}
+                          </CardDescription>
+                        )}
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      {state.lessonPlan.activities?.map((activity, i) => {
-                        const typeOpt = ACTIVITY_TYPE_OPTIONS.find(
-                          (t) => t.value === activity.type,
-                        );
-                        return (
-                          <div
-                            key={i}
-                            className="flex gap-3 p-4 border rounded-lg bg-gray-50 relative"
-                          >
-                            <div className="flex-1 space-y-2">
-                              <div className="flex items-center justify-between gap-2">
-                                <Input
-                                  className="font-semibold text-gray-800 border-dashed flex-1"
-                                  value={activity.title}
-                                  onChange={(e) => {
-                                    const newActs = [
-                                      ...state.lessonPlan.activities,
-                                    ];
-                                    newActs[i] = {
-                                      ...newActs[i],
-                                      title: e.target.value,
-                                    };
-                                    dispatch({
-                                      type: "UPDATE_PLAN_FIELD",
-                                      field: "activities",
-                                      value: newActs,
-                                    });
-                                  }}
-                                />
-                                <Input
-                                  className="w-28 text-sm border-dashed text-blue-700"
-                                  value={activity.duration}
-                                  onChange={(e) => {
-                                    const newActs = [
-                                      ...state.lessonPlan.activities,
-                                    ];
-                                    newActs[i] = {
-                                      ...newActs[i],
-                                      duration: e.target.value,
-                                    };
-                                    dispatch({
-                                      type: "UPDATE_PLAN_FIELD",
-                                      field: "activities",
-                                      value: newActs,
-                                    });
-                                  }}
-                                />
-                              </div>
-                              <Textarea
-                                className="text-sm border-dashed"
-                                rows={2}
-                                value={activity.description}
-                                onChange={(e) => {
-                                  const newActs = [
-                                    ...state.lessonPlan.activities,
-                                  ];
-                                  newActs[i] = {
-                                    ...newActs[i],
-                                    description: e.target.value,
-                                  };
-                                  dispatch({
-                                    type: "UPDATE_PLAN_FIELD",
-                                    field: "activities",
-                                    value: newActs,
-                                  });
-                                }}
-                              />
-                              <div className="flex items-center gap-2 pt-1">
-                                <Label className="text-xs font-semibold text-gray-500 shrink-0">
-                                  Activity Type
-                                </Label>
-                                <Select
-                                  value={activity.type || "quiz"}
-                                  onValueChange={(val) => {
-                                    const newActs = [
-                                      ...state.lessonPlan.activities,
-                                    ];
-                                    newActs[i] = { ...newActs[i], type: val };
-                                    dispatch({
-                                      type: "UPDATE_PLAN_FIELD",
-                                      field: "activities",
-                                      value: newActs,
-                                    });
-                                  }}
-                                >
-                                  <SelectTrigger className="w-44 h-8 text-xs">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {ACTIVITY_TYPE_OPTIONS.map((opt) => (
-                                      <SelectItem
-                                        key={opt.value}
-                                        value={opt.value}
-                                      >
-                                        <span className="flex items-center gap-1.5">
-                                          <opt.icon className="h-3.5 w-3.5" />
-                                          {opt.label}
-                                        </span>
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                            <button
-                              onClick={() =>
-                                removePlanArrayItem("activities", i)
-                              }
-                              className="text-gray-400 hover:text-red-500 absolute top-2 right-2 cursor-pointer"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
+                      {/* ── Unit Plan: week-tabbed activities ── */}
+                      {state.lessonPlan.plan_type === "unit" &&
+                      state.lessonPlan.weeks?.length > 0 ? (
+                        <>
+                          {/* Week navigation tabs */}
+                          <div className="flex gap-1 border-b">
+                            {state.lessonPlan.weeks.map((week, wi) => (
+                              <button
+                                key={wi}
+                                type="button"
+                                onClick={() => setActiveWeekTab(wi)}
+                                className={`px-4 py-2 text-sm font-medium rounded-t-md transition-colors cursor-pointer ${
+                                  (activeWeekTab < state.lessonPlan.weeks.length ? activeWeekTab : 0) === wi
+                                    ? "bg-orange-50 text-orange-700 border border-b-0 border-orange-200 -mb-px"
+                                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                                }`}
+                              >
+                                Week {week.week_number || wi + 1}
+                              </button>
+                            ))}
                           </div>
-                        );
-                      })}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          addPlanArrayItem("activities", {
-                            title: "",
-                            description: "",
-                            duration: "5 minutes",
-                            type: "quiz",
-                          })
-                        }
-                        className="text-indigo-600 cursor-pointer"
-                      >
-                        <Plus className="h-4 w-4 mr-1" /> Add Activity Step
-                      </Button>
+
+                          {/* Active week content */}
+                          {(() => {
+                            const wi =
+                              activeWeekTab < state.lessonPlan.weeks.length
+                                ? activeWeekTab
+                                : 0;
+                            const week = state.lessonPlan.weeks[wi];
+                            if (!week) return null;
+
+                            const updateWeekActivity = (ai, patch) => {
+                              const newWeeks = state.lessonPlan.weeks.map(
+                                (w, k) =>
+                                  k === wi
+                                    ? {
+                                        ...w,
+                                        activities: w.activities.map((a, j) =>
+                                          j === ai ? { ...a, ...patch } : a,
+                                        ),
+                                      }
+                                    : w,
+                              );
+                              dispatch({
+                                type: "UPDATE_PLAN_FIELD",
+                                field: "weeks",
+                                value: newWeeks,
+                              });
+                            };
+
+                            return (
+                              <div className="space-y-3">
+                                {/* Week theme */}
+                                <div className="flex items-center gap-2">
+                                  <Badge className="bg-orange-100 text-orange-700 shrink-0">
+                                    Week {week.week_number || wi + 1}
+                                  </Badge>
+                                  <Input
+                                    className="flex-1 text-sm font-semibold border-dashed"
+                                    placeholder="Week theme"
+                                    value={week.theme || ""}
+                                    onChange={(e) => {
+                                      const newWeeks = [
+                                        ...state.lessonPlan.weeks,
+                                      ];
+                                      newWeeks[wi] = {
+                                        ...newWeeks[wi],
+                                        theme: e.target.value,
+                                      };
+                                      dispatch({
+                                        type: "UPDATE_PLAN_FIELD",
+                                        field: "weeks",
+                                        value: newWeeks,
+                                      });
+                                    }}
+                                  />
+                                </div>
+
+                                {/* Week activities */}
+                                {week.activities?.map((activity, ai) => (
+                                  <div
+                                    key={ai}
+                                    className="flex gap-3 p-4 border rounded-lg bg-gray-50 relative"
+                                  >
+                                    <div className="flex-1 space-y-2">
+                                      <div className="flex items-center justify-between gap-2">
+                                        <Input
+                                          className="font-semibold text-gray-800 border-dashed flex-1"
+                                          value={activity.title}
+                                          onChange={(e) =>
+                                            updateWeekActivity(ai, {
+                                              title: e.target.value,
+                                            })
+                                          }
+                                        />
+                                        <Input
+                                          className="w-28 text-sm border-dashed text-blue-700"
+                                          value={activity.duration || ""}
+                                          onChange={(e) =>
+                                            updateWeekActivity(ai, {
+                                              duration: e.target.value,
+                                            })
+                                          }
+                                        />
+                                      </div>
+                                      <Textarea
+                                        className="text-sm border-dashed"
+                                        rows={2}
+                                        value={activity.description || ""}
+                                        onChange={(e) =>
+                                          updateWeekActivity(ai, {
+                                            description: e.target.value,
+                                          })
+                                        }
+                                      />
+                                      <div className="flex items-center gap-2 pt-1">
+                                        <Label className="text-xs font-semibold text-gray-500 shrink-0">
+                                          Type
+                                        </Label>
+                                        <Select
+                                          value={activity.type || "quiz"}
+                                          onValueChange={(val) =>
+                                            updateWeekActivity(ai, {
+                                              type: val,
+                                            })
+                                          }
+                                        >
+                                          <SelectTrigger className="w-40 h-8 text-xs">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {ACTIVITY_TYPE_OPTIONS.map(
+                                              (opt) => (
+                                                <SelectItem
+                                                  key={opt.value}
+                                                  value={opt.value}
+                                                >
+                                                  <span className="flex items-center gap-1.5">
+                                                    <opt.icon className="h-3.5 w-3.5" />
+                                                    {opt.label}
+                                                  </span>
+                                                </SelectItem>
+                                              ),
+                                            )}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    </div>
+                                    <button
+                                      onClick={() => {
+                                        const newWeeks =
+                                          state.lessonPlan.weeks.map((w, k) =>
+                                            k === wi
+                                              ? {
+                                                  ...w,
+                                                  activities:
+                                                    w.activities.filter(
+                                                      (_, j) => j !== ai,
+                                                    ),
+                                                }
+                                              : w,
+                                          );
+                                        dispatch({
+                                          type: "UPDATE_PLAN_FIELD",
+                                          field: "weeks",
+                                          value: newWeeks,
+                                        });
+                                      }}
+                                      className="text-gray-400 hover:text-red-500 absolute top-2 right-2 cursor-pointer"
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                ))}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    const newWeeks = [
+                                      ...state.lessonPlan.weeks,
+                                    ];
+                                    newWeeks[wi] = {
+                                      ...newWeeks[wi],
+                                      activities: [
+                                        ...(newWeeks[wi].activities || []),
+                                        {
+                                          title: "",
+                                          description: "",
+                                          duration: "30 minutes",
+                                          type: "quiz",
+                                        },
+                                      ],
+                                    };
+                                    dispatch({
+                                      type: "UPDATE_PLAN_FIELD",
+                                      field: "weeks",
+                                      value: newWeeks,
+                                    });
+                                  }}
+                                  className="text-indigo-600 cursor-pointer"
+                                >
+                                  <Plus className="h-4 w-4 mr-1" /> Add
+                                  Activity
+                                </Button>
+                              </div>
+                            );
+                          })()}
+                        </>
+                      ) : (
+                        /* ── Regular Lesson Plan: flat activity list ── */
+                        <>
+                          {state.lessonPlan.activities?.map((activity, i) => {
+                            return (
+                              <div
+                                key={i}
+                                className="flex gap-3 p-4 border rounded-lg bg-gray-50 relative"
+                              >
+                                <div className="flex-1 space-y-2">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <Input
+                                      className="font-semibold text-gray-800 border-dashed flex-1"
+                                      value={activity.title}
+                                      onChange={(e) => {
+                                        const newActs = [
+                                          ...state.lessonPlan.activities,
+                                        ];
+                                        newActs[i] = {
+                                          ...newActs[i],
+                                          title: e.target.value,
+                                        };
+                                        dispatch({
+                                          type: "UPDATE_PLAN_FIELD",
+                                          field: "activities",
+                                          value: newActs,
+                                        });
+                                      }}
+                                    />
+                                    <Input
+                                      className="w-28 text-sm border-dashed text-blue-700"
+                                      value={activity.duration}
+                                      onChange={(e) => {
+                                        const newActs = [
+                                          ...state.lessonPlan.activities,
+                                        ];
+                                        newActs[i] = {
+                                          ...newActs[i],
+                                          duration: e.target.value,
+                                        };
+                                        dispatch({
+                                          type: "UPDATE_PLAN_FIELD",
+                                          field: "activities",
+                                          value: newActs,
+                                        });
+                                      }}
+                                    />
+                                  </div>
+                                  <Textarea
+                                    className="text-sm border-dashed"
+                                    rows={2}
+                                    value={activity.description}
+                                    onChange={(e) => {
+                                      const newActs = [
+                                        ...state.lessonPlan.activities,
+                                      ];
+                                      newActs[i] = {
+                                        ...newActs[i],
+                                        description: e.target.value,
+                                      };
+                                      dispatch({
+                                        type: "UPDATE_PLAN_FIELD",
+                                        field: "activities",
+                                        value: newActs,
+                                      });
+                                    }}
+                                  />
+                                  <div className="flex items-center gap-2 pt-1">
+                                    <Label className="text-xs font-semibold text-gray-500 shrink-0">
+                                      Type
+                                    </Label>
+                                    <Select
+                                      value={activity.type || "quiz"}
+                                      onValueChange={(val) => {
+                                        const newActs = [
+                                          ...state.lessonPlan.activities,
+                                        ];
+                                        newActs[i] = {
+                                          ...newActs[i],
+                                          type: val,
+                                        };
+                                        dispatch({
+                                          type: "UPDATE_PLAN_FIELD",
+                                          field: "activities",
+                                          value: newActs,
+                                        });
+                                      }}
+                                    >
+                                      <SelectTrigger className="w-40 h-8 text-xs">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {ACTIVITY_TYPE_OPTIONS.map((opt) => (
+                                          <SelectItem
+                                            key={opt.value}
+                                            value={opt.value}
+                                          >
+                                            <span className="flex items-center gap-1.5">
+                                              <opt.icon className="h-3.5 w-3.5" />
+                                              {opt.label}
+                                            </span>
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() =>
+                                    removePlanArrayItem("activities", i)
+                                  }
+                                  className="text-gray-400 hover:text-red-500 absolute top-2 right-2 cursor-pointer"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </div>
+                            );
+                          })}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              addPlanArrayItem("activities", {
+                                title: "",
+                                description: "",
+                                duration: "5 minutes",
+                                type: "quiz",
+                              })
+                            }
+                            className="text-indigo-600 cursor-pointer"
+                          >
+                            <Plus className="h-4 w-4 mr-1" /> Add Activity
+                            Step
+                          </Button>
+                        </>
+                      )}
                     </CardContent>
                   </Card>
 
@@ -1103,6 +1433,14 @@ export function AILessonPlanning() {
 
                   {/* Bottom save bar */}
                   <div className="flex justify-end gap-3 pb-8">
+                    <Button
+                      variant="outline"
+                      onClick={() => downloadLessonPlanPDF(state.lessonPlan)}
+                      className="cursor-pointer"
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Download PDF
+                    </Button>
                     <AlertDialog
                       open={showResetDialog}
                       onOpenChange={setShowResetDialog}
@@ -1117,7 +1455,7 @@ export function AILessonPlanning() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            This will discard all changes to the lesson plan and
+                            This will discard all changes to the {planLabel.toLowerCase()} and
                             return you to the form. This action cannot be
                             undone.
                           </AlertDialogDescription>
@@ -1193,12 +1531,22 @@ export function AILessonPlanning() {
                             </Badge>
                           </div>
                         </div>
-                        <Button
-                          onClick={() => setViewingPlan(null)}
-                          className="bg-[#3090A0] hover:bg-[#2FBFA5] text-white cursor-pointer"
-                        >
-                          Back to List
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => downloadLessonPlanPDF(viewingPlan)}
+                            className="cursor-pointer"
+                          >
+                            <Download className="mr-2 h-4 w-4" />
+                            PDF
+                          </Button>
+                          <Button
+                            onClick={() => setViewingPlan(null)}
+                            className="bg-[#3090A0] hover:bg-[#2FBFA5] text-white cursor-pointer"
+                          >
+                            Back to List
+                          </Button>
+                        </div>
                       </div>
                     </CardHeader>
                   </Card>
@@ -1309,44 +1657,133 @@ export function AILessonPlanning() {
                         <Layers className="h-5 w-5 text-emerald-600" />{" "}
                         Activities
                       </CardTitle>
+                      {viewingPlan.plan_type === "unit" &&
+                        viewingPlan.unit_theme && (
+                          <p className="text-sm text-gray-700 font-medium">
+                            Unit Theme: {viewingPlan.unit_theme}
+                          </p>
+                        )}
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-4">
-                        {(viewingPlan.activities || []).map((act, i) => {
-                          const typeOpt = ACTIVITY_TYPE_OPTIONS.find(
-                            (t) => t.value === act.type,
-                          );
-                          return (
-                            <div
-                              key={i}
-                              className="flex gap-3 p-3 border rounded-lg bg-gray-50"
-                            >
-                              <div className="flex-1">
-                                <div className="flex items-center justify-between mb-1">
-                                  <h3 className="font-semibold text-gray-800">
-                                    {act.title}
-                                  </h3>
-                                  <div className="flex items-center gap-2">
-                                    {typeOpt && (
-                                      <Badge className={typeOpt.color}>
-                                        <typeOpt.icon className="h-3 w-3 mr-1" />
-                                        {typeOpt.label}
-                                      </Badge>
-                                    )}
-                                    <Badge className="bg-blue-50 text-blue-700 border border-blue-200">
-                                      <Clock className="h-3 w-3 mr-1" />
-                                      {act.duration}
-                                    </Badge>
-                                  </div>
+                      {/* UNP: week-tabbed */}
+                      {viewingPlan.plan_type === "unit" &&
+                      viewingPlan.weeks?.length > 0 ? (
+                        <>
+                          <div className="flex gap-1 border-b mb-4">
+                            {viewingPlan.weeks.map((week, wi) => (
+                              <button
+                                key={wi}
+                                type="button"
+                                onClick={() => setViewingWeekTab(wi)}
+                                className={`px-4 py-2 text-sm font-medium rounded-t-md transition-colors cursor-pointer ${
+                                  (viewingWeekTab < viewingPlan.weeks.length
+                                    ? viewingWeekTab
+                                    : 0) === wi
+                                    ? "bg-orange-50 text-orange-700 border border-b-0 border-orange-200 -mb-px"
+                                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                                }`}
+                              >
+                                <Calendar className="inline h-3.5 w-3.5 mr-1.5 -mt-0.5" />
+                                Week {week.week_number || wi + 1}
+                              </button>
+                            ))}
+                          </div>
+                          {(() => {
+                            const wi =
+                              viewingWeekTab < viewingPlan.weeks.length
+                                ? viewingWeekTab
+                                : 0;
+                            const week = viewingPlan.weeks[wi];
+                            if (!week) return null;
+                            return (
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <Badge className="bg-orange-100 text-orange-700">
+                                    Week {week.week_number || wi + 1}
+                                  </Badge>
+                                  <span className="text-sm font-semibold text-gray-800">
+                                    {week.theme}
+                                  </span>
                                 </div>
-                                <p className="text-sm text-gray-600">
-                                  {act.description}
-                                </p>
+                                {(week.activities || []).map((act, ai) => {
+                                  const typeOpt = ACTIVITY_TYPE_OPTIONS.find(
+                                    (t) => t.value === act.type,
+                                  );
+                                  return (
+                                    <div
+                                      key={ai}
+                                      className="flex gap-3 p-3 border rounded-lg bg-gray-50"
+                                    >
+                                      <div className="flex-1">
+                                        <div className="flex items-center justify-between mb-1">
+                                          <h3 className="font-semibold text-gray-800">
+                                            {act.title}
+                                          </h3>
+                                          <div className="flex items-center gap-2">
+                                            {typeOpt && (
+                                              <Badge className={typeOpt.color}>
+                                                <typeOpt.icon className="h-3 w-3 mr-1" />
+                                                {typeOpt.label}
+                                              </Badge>
+                                            )}
+                                            {act.duration && (
+                                              <Badge className="bg-blue-50 text-blue-700 border border-blue-200">
+                                                <Clock className="h-3 w-3 mr-1" />
+                                                {act.duration}
+                                              </Badge>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <p className="text-sm text-gray-600">
+                                          {act.description}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                               </div>
-                            </div>
-                          );
-                        })}
-                      </div>
+                            );
+                          })()}
+                        </>
+                      ) : (
+                        /* LP: flat list */
+                        <div className="space-y-4">
+                          {(viewingPlan.activities || []).map((act, i) => {
+                            const typeOpt = ACTIVITY_TYPE_OPTIONS.find(
+                              (t) => t.value === act.type,
+                            );
+                            return (
+                              <div
+                                key={i}
+                                className="flex gap-3 p-3 border rounded-lg bg-gray-50"
+                              >
+                                <div className="flex-1">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <h3 className="font-semibold text-gray-800">
+                                      {act.title}
+                                    </h3>
+                                    <div className="flex items-center gap-2">
+                                      {typeOpt && (
+                                        <Badge className={typeOpt.color}>
+                                          <typeOpt.icon className="h-3 w-3 mr-1" />
+                                          {typeOpt.label}
+                                        </Badge>
+                                      )}
+                                      <Badge className="bg-blue-50 text-blue-700 border border-blue-200">
+                                        <Clock className="h-3 w-3 mr-1" />
+                                        {act.duration}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                  <p className="text-sm text-gray-600">
+                                    {act.description}
+                                  </p>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
 
@@ -1413,7 +1850,7 @@ export function AILessonPlanning() {
                 /* Plans list */
                 <Card>
                   <CardHeader>
-                    <CardTitle>My Lesson Plans</CardTitle>
+                    <CardTitle>My Plans</CardTitle>
                     <CardDescription>
                       Click a plan to view details
                     </CardDescription>
@@ -1437,8 +1874,7 @@ export function AILessonPlanning() {
                       </div>
                     ) : savedPlans.length === 0 ? (
                       <p className="text-center text-muted-foreground py-8">
-                        No lesson plans yet. Go to the Generator tab to create
-                        one.
+                        No plans yet. Go to the Generator tab to create one.
                       </p>
                     ) : (
                       <div className="space-y-3">
@@ -1446,11 +1882,23 @@ export function AILessonPlanning() {
                           <div
                             key={plan.id}
                             className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                            onClick={() => setViewingPlan(plan)}
+                            onClick={() => { setViewingPlan(plan); setViewingWeekTab(0); }}
                           >
                             <div>
                               <p className="font-medium">{plan.title}</p>
                               <div className="flex gap-2 mt-1">
+                                <Badge
+                                  variant="outline"
+                                  className={`text-xs font-semibold ${
+                                    plan.plan_type === "unit"
+                                      ? "bg-orange-50 text-orange-700 border-orange-200"
+                                      : "bg-indigo-50 text-indigo-700 border-indigo-200"
+                                  }`}
+                                >
+                                  {plan.plan_type === "unit"
+                                    ? `${plan.duration_weeks || "?"}-week Unit Plan`
+                                    : "Lesson Plan"}
+                                </Badge>
                                 <Badge
                                   variant="outline"
                                   className="text-xs capitalize"
@@ -1478,7 +1926,7 @@ export function AILessonPlanning() {
                                 className="text-red-500 hover:text-red-700 h-8 w-8 p-0 cursor-pointer"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  deletePlan(plan.id);
+                                  deletePlan(plan.id, plan.plan_type);
                                 }}
                               >
                                 <Trash2 className="h-4 w-4" />

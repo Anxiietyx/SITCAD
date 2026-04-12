@@ -8,6 +8,7 @@ import { Button } from "./ui/button";
 import { Label } from "./ui/label";
 import { activityReducer, initialState } from "../reducers/activityReducer";
 import { toast } from "sonner";
+import { downloadActivityPDF, downloadFlashcardZIP } from "../lib/downloads";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Input } from "./ui/input";
 import {
@@ -62,6 +63,8 @@ import {
   TrendingUp,
   AlertTriangle,
   Trophy,
+  Download,
+  FileDown,
 } from "lucide-react";
 
 
@@ -147,6 +150,9 @@ export function ActivityManagement() {
 
   // Delete confirmation
   const [deleteTargetId, setDeleteTargetId] = useState(null);
+
+  // Week tab for UNP plan selection
+  const [planWeekTab, setPlanWeekTab] = useState(0);
 
   // Re-run analysis state
   const [rerunningActivityId, setRerunningActivityId] = useState(null);
@@ -241,6 +247,7 @@ export function ActivityManagement() {
         description: act.description,
         duration: act.duration || "",
         type: act.type || "quiz",
+        image_style: state.activityImageStyles[idx] || "cartoon",
       };
     });
 
@@ -259,6 +266,7 @@ export function ActivityManagement() {
           learning_area: selectedPlan.learning_area,
           age_group: selectedPlan.age_group,
           language: selectedPlan.language || (selectedPlan.learning_area === "literacy_en" ? "en" : "bm"),
+          image_style: selectedPlan.image_style || "cartoon",
           activities: activitiesToGenerate,
         }),
       });
@@ -584,12 +592,27 @@ export function ActivityManagement() {
                             <div key={plan.id} className={`border-2 rounded-lg transition-colors ${isSelected ? "border-indigo-400 bg-indigo-50/50" : "border-gray-200 hover:border-gray-300"}`}>
                               <div
                                 className="p-4 cursor-pointer"
-                                onClick={() => dispatch({ type: "SELECT_PLAN", payload: isSelected ? null : plan.id })}
+                                onClick={() => {
+                                  dispatch({ type: "SELECT_PLAN", payload: isSelected ? null : plan.id });
+                                  setPlanWeekTab(0);
+                                }}
                               >
                                 <div className="flex items-center justify-between">
                                   <div>
                                     <h3 className="font-semibold text-gray-800">{plan.title}</h3>
                                     <div className="flex items-center gap-2 mt-1">
+                                      <Badge
+                                        variant="outline"
+                                        className={`text-xs font-semibold ${
+                                          plan.plan_type === "unit"
+                                            ? "bg-orange-50 text-orange-700 border-orange-200"
+                                            : "bg-indigo-50 text-indigo-700 border-indigo-200"
+                                        }`}
+                                      >
+                                        {plan.plan_type === "unit"
+                                          ? `${plan.duration_weeks || "?"}-week Unit Plan`
+                                          : "Lesson Plan"}
+                                      </Badge>
                                       <Badge variant="outline" className="text-xs capitalize">{LEARNING_AREA_LABELS[plan.learning_area] || plan.learning_area}</Badge>
                                       <Badge variant="outline" className="text-xs">{plan.duration_minutes} min</Badge>
                                       <Badge variant="outline" className="text-xs">Ages {plan.age_group}</Badge>
@@ -605,33 +628,150 @@ export function ActivityManagement() {
                               {isSelected && plan.activities?.length > 0 && (
                                 <div className="border-t border-indigo-200 p-4 space-y-3">
                                   <p className="text-sm font-medium text-gray-600">Select activities to generate:</p>
-                                  {plan.activities.map((act, idx) => {
-                                    const typeMeta = ACTIVITY_TYPE_META[act.type] || ACTIVITY_TYPE_META.quiz;
-                                    const TypeIcon = typeMeta.icon;
-                                    const isChecked = state.selectedActivities.includes(idx);
-                                    return (
-                                      <div
-                                        key={idx}
-                                        className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${isChecked ? "bg-indigo-50 border-indigo-300" : "bg-white border-gray-200 hover:bg-gray-50"}`}
-                                        onClick={() => dispatch({ type: "TOGGLE_ACTIVITY", payload: idx })}
-                                      >
-                                        <div className="flex-1 min-w-0">
-                                          <div className="flex items-center gap-2 mb-1">
-                                            <h4 className="font-semibold text-sm text-gray-800">{act.title}</h4>
-                                            <Badge variant="outline" className={`text-xs ${typeMeta.color}`}>
-                                              <TypeIcon className="h-3 w-3 mr-1" />{typeMeta.label}
-                                            </Badge>
-                                            {act.duration && (
-                                              <Badge variant="outline" className="text-xs text-blue-700 bg-blue-50 border-blue-200">
-                                                <Clock className="h-3 w-3 mr-1" />{act.duration}
+
+                                  {/* UNP: week tabs */}
+                                  {plan.plan_type === "unit" && plan.weeks?.length > 0 ? (
+                                    <>
+                                      <div className="flex gap-1 border-b">
+                                        {plan.weeks.map((week, wi) => (
+                                          <button
+                                            key={wi}
+                                            type="button"
+                                            onClick={() => setPlanWeekTab(wi)}
+                                            className={`px-3 py-1.5 text-xs font-medium rounded-t-md transition-colors cursor-pointer ${
+                                              (planWeekTab < plan.weeks.length ? planWeekTab : 0) === wi
+                                                ? "bg-orange-50 text-orange-700 border border-b-0 border-orange-200 -mb-px"
+                                                : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                                            }`}
+                                          >
+                                            <Calendar className="inline h-3 w-3 mr-1 -mt-0.5" />
+                                            Week {week.week_number || wi + 1}
+                                          </button>
+                                        ))}
+                                      </div>
+                                      {(() => {
+                                        const wi = planWeekTab < plan.weeks.length ? planWeekTab : 0;
+                                        // Compute flat-index offset for this week
+                                        let offset = 0;
+                                        for (let k = 0; k < wi; k++) {
+                                          offset += plan.weeks[k].activities?.length || 0;
+                                        }
+                                        const week = plan.weeks[wi];
+                                        return (
+                                          <div className="space-y-2 pt-2">
+                                            {week?.theme && (
+                                              <p className="text-xs font-semibold text-orange-700 mb-2">{week.theme}</p>
+                                            )}
+                                            {(week?.activities || []).map((act, ai) => {
+                                              const idx = offset + ai;
+                                              const typeMeta = ACTIVITY_TYPE_META[act.type] || ACTIVITY_TYPE_META.quiz;
+                                              const TypeIcon = typeMeta.icon;
+                                              const isChecked = state.selectedActivities.includes(idx);
+                                              return (
+                                                <div
+                                                  key={idx}
+                                                  className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${isChecked ? "bg-indigo-50 border-indigo-300" : "bg-white border-gray-200 hover:bg-gray-50"}`}
+                                                  onClick={() => dispatch({ type: "TOGGLE_ACTIVITY", payload: idx })}
+                                                >
+                                                  <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                      <h4 className="font-semibold text-sm text-gray-800">{act.title}</h4>
+                                                      <Badge variant="outline" className={`text-xs ${typeMeta.color}`}>
+                                                        <TypeIcon className="h-3 w-3 mr-1" />{typeMeta.label}
+                                                      </Badge>
+                                                      {act.duration && (
+                                                        <Badge variant="outline" className="text-xs text-blue-700 bg-blue-50 border-blue-200">
+                                                          <Clock className="h-3 w-3 mr-1" />{act.duration}
+                                                        </Badge>
+                                                      )}
+                                                    </div>
+                                                    <p className="text-sm text-gray-600">{act.description}</p>
+                                                    {isChecked && (
+                                                      <div
+                                                        className="flex items-center gap-2 mt-3"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                      >
+                                                        <span className="text-xs text-gray-500">Image Style:</span>
+                                                        <div className="flex rounded-md border overflow-hidden">
+                                                          {["cartoon", "photorealistic"].map((style) => (
+                                                            <button
+                                                              key={style}
+                                                              type="button"
+                                                              onClick={() => dispatch({ type: "SET_ACTIVITY_IMAGE_STYLE", idx, style })}
+                                                              className={`px-2.5 py-0.5 text-xs cursor-pointer transition-colors ${
+                                                                (state.activityImageStyles[idx] || "cartoon") === style
+                                                                  ? "bg-[#3090A0] text-white"
+                                                                  : "bg-white text-gray-600 hover:bg-gray-50"
+                                                              }`}
+                                                            >
+                                                              {style === "cartoon" ? "Cartoon" : "Photorealistic"}
+                                                            </button>
+                                                          ))}
+                                                        </div>
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                        );
+                                      })()}
+                                    </>
+                                  ) : (
+                                    /* LP: flat list */
+                                    plan.activities.map((act, idx) => {
+                                      const typeMeta = ACTIVITY_TYPE_META[act.type] || ACTIVITY_TYPE_META.quiz;
+                                      const TypeIcon = typeMeta.icon;
+                                      const isChecked = state.selectedActivities.includes(idx);
+                                      return (
+                                        <div
+                                          key={idx}
+                                          className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${isChecked ? "bg-indigo-50 border-indigo-300" : "bg-white border-gray-200 hover:bg-gray-50"}`}
+                                          onClick={() => dispatch({ type: "TOGGLE_ACTIVITY", payload: idx })}
+                                        >
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-1">
+                                              <h4 className="font-semibold text-sm text-gray-800">{act.title}</h4>
+                                              <Badge variant="outline" className={`text-xs ${typeMeta.color}`}>
+                                                <TypeIcon className="h-3 w-3 mr-1" />{typeMeta.label}
                                               </Badge>
+                                              {act.duration && (
+                                                <Badge variant="outline" className="text-xs text-blue-700 bg-blue-50 border-blue-200">
+                                                  <Clock className="h-3 w-3 mr-1" />{act.duration}
+                                                </Badge>
+                                              )}
+                                            </div>
+                                            <p className="text-sm text-gray-600">{act.description}</p>
+                                            {isChecked && (
+                                              <div
+                                                className="flex items-center gap-2 mt-3"
+                                                onClick={(e) => e.stopPropagation()}
+                                              >
+                                                <span className="text-xs text-gray-500">Image Style:</span>
+                                                <div className="flex rounded-md border overflow-hidden">
+                                                  {["cartoon", "photorealistic"].map((style) => (
+                                                    <button
+                                                      key={style}
+                                                      type="button"
+                                                      onClick={() => dispatch({ type: "SET_ACTIVITY_IMAGE_STYLE", idx, style })}
+                                                      className={`px-2.5 py-0.5 text-xs cursor-pointer transition-colors ${
+                                                        (state.activityImageStyles[idx] || "cartoon") === style
+                                                          ? "bg-[#3090A0] text-white"
+                                                          : "bg-white text-gray-600 hover:bg-gray-50"
+                                                      }`}
+                                                    >
+                                                      {style === "cartoon" ? "Cartoon" : "Photorealistic"}
+                                                    </button>
+                                                  ))}
+                                                </div>
+                                              </div>
                                             )}
                                           </div>
-                                          <p className="text-sm text-gray-600">{act.description}</p>
                                         </div>
-                                      </div>
-                                    );
-                                  })}
+                                      );
+                                    })
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -1203,6 +1343,33 @@ export function ActivityManagement() {
                     <Button className="flex-1 cursor-pointer" onClick={() => handleCompleteActivity(act.id)}>
                       <CheckCircle2 className="mr-2 h-4 w-4" />
                       Mark as Complete
+                    </Button>
+                  )}
+                  {act.generated_content && act.activity_type !== "image" && (
+                    <Button
+                      variant="outline"
+                      className="cursor-pointer"
+                      onClick={() => downloadActivityPDF(act)}
+                    >
+                      <Download className="mr-1 h-4 w-4" /> PDF
+                    </Button>
+                  )}
+                  {act.activity_type === "image" && act.generated_content && (
+                    <Button
+                      variant="outline"
+                      className="cursor-pointer"
+                      onClick={async () => {
+                        toast.info('Preparing flashcard ZIP…');
+                        try {
+                          const idToken = await getIdToken();
+                          await downloadFlashcardZIP(act, idToken);
+                          toast.success('ZIP downloaded!');
+                        } catch (err) {
+                          toast.error(err.message || 'Failed to download ZIP');
+                        }
+                      }}
+                    >
+                      <FileDown className="mr-1 h-4 w-4" /> ZIP
                     </Button>
                   )}
                   <Button

@@ -12,6 +12,9 @@ export const initialState = {
   additionalNotes: "",
   moralEducation: "moral",   // "moral" | "islam"
   language: "bm",            // "bm" | "en"
+  planType: "subject",       // "subject" | "unit"
+  durationWeeks: "3",        // "1"-"6" for unit plans
+  imageStyle: "cartoon",     // "cartoon" | "photorealistic"
 };
 
 export const lessonReducer = (state, action) => {

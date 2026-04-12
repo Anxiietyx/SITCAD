@@ -5,6 +5,7 @@ export const initialState = {
   // Plan & activity selection
   selectedPlanId: null,
   selectedActivities: [],   // indices of activities chosen from the plan
+  activityImageStyles: {},  // { [idx]: "cartoon" | "photorealistic" } — per-activity override
 
   // Generated results (from AI)
   generatedResults: [],     // [{title, description, type, duration, generated_content}]
@@ -27,7 +28,18 @@ export const activityReducer = (state, action) => {
         ...state,
         selectedPlanId: action.payload,
         selectedActivities: [],
+        activityImageStyles: {},
       };
+
+    case "SET_ACTIVITY_IMAGE_STYLE": {
+      return {
+        ...state,
+        activityImageStyles: {
+          ...state.activityImageStyles,
+          [action.idx]: action.style,
+        },
+      };
+    }
 
     case "TOGGLE_ACTIVITY": {
       const idx = action.payload;
