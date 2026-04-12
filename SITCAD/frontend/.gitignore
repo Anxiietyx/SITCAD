@@ -8,7 +8,7 @@ firebase-debug.log*
 firebase-debug.*.log*
 
 # Firebase cache
-.firebase/
+
 
 # Firebase config
 
@@ -63,7 +63,7 @@ node_modules/
 .yarn-integrity
 
 # dotenv environment variables file
-.env
+
 
 # dataconnect generated files
 .dataconnect
