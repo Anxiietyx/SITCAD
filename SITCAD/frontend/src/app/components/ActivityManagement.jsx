@@ -610,7 +610,7 @@ export function ActivityManagement() {
                                         }`}
                                       >
                                         {plan.plan_type === "unit"
-                                          ? `${plan.duration_weeks || "?"}W Unit Plan`
+                                          ? `${plan.duration_weeks || "?"}-week Unit Plan`
                                           : "Lesson Plan"}
                                       </Badge>
                                       <Badge variant="outline" className="text-xs capitalize">{LEARNING_AREA_LABELS[plan.learning_area] || plan.learning_area}</Badge>

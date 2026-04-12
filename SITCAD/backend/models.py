@@ -93,6 +93,7 @@ class Activity(Base):
   results_data = Column(JSON, nullable=True)                     # Activity results for AI analysis
   analysis_status = Column(String, nullable=True)                 # null | "pending" | "analyzing" | "completed" | "failed"
   analysis_error = Column(Text, nullable=True)
+  is_deleted = Column(Boolean, nullable=False, default=False)    # soft-delete flag
   started_at = Column(DateTime, nullable=True)
   created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
   completed_at = Column(DateTime, nullable=True)
@@ -115,6 +116,7 @@ class Report(Base):
   title = Column(String, nullable=False)
   summary = Column(Text, nullable=True)
   details = Column(JSON, nullable=True)
+  is_deleted = Column(Boolean, nullable=False, default=False)  # soft-delete flag
   created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 

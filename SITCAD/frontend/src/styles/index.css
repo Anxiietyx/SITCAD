@@ -17,6 +17,24 @@ h1, h2, h3, h4, h5, h6,
   font-family: 'Roboto Serif', serif;
 }
 
+/* Classroom teaching mode delivery — force Comic Sans on every element */
+.comic-delivery,
+.comic-delivery * {
+  font-family: 'Comic Sans MS', 'Comic Sans', 'Chalkboard SE', cursive !important;
+}
+
+/* Classroom delivery overlay scale animations */
+@keyframes delivery-open {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes delivery-close {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.92); }
+}
+.animate-delivery-open  { animation: delivery-open  0.3s cubic-bezier(0.34, 1.2, 0.64, 1) forwards; }
+.animate-delivery-close { animation: delivery-close 0.2s ease-in forwards; }
+
 /* Landing page animations */
 @keyframes float {
   0%, 100% { transform: translateY(0); }

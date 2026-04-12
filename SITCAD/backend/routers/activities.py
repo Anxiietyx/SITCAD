@@ -177,11 +177,14 @@ async def create_activity(request: CreateActivityRequest, db: Session = Depends(
 
 @router.post("/my-activities")
 async def list_activities(request: AuthenticatedRequest, db: Session = Depends(get_db)):
-    """List all activities for the authenticated teacher."""
+    """List all activities for the authenticated teacher (excludes soft-deleted)."""
     teacher = _verify_teacher(request.id_token, db)
     activities = (
         db.query(models.Activity)
-        .filter(models.Activity.teacher_id == teacher.id)
+        .filter(
+            models.Activity.teacher_id == teacher.id,
+            models.Activity.is_deleted == False,
+        )
         .order_by(models.Activity.created_at.desc())
         .all()
     )
@@ -190,13 +193,14 @@ async def list_activities(request: AuthenticatedRequest, db: Session = Depends(g
 
 @router.post("/classroom-activities")
 async def list_classroom_activities(request: AuthenticatedRequest, db: Session = Depends(get_db)):
-    """List activities assigned to the whole class (for classroom mode)."""
+    """List activities assigned to the whole class (for classroom mode, excludes soft-deleted)."""
     teacher = _verify_teacher(request.id_token, db)
     activities = (
         db.query(models.Activity)
         .filter(
             models.Activity.teacher_id == teacher.id,
             models.Activity.assigned_to == "class",
+            models.Activity.is_deleted == False,
         )
         .order_by(models.Activity.created_at.desc())
         .all()
@@ -248,7 +252,8 @@ async def complete_activity(activity_id: str, request: CompleteActivityRequest, 
 
 @router.post("/{activity_id}/delete")
 async def delete_activity(activity_id: str, request: AuthenticatedRequest, db: Session = Depends(get_db)):
-    """Delete an activity and its student links."""
+    """Soft-delete an activity so it no longer appears in lists.
+    Reports linked to the activity are preserved for AI analysis history."""
     teacher = _verify_teacher(request.id_token, db)
     activity = db.query(models.Activity).filter(
         models.Activity.id == activity_id,
@@ -256,8 +261,7 @@ async def delete_activity(activity_id: str, request: AuthenticatedRequest, db: S
     ).first()
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
-    db.query(models.ActivityStudent).filter(models.ActivityStudent.activity_id == activity_id).delete()
-    db.delete(activity)
+    activity.is_deleted = True
     db.commit()
     return {"detail": "Activity deleted"}
 
@@ -285,7 +289,10 @@ async def list_activities_for_student(student_id: str, request: AuthenticatedReq
 
     activities = (
         db.query(models.Activity)
-        .filter(models.Activity.id.in_(activity_ids))
+        .filter(
+            models.Activity.id.in_(activity_ids),
+            models.Activity.is_deleted == False,
+        )
         .order_by(models.Activity.created_at.desc())
         .all()
     )

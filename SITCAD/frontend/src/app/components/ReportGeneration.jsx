@@ -7,11 +7,21 @@ import { mockStudents, getActivitiesByStudent } from '../data/mockData';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from './ui/alert-dialog';
 import { Progress } from './ui/progress';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Checkbox } from './ui/checkbox';
-import { ArrowLeft, FileText, Download, Sparkles, Loader2, Printer, TrendingUp, Award, Target, Trophy, AlertCircle, AlertTriangle, Clock, Save, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, FileText, Download, Sparkles, Loader2, Printer, TrendingUp, Award, Target, Trophy, AlertCircle, AlertTriangle, Clock, Save, CheckCircle2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import Duckpit from './Duckpit';
 import { reportReducer, initialReportState } from '../reducers/reportReducer';
@@ -42,6 +52,7 @@ export function ReportGeneration() {
   const [pastReports, setPastReports] = useState([]);
   const [loadingReports, setLoadingReports] = useState(true);
   const [viewingReport, setViewingReport] = useState(null);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
   // key: `${studentId}::${sprCode}`, value: true (saved) | 'saving'
   const [savedSprs, setSavedSprs] = useState({});
 
@@ -74,6 +85,24 @@ export function ReportGeneration() {
       toast.success(`Saved ${sprCode} Level ${level} for ${students.length} student(s)`);
     } catch (err) {
       toast.error('Failed to save SPR score');
+    }
+  };
+
+  const handleDeleteReport = async () => {
+    if (!deleteTargetId) return;
+    try {
+      const idToken = await getIdToken();
+      const res = await fetch(`${API_BASE}/reports/${deleteTargetId}/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_token: idToken }),
+      });
+      if (!res.ok) throw new Error('Failed to delete report');
+      toast.success('Report deleted.');
+      setDeleteTargetId(null);
+      fetchReports();
+    } catch (err) {
+      toast.error(err.message || 'Failed to delete report');
     }
   };
 
@@ -235,9 +264,9 @@ export function ReportGeneration() {
                   </p>
                 </div>
                 <div className="ml-auto print:hidden">
-                  <Button onClick={handlePrint} className="cursor-pointer">
-                    <Printer className="mr-2 h-4 w-4" />
-                    Print / Save as PDF
+                  <Button variant="outline" onClick={handlePrint} className="cursor-pointer">
+                    <Download className="mr-2 h-4 w-4" />
+                    Download PDF
                   </Button>
                 </div>
               </div>
@@ -721,7 +750,7 @@ export function ReportGeneration() {
                     className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
                     onClick={() => setViewingReport(report)}
                   >
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <p className="font-medium">{report.title}</p>
                       <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
                         {report.summary}
@@ -740,6 +769,13 @@ export function ReportGeneration() {
                         </span>
                       </div>
                     </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setDeleteTargetId(report.id); }}
+                      className="ml-3 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors shrink-0 cursor-pointer"
+                      title="Delete report"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -856,6 +892,27 @@ export function ReportGeneration() {
           </div>
         )}
       </main>
+
+      {/* Delete Report Confirmation */}
+      <AlertDialog open={!!deleteTargetId} onOpenChange={(open) => { if (!open) setDeleteTargetId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this report?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the report. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white cursor-pointer"
+              onClick={handleDeleteReport}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

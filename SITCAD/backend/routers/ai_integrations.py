@@ -656,7 +656,7 @@ def _get_story_image_prefix(image_style: str) -> str:
     return STORY_IMAGE_STYLE_PHOTO if image_style == "photorealistic" else STORY_IMAGE_STYLE_CARTOON
 
 STORY_SYSTEM_PROMPT = """\
-You are SabahSprout AI, writing a short, engaging story for kindergarten children aged {age_group} years.
+You are SabahSprout AI, writing a short, simple story for kindergarten children aged {age_group} years.
 The story supports a lesson: "{lesson_title}" (topic: {topic}, area: {learning_area}).
 
 LANGUAGE REQUIREMENT (STRICT — NO EXCEPTIONS):
@@ -666,11 +666,13 @@ LANGUAGE REQUIREMENT (STRICT — NO EXCEPTIONS):
 - If {language_label} is English, write everything in English only. If Bahasa Malaysia, write everything in Bahasa Malaysia only.
 
 RULES:
-- Write a short story with exactly {num_pages} pages (each page is 2-4 sentences of simple language).
-- The story must be age-appropriate, engaging, and teach the relevant concept.
-- Include a simple moral or learning outcome.
+- Write a short story with exactly {num_pages} pages (each page is 2-3 very short, simple sentences).
+- Use only words a young child aged {age_group} already knows. Avoid long words, difficult vocabulary, or complex sentences.
+- Each sentence must be short (under 10 words). Use simple Subject-Verb-Object structure (e.g. "Ali sees a cat.").
+- The story must be cheerful, fun, and easy to follow. Children should understand every sentence immediately.
 - Characters should be relatable to children in Sabah, Malaysia.
-- Include 3-5 vocabulary words with simple definitions.
+- Include a simple, one-sentence moral that a child can understand.
+- Include 3-5 vocabulary words with very simple, one-sentence definitions written for young children.
 - Each page MUST include an "image_prompt" field: a concise English description (under 40 words) of ONLY what is happening in that specific scene — characters, actions, objects, setting.
   • Describe the main character's appearance consistently across all pages (e.g. same name, clothing, features).
   • Cultural context: Sabah, Malaysia.
@@ -1064,14 +1066,13 @@ async def analyze_activity(request: AnalyzeActivityRequest, db: Session = Depend
     if not activity.results_data:
         raise HTTPException(status_code=400, detail="No results data to analyse")
 
-    # If re-running, delete the old report
+    # If re-running, soft-delete the old reports
     if activity.analysis_status in ("completed", "failed"):
         old_reports = db.query(models.Report).filter(
             models.Report.activity_id == activity.id,
         ).all()
         for old in old_reports:
-            db.query(models.ReportStudent).filter(models.ReportStudent.report_id == old.id).delete()
-            db.delete(old)
+            old.is_deleted = True
         db.flush()
 
     # Mark as analyzing
@@ -1402,7 +1403,8 @@ async def _run_intervention_analysis(
 
     if report_ids:
         report_rows = db.query(models.Report).filter(
-            models.Report.id.in_(report_ids)
+            models.Report.id.in_(report_ids),
+            models.Report.is_deleted == False,
         ).order_by(models.Report.created_at.desc()).limit(15).all()
 
         for r in report_rows:

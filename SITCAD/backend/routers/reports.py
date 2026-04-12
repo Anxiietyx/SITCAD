@@ -200,15 +200,33 @@ async def generate_report(request: CreateReportRequest, db: Session = Depends(ge
 
 @router.post("/my-reports")
 async def list_reports(request: AuthenticatedRequest, db: Session = Depends(get_db)):
-    """List all reports for the authenticated teacher."""
+    """List all reports for the authenticated teacher (excludes soft-deleted)."""
     teacher = _verify_teacher(request.id_token, db)
     reports = (
         db.query(models.Report)
-        .filter(models.Report.teacher_id == teacher.id)
+        .filter(
+            models.Report.teacher_id == teacher.id,
+            models.Report.is_deleted == False,
+        )
         .order_by(models.Report.created_at.desc())
         .all()
     )
     return [_report_to_dict(r, db) for r in reports]
+
+
+@router.post("/{report_id}/delete")
+async def delete_report(report_id: str, request: AuthenticatedRequest, db: Session = Depends(get_db)):
+    """Soft-delete a report so it no longer appears in lists."""
+    teacher = _verify_teacher(request.id_token, db)
+    report = db.query(models.Report).filter(
+        models.Report.id == report_id,
+        models.Report.teacher_id == teacher.id,
+    ).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    report.is_deleted = True
+    db.commit()
+    return {"detail": "Report deleted"}
 
 
 @router.post("/for-student/{student_id}")
@@ -233,7 +251,10 @@ async def list_reports_for_student(student_id: str, request: AuthenticatedReques
 
     reports = (
         db.query(models.Report)
-        .filter(models.Report.id.in_(report_ids))
+        .filter(
+            models.Report.id.in_(report_ids),
+            models.Report.is_deleted == False,
+        )
         .order_by(models.Report.created_at.desc())
         .all()
     )
@@ -263,7 +284,10 @@ async def list_reports_for_parent(request: AuthenticatedRequest, db: Session = D
 
     reports = (
         db.query(models.Report)
-        .filter(models.Report.id.in_(set(report_ids)))
+        .filter(
+            models.Report.id.in_(set(report_ids)),
+            models.Report.is_deleted == False,
+        )
         .order_by(models.Report.created_at.desc())
         .all()
     )
