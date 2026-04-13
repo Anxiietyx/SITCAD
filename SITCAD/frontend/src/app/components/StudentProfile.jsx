@@ -9,6 +9,7 @@ import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { ArrowLeft, Calendar, MapPin, TrendingUp, TrendingDown, Award, AlertCircle, Loader2, Star, GraduationCap, Target, Sparkles, Minus, Brain } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import Duckpit from './Duckpit';
 
 export function StudentProfile() {
   const { studentId } = useParams(); // Removed type annotation
@@ -130,7 +131,12 @@ export function StudentProfile() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-blue-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen relative overflow-hidden bg-slate-50">
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <Duckpit count={30} interactive={false} className="h-full w-full opacity-100" />
+      </div>
+      <div className="absolute inset-0 z-0 bg-linear-to-b from-white/72 via-white/58 to-emerald-50/72" />
+
       {/* Header */}
       <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -152,13 +158,13 @@ export function StudentProfile() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 py-8 space-y-6 relative z-10">
         {/* Student Header */}
         <Card>
           <CardContent className="pt-6">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
               <div
-                className="w-32 h-32 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-3xl font-bold text-white shadow-lg border-4 border-purple-200"
+                className="w-28 h-28 rounded-full bg-linear-to-br from-emerald-200 to-emerald-100 flex items-center justify-center text-3xl font-bold text-black shadow-lg border-4 border-emerald-150"
               >
                 {student.name.charAt(0).toUpperCase()}
               </div>
@@ -272,7 +278,7 @@ export function StudentProfile() {
             {!analysis ? (
               <Card>
                 <CardContent className="py-12 text-center text-muted-foreground">
-                  <Brain className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                  <Brain className="h-8 w-8 mx-auto mb-2 text-emerald-400" />
                   <p className="font-medium">No analysis available yet</p>
                   <p className="text-sm mt-1">AI insights will appear here after the student completes activities.</p>
                 </CardContent>
