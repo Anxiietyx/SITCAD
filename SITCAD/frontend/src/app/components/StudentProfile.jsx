@@ -1,6 +1,7 @@
 import { useParams, useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { auth } from '../lib/firebase';
+import { API_BASE } from '../lib/api';
 import { formatDateTime } from '../lib/utils';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -29,8 +30,8 @@ export function StudentProfile() {
         
         // Determine which endpoint to use based on user role
         const endpoint = user.role === 'teacher' 
-          ? 'http://localhost:8000/teachers/my-students'
-          : 'http://localhost:8000/parents/my-children';
+          ? `${API_BASE}/teachers/my-students`
+          : `${API_BASE}/parents/my-children`;
         
         const res = await fetch(endpoint, {
           method: 'POST',
@@ -50,7 +51,7 @@ export function StudentProfile() {
 
         // Fetch analysis
         try {
-          const analysisRes = await fetch(`http://localhost:8000/ai-integrations/child-analysis/${studentId}`, {
+          const analysisRes = await fetch(`${API_BASE}/ai-integrations/child-analysis/${studentId}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id_token: idToken }),

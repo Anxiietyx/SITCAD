@@ -2,7 +2,7 @@ import { jsPDF } from "jspdf";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 
-const API_BASE = "http://localhost:8000";
+import { API_BASE } from './api';
 
 const CONTENT_FONT = "Comic Sans MS";
 const TEAL = [48, 144, 160]; // #3090A0

@@ -1,6 +1,7 @@
 import { useParams, useNavigate, useLocation } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { auth } from '../lib/firebase';
+import { API_BASE } from '../lib/api';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -47,8 +48,8 @@ export function ProgressTracking() {
       try {
         const idToken = await auth.currentUser.getIdToken();
         const endpoint = user.role === 'teacher'
-          ? 'http://localhost:8000/teachers/my-students'
-          : 'http://localhost:8000/parents/my-children';
+          ? `${API_BASE}/teachers/my-students`
+          : `${API_BASE}/parents/my-children`;
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -76,7 +77,7 @@ export function ProgressTracking() {
   useEffect(() => {
     const fetchDomains = async () => {
       try {
-        const res = await fetch('http://localhost:8000/curriculum/domains');
+        const res = await fetch(`${API_BASE}/curriculum/domains`);
         if (!res.ok) throw new Error('Failed to fetch curriculum');
         const data = await res.json();
         setDomains(data);
@@ -96,8 +97,8 @@ export function ProgressTracking() {
       try {
         const idToken = await auth.currentUser.getIdToken();
         const endpoint = user.role === 'teacher'
-          ? `http://localhost:8000/teachers/student-progress/${studentId}`
-          : `http://localhost:8000/parents/child-progress/${studentId}`;
+          ? `${API_BASE}/teachers/student-progress/${studentId}`
+          : `${API_BASE}/parents/child-progress/${studentId}`;
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -123,7 +124,7 @@ export function ProgressTracking() {
     setSavingScore(scoreKey);
     try {
       const idToken = await auth.currentUser.getIdToken();
-      const res = await fetch('http://localhost:8000/teachers/score', {
+      const res = await fetch(`${API_BASE}/teachers/score`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -153,7 +154,7 @@ export function ProgressTracking() {
     setExpandedDomain(domainKey);
     if (domainDetail[domainKey]) return; // already loaded
     try {
-      const res = await fetch(`http://localhost:8000/curriculum/domains/${domainKey}`);
+      const res = await fetch(`${API_BASE}/curriculum/domains/${domainKey}`);
       if (!res.ok) throw new Error('Failed to fetch domain');
       const data = await res.json();
       setDomainDetail(prev => ({ ...prev, [domainKey]: data }));

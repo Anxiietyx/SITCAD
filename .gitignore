@@ -5,8 +5,6 @@
 *.swp
 *.log
 
-
-
 # Specific Firebase credentials inside the nested path
 SITCAD/frontend/src/firebase/firebase.js
 SITCAD/frontend/src/lib/firebase.js
@@ -37,3 +35,6 @@ SITCAD/backend/routers/__pycache__
 *.sqlite
 *.db
 SITCAD/backend/sitcad-sabahsprout-firebase-adminsdk.json
+SITCAD/frontend/.env.production
+SITCAD/frontend/.env
+SITCAD/backend/.env

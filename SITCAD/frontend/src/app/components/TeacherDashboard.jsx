@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { auth } from '../lib/firebase';
+import { API_BASE } from '../lib/api';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Progress } from './ui/progress';
@@ -34,7 +35,7 @@ export function TeacherDashboard() {
     const fetchStudents = async () => {
       try {
         const idToken = await auth.currentUser.getIdToken();
-        const studentsRes = await fetch('http://localhost:8000/teachers/my-students', {
+        const studentsRes = await fetch(`${API_BASE}/teachers/my-students`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id_token: idToken }),
@@ -54,12 +55,12 @@ export function TeacherDashboard() {
       try {
         const idToken = await auth.currentUser.getIdToken();
         const [interventionsRes, analysesRes] = await Promise.all([
-          fetch('http://localhost:8000/ai-integrations/all-interventions', {
+          fetch(`${API_BASE}/ai-integrations/all-interventions`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id_token: idToken }),
           }),
-          fetch('http://localhost:8000/ai-integrations/all-analyses', {
+          fetch(`${API_BASE}/ai-integrations/all-analyses`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id_token: idToken }),
@@ -88,7 +89,7 @@ export function TeacherDashboard() {
     setIsLoadingUnassigned(true);
     try {
       const idToken = await auth.currentUser.getIdToken();
-      const res = await fetch('http://localhost:8000/teachers/unassigned', {
+      const res = await fetch(`${API_BASE}/teachers/unassigned`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id_token: idToken }),
@@ -107,7 +108,7 @@ export function TeacherDashboard() {
     setIsSubmitting(true);
     try {
       const idToken = await auth.currentUser.getIdToken();
-      const res = await fetch('http://localhost:8000/teachers/assign', {
+      const res = await fetch(`${API_BASE}/teachers/assign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id_token: idToken, student_id: selectedStudentId, classroom }),

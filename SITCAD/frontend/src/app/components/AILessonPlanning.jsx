@@ -71,7 +71,7 @@ import { toast } from "sonner";
 import { lessonReducer, initialState } from "../reducers/lessonReducer";
 import { downloadLessonPlanPDF } from "../lib/downloads";
 
-const API_BASE = "http://localhost:8000";
+import { API_BASE } from '../lib/api';
 
 async function getIdToken() {
   const firebaseUser = auth.currentUser;

@@ -26,7 +26,7 @@ import { toast } from 'sonner';
 import Duckpit from './Duckpit';
 import { reportReducer, initialReportState } from '../reducers/reportReducer';
 
-const API_BASE = 'http://localhost:8000';
+import { API_BASE } from '../lib/api';
 
 const LEARNING_AREA_LABELS = {
   literacy_bm: 'Literacy (BM)',
@@ -176,7 +176,7 @@ export function ReportGeneration() {
       }));
 
     try {
-      const response = await fetch('http://localhost:8000/ai/generate-report', {
+      const response = await fetch(`${API_BASE}/ai/generate-report`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

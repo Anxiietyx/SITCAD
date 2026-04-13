@@ -9,7 +9,7 @@ import { Users, GraduationCap, ShieldCheck, UserPlus, Trash2, RefreshCw, Mail, C
 import { adminReducer, initialState } from '../reducers/adminReducer';
 import Duckpit from './Duckpit';
 
-const API_BASE = 'http://localhost:8000';
+import { API_BASE } from '../lib/api';
 
 export function AdminDashboard() {
   const { user } = useAuth();

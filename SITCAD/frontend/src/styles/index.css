@@ -20,7 +20,7 @@ h1, h2, h3, h4, h5, h6,
 /* Classroom teaching mode delivery — force Comic Sans on every element */
 .comic-delivery,
 .comic-delivery * {
-  font-family: 'Comic Sans MS', 'Comic Sans', 'Chalkboard SE', cursive !important;
+  font-family: 'Comic Neue', 'Comic Sans MS', 'Comic Sans', 'Chalkboard SE', cursive !important;
 }
 
 /* Classroom delivery overlay scale animations */

@@ -323,21 +323,27 @@ def _build_flashcard_image(image_bytes: bytes, label: str) -> bytes:
     bar_h = max(80, int(H * 0.12))
     font_size = max(24, int(bar_h * 0.52))
 
-    # Try Comic Sans MS first, then fall back to other bold sans-serif fonts
+    # Try bundled font first, then common system paths
     font = None
-    for candidate in [
+    # Base path for bundled font
+    import os
+    bundle_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "fonts", "ComicNeue-Bold.ttf")
+    
+    candidates = [
+        bundle_path,
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",   # ← moved up: reliable on Ubuntu/Cloud Run
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
         "/usr/share/fonts/truetype/msttcorefonts/Comic_Sans_MS_Bold.ttf",
         "/usr/share/fonts/truetype/msttcorefonts/comicbd.ttf",
         "/usr/share/fonts/msttcore/comicbd.ttf",
         "C:/Windows/Fonts/comicbd.ttf",
         "/Library/Fonts/Comic Sans MS Bold.ttf",
         "/System/Library/Fonts/Supplemental/Comic Sans MS Bold.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-        "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
         "/System/Library/Fonts/Helvetica.ttc",
         "C:/Windows/Fonts/arialbd.ttf",
-    ]:
+    ]
+    for candidate in candidates:
         try:
             font = ImageFont.truetype(candidate, font_size)
             break

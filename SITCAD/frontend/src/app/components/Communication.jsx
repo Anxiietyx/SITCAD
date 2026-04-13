@@ -13,7 +13,7 @@ import { ArrowLeft, MessageSquare, Send, Inbox, Mail, CheckCircle, Users, Refres
 import { toast } from 'sonner';
 import Duckpit from './Duckpit';
 
-const API_BASE = 'http://localhost:8000';
+import { API_BASE } from '../lib/api';
 
 async function getIdToken() {
   const firebaseUser = auth.currentUser;

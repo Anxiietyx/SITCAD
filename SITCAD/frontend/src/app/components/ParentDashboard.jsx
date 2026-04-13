@@ -2,6 +2,7 @@
 import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { auth } from '../lib/firebase';
+import { API_BASE } from '../lib/api';
 import { formatDateTime } from '../lib/utils';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -35,7 +36,7 @@ export function ParentDashboard() {
     const fetchChildren = async () => {
       try {
         const idToken = await auth.currentUser.getIdToken();
-        const res = await fetch('http://localhost:8000/parents/my-children', {
+        const res = await fetch(`${API_BASE}/parents/my-children`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id_token: idToken }),
@@ -57,7 +58,7 @@ export function ParentDashboard() {
     const fetchReports = async () => {
       try {
         const idToken = await auth.currentUser.getIdToken();
-        const res = await fetch('http://localhost:8000/reports/for-parent', {
+        const res = await fetch(`${API_BASE}/reports/for-parent`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id_token: idToken }),
@@ -81,7 +82,7 @@ export function ParentDashboard() {
         const idToken = await auth.currentUser.getIdToken();
         const results = await Promise.all(
           children.map(child =>
-            fetch(`http://localhost:8000/ai-integrations/child-analysis/${child.id}`, {
+            fetch(`${API_BASE}/ai-integrations/child-analysis/${child.id}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ id_token: idToken }),
@@ -107,7 +108,7 @@ export function ParentDashboard() {
     setIsSubmitting(true);
     try {
       const idToken = await auth.currentUser.getIdToken();
-      const res = await fetch('http://localhost:8000/parents/add-child', {
+      const res = await fetch(`${API_BASE}/parents/add-child`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id_token: idToken, name: newChild.name, age: Number(newChild.age) }),

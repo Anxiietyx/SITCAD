@@ -9,6 +9,7 @@ import {
   sendPasswordResetEmail
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
+import { API_BASE } from '../lib/api';
 
 // ─── DEV BYPASS ──────────────────────────────────────────────────────────────
 // Set to true to skip Firebase + backend auth entirely.
@@ -38,7 +39,7 @@ export function AuthProvider({ children }) {
         try {
           // Fetch real user data from our FastAPI backend
           const idToken = await firebaseUser.getIdToken();
-          const response = await fetch('http://localhost:8000/auth/sync', {
+          const response = await fetch(`${API_BASE}/auth/sync`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id_token: idToken })
@@ -78,7 +79,7 @@ export function AuthProvider({ children }) {
       const firebaseUser = result.user;
       const idToken = await firebaseUser.getIdToken();
 
-      const response = await fetch('http://localhost:8000/auth/sync', {
+      const response = await fetch(`${API_BASE}/auth/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -112,7 +113,7 @@ export function AuthProvider({ children }) {
     if (!firebaseUser) throw new Error('No authenticated user');
 
     const idToken = await firebaseUser.getIdToken();
-    const response = await fetch('http://localhost:8000/auth/update-role', {
+    const response = await fetch(`${API_BASE}/auth/update-role`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id_token: idToken, role })
@@ -146,7 +147,7 @@ export function AuthProvider({ children }) {
       const firebaseUser = result.user;
       const idToken = await firebaseUser.getIdToken();
 
-      const response = await fetch('http://localhost:8000/auth/sync', {
+      const response = await fetch(`${API_BASE}/auth/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id_token: idToken })
@@ -182,7 +183,7 @@ export function AuthProvider({ children }) {
       const body = { id_token: idToken, role, full_name: fullName };
       if (adminSecret) body.admin_secret = adminSecret;
 
-      const response = await fetch('http://localhost:8000/auth/sync', {
+      const response = await fetch(`${API_BASE}/auth/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)

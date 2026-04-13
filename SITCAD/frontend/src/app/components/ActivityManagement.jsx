@@ -68,7 +68,7 @@ import {
 } from "lucide-react";
 
 
-const API_BASE = "http://localhost:8000";
+import { API_BASE } from '../lib/api';
 
 async function getIdToken() {
   const firebaseUser = auth.currentUser;

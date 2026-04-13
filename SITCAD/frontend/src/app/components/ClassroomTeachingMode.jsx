@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const API_BASE = 'http://localhost:8000';
+import { API_BASE } from '../lib/api';
 
 async function getIdToken() {
   const firebaseUser = auth.currentUser;
@@ -51,7 +51,7 @@ const optionColors = [
 ];
 const optionShapes = ['▲', '◆', '●', '■'];
 
-const CONTENT_FONT = { fontFamily: "'Comic Sans MS', 'Comic Sans', 'Chalkboard SE', cursive" };
+const CONTENT_FONT = { fontFamily: "'Comic Neue', 'Comic Sans MS', 'Comic Sans', 'Chalkboard SE', cursive" };
 
 // ─── Quiz Delivery ───────────────────────────────────────────────────
 
@@ -498,7 +498,7 @@ function ImageDelivery({ activity, onComplete }) {
           </div>
         )}
 
-        <h3 className="text-2xl font-bold text-gray-800 mt-4" style={CONTENT_FONT}>{card.label}</h3>
+        <h3 style={{ fontFamily: "'Comic Neue', 'Comic Sans MS', 'Comic Sans', 'Chalkboard SE', cursive", fontSize: '3rem', fontWeight: 'bold', color: '#1f2937', marginTop: '1rem', textAlign: 'center', transform: 'scale(1.2)' }}>{card.label}</h3>
 
         {!showPoint && card.learning_point && (
           <Button variant="outline" onClick={() => setShowPoint(true)}
