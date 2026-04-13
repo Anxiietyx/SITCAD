@@ -5,11 +5,7 @@
 *.swp
 *.log
 
-# --- Environment & Secrets ---
-# Wildcards remain effective regardless of depth
-**/.env
-**/.env.local
-**/.env.*.local
+
 
 # Specific Firebase credentials inside the nested path
 SITCAD/frontend/src/firebase/firebase.js
