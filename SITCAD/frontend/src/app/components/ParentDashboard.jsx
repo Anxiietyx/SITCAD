@@ -140,7 +140,7 @@ export function ParentDashboard() {
   return (
     <div className="min-h-screen relative overflow-hidden bg-slate-50">
       <div className="absolute inset-0 z-0 pointer-events-none">
-        <Duckpit count={15} interactive={false} className="h-full w-full opacity-100" />
+        <Duckpit count={30} interactive={false} className="h-full w-full opacity-100" />
       </div>
       <div className="absolute inset-0 z-0 bg-linear-to-b from-white/72 via-white/58 to-emerald-50/72" />
 
@@ -150,7 +150,7 @@ export function ParentDashboard() {
           <div className="max-w-6xl mx-auto px-6 py-4">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-semibold">Parent Dashboard</h1>
+                <h1 className="text-3xl font-semibold">Parent Dashboard</h1>
                 <p className="text-sm text-muted-foreground mt-1">
                   Welcome back, {user.name}!
                 </p>
@@ -161,7 +161,7 @@ export function ParentDashboard() {
 
       <main className="relative z-10 max-w-7xl mx-auto px-4 py-8 space-y-8">
         {/* Welcome Message */}
-        <Card className="bg-linear-to-r bg-slate-50 shadow-lg border-slate-200">
+        <Card className="border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle}>
           <CardHeader>
             <CardTitle className="text-black">Your Child's Learning Journey</CardTitle>
             <CardDescription className="text-muted-foreground">
@@ -250,9 +250,9 @@ export function ParentDashboard() {
           <Card className="border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle}>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>My Children</CardTitle>
+                <CardTitle></CardTitle>
                 <CardDescription>
-                  Click on a child to view their profile and learning progress
+                <CardTitle className="text-black">Click on a child to view their profile and learning progress</CardTitle>
                 </CardDescription>
               </div>
               <Dialog open={addChildOpen} onOpenChange={setAddChildOpen}>
@@ -292,7 +292,6 @@ export function ParentDashboard() {
                           <SelectItem value="4">4</SelectItem>
                           <SelectItem value="5">5</SelectItem>
                           <SelectItem value="6">6</SelectItem>
-                          <SelectItem value="7">7</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -345,7 +344,7 @@ export function ParentDashboard() {
                       <CardHeader>
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="w-14 h-14 rounded-full bg-green-200 flex items-center justify-center text-xl font-bold text-green-700">
+                            <div className="w-14 h-14 rounded-full bg-emerald-200 flex items-center justify-center text-xl font-bold text-black-500">
                               {child.name.charAt(0)}
                             </div>
                             <div>

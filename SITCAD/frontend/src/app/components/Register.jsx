@@ -53,7 +53,10 @@ export function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4 sm:p-6 lg:p-8">
+    <div
+      className="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8"
+      style={{ background: 'linear-gradient(160deg, #ACFCD9 0%, #ffffff 65%, #FFF5F9 80%, #FFFDE7 100%)' }}
+    >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -69,9 +72,9 @@ export function Register() {
           <div className="relative z-10">
             <button
               onClick={() => navigate('/')}
-              className="flex items-center text-sm font-medium opacity-90 hover:opacity-100 transition-opacity mb-12"
+              className="flex items-center text-lg md:text-3xl font-medium opacity-90 hover:opacity-100 transition-opacity mb-12 cursor-pointer"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
+              <ArrowLeft className="w-6 h-6 mr-4" />
               Home Page
             </button>
 
@@ -94,13 +97,13 @@ export function Register() {
             </div>
 
             <div className="text-center space-y-4 w-full">
-              <p className="text-sm opacity-90">Already have an account?</p>
+              <p className="text-lg md:text-1xl opacity-90">Already have an account?</p>
               <Button
                 variant="outline"
                 className="w-full border-white text-white bg-white/10 hover:bg-white hover:text-[#3090A0] transition-all rounded-lg py-6 font-semibold cursor-pointer"
                 onClick={() => navigate('/login')}
               >
-                Log in
+              <div className="text-lg md:text-1xl">Log in</div>
               </Button>
             </div>
           </div>
