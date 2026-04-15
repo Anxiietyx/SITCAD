@@ -6,6 +6,7 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
+import Duckpit from './Duckpit';
 import {
   ArrowLeft, Play, CheckCircle2, Users, Clock, Book, Calculator, Palette, Brain,
   Activity as ActivityIcon, Trophy, RotateCcw, ChevronRight, ChevronLeft, Star,
@@ -233,7 +234,7 @@ function QuizDelivery({ activity, onComplete }) {
         </div>
         <h2 className="text-3xl font-bold text-gray-800">Quiz Complete!</h2>
         <div>
-          <p className="text-sm text-muted-foreground mb-1">Correct on first try</p>
+          <p className="text-base text-semibold mb-1">Correct on first try</p>
           <div className="inline-flex items-baseline gap-1">
             <span className="text-6xl font-black text-blue-600">{firstCorrectCount}</span>
             <span className="text-2xl text-muted-foreground font-semibold">/ {questions.length}</span>
@@ -264,10 +265,10 @@ function QuizDelivery({ activity, onComplete }) {
            : '📚 Keep learning! You got them all in the end!'}
         </p>
         <div className="flex gap-3 pt-2">
-          <Button variant="outline" onClick={handleRestart} className="flex-1 border-blue-200 text-blue-700 hover:bg-blue-50 cursor-pointer" size="lg">
+          <Button variant="outline" onClick={handleRestart} className="text-lg font-mediumn flex-1 border-blue-200 text-blue-700 hover:bg-blue-50 cursor-pointer" size="lg">
             <RotateCcw className="mr-2 h-4 w-4" /> Play Again
           </Button>
-          <Button onClick={handleFinish} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white cursor-pointer" size="lg">
+          <Button onClick={handleFinish} className=" text-lg font-medium flex-1 bg-blue-600 hover:bg-blue-700 text-white cursor-pointer" size="lg">
             <CheckCircle2 className="mr-2 h-4 w-4" /> Finish Activity
           </Button>
         </div>
@@ -283,8 +284,8 @@ function QuizDelivery({ activity, onComplete }) {
   return (
     <div className="space-y-5">
       <div className="flex items-center gap-3">
-        <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">{completedCount} / {questions.length}</span>
-        <Progress value={(completedCount / questions.length) * 100} className="h-2 flex-1" />
+        <span className="text-base font-semibold text-muted-foreground whitespace-nowrap">{completedCount} / {questions.length}</span>
+        <Progress value={(completedCount / questions.length) * 100} className="h-3 flex-1" />
         {streak >= 2 && (
           <Badge className="bg-yellow-400 text-yellow-900 border-yellow-500 animate-pulse">
             <Star className="h-3 w-3 mr-1" />{streak} streak!
@@ -353,7 +354,7 @@ function QuizDelivery({ activity, onComplete }) {
              : `❌ Not quite! The answer is "${currentQ.options[currentQ.correct_answer]}". You'll see this again.`}
           </div>
           {currentQ.explanation && <p className="text-sm text-muted-foreground text-center italic" style={CONTENT_FONT}>{currentQ.explanation}</p>}
-          <Button onClick={nextQuestion} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold cursor-pointer" size="lg">
+          <Button onClick={nextQuestion} className="text-base font-medium w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold cursor-pointer" size="lg">
             {isLastAndCorrect
               ? <><Trophy className="mr-2 h-5 w-5" /> See Results</>
               : <><ChevronRight className="mr-2 h-5 w-5" /> Next Question</>}
@@ -467,8 +468,8 @@ function ImageDelivery({ activity, onComplete }) {
           <CheckCircle2 className="h-10 w-10 text-orange-600" />
         </div>
         <h2 className="text-3xl font-bold text-gray-800">All Flashcards Viewed!</h2>
-        <p className="text-lg text-muted-foreground">{cards.length} cards completed</p>
-        <Button onClick={handleFinish} className="bg-orange-500 hover:bg-orange-600 text-white cursor-pointer" size="lg">
+        <p className="text-2xl text-semibold">{cards.length} cards completed</p>
+        <Button onClick={handleFinish} className="text-lg font-medium bg-orange-500 hover:bg-orange-600 text-white cursor-pointer" size="lg">
           <CheckCircle2 className="mr-2 h-4 w-4" /> Finish Activity
         </Button>
       </div>
@@ -481,8 +482,8 @@ function ImageDelivery({ activity, onComplete }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">{cardIdx + 1} / {cards.length}</span>
-        <Progress value={((cardIdx + 1) / cards.length) * 100} className="h-2 flex-1" />
+        <span className="text-base font-semibold text-muted-foreground whitespace-nowrap">{cardIdx + 1} / {cards.length}</span>
+        <Progress value={((cardIdx + 1) / cards.length) * 100} className="h-3 flex-1" />
       </div>
 
       <div className="flex flex-col items-center">
@@ -490,7 +491,7 @@ function ImageDelivery({ activity, onComplete }) {
           <img
             src={card.image_url || `data:image/png;base64,${card.image_b64}`}
             alt={card.label}
-            className="w-full max-w-lg rounded-xl shadow-lg aspect-square object-cover"
+            className="w-full max-w-sm rounded-xl shadow-lg aspect-square object-cover"
           />
         ) : (
           <div className="w-full max-w-sm aspect-square bg-orange-50 rounded-xl flex items-center justify-center border-2 border-dashed border-orange-200">
@@ -502,22 +503,22 @@ function ImageDelivery({ activity, onComplete }) {
 
         {!showPoint && card.learning_point && (
           <Button variant="outline" onClick={() => setShowPoint(true)}
-            className="mt-3 border-orange-200 text-orange-700 hover:bg-orange-50 cursor-pointer">
+            className="mt-3 text-base font-semibold border-orange-200 text-orange-700 hover:bg-orange-50 cursor-pointer">
             Reveal Learning Point
           </Button>
         )}
         {showPoint && card.learning_point && (
-          <p className="mt-3 text-base text-gray-600 bg-orange-50 px-4 py-3 rounded-lg border border-orange-200 max-w-sm text-center animate-in fade-in duration-300" style={CONTENT_FONT}>
+          <p className="mt-3 text-2xl font-semibold text-gray-600 bg-orange-50 px-4 py-3 rounded-lg border border-orange-200 max-w-sm text-center animate-in fade-in duration-300" style={CONTENT_FONT}>
             {card.learning_point}
           </p>
         )}
       </div>
 
       <div className="flex gap-3">
-        <Button variant="outline" onClick={goPrev} disabled={cardIdx === 0} className="flex-1 cursor-pointer">
+        <Button variant="outline" onClick={goPrev} disabled={cardIdx === 0} className="flex-1 cursor-pointer text-base font-medium">
           <ChevronLeft className="mr-2 h-4 w-4" /> Previous
         </Button>
-        <Button onClick={goNext} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white cursor-pointer">
+        <Button onClick={goNext} className="text-base flex-1 bg-orange-500 hover:bg-orange-600 text-white cursor-pointer font-medium">
           {cardIdx + 1 >= cards.length
             ? <><CheckCircle2 className="mr-2 h-4 w-4" /> Finish</>
             : <><ChevronRight className="mr-2 h-4 w-4" /> Next Card</>}
@@ -665,7 +666,7 @@ function StoryDelivery({ activity, onComplete }) {
   return (
     <div className="space-y-7">
       <div className="flex items-center gap-4">
-        <span className="text-lg font-semibold text-muted-foreground whitespace-nowrap" style={CONTENT_FONT}>Page {pageIdx + 1} / {pages.length}</span>
+        <span className="text-base font-semibold text-muted-foreground whitespace-nowrap" style={CONTENT_FONT}>Page {pageIdx + 1} / {pages.length}</span>
         <Progress value={((pageIdx + 1) / pages.length) * 100} className="h-3 flex-1" />
       </div>
 
@@ -845,13 +846,15 @@ export function ClassroomTeachingMode() {
     : 'bg-emerald-600';
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-50">
-      <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
+    <div className="relative min-h-screen overflow-hidden print:min-h-0">
+      <div className="absolute inset-0 z-0 bg-linear-to-b from-white/72 via-white/58 to-emerald-50/72" />
+    <div className="relative z-10">
+      <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm print:hidden">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-8 h-8 bg-[#bafde0] rounded-lg flex items-center justify-center">
-                <Users className="w-4 h-4 text-black" />
+              <div className="w-12 h-12 bg-[#bafde0] rounded-lg flex items-center justify-center">
+                <Users className="w-8 h-8 text-black" />
               </div>
               <div>
                 <h1 className="text-2xl font-semibold">Classroom Teaching Mode</h1>
@@ -865,7 +868,7 @@ export function ClassroomTeachingMode() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+      <main className="max-w-7xl mx-auto px-6 py-8 min-h-[80vh] space-y-6">
         {/* Progress Overview */}
         <Card>
           <CardHeader>
@@ -916,7 +919,7 @@ export function ClassroomTeachingMode() {
               return (
                 <Card key={activity.id} className={`border-2 transition-colors ${
                   isActive ? typeMeta.activeCard :
-                  isCompleted ? 'border-green-300 bg-green-50/50' :
+                  isCompleted ? 'border-gray-400 bg-gray-100' :
                   'border-gray-200 hover:border-gray-300'
                 }`}>
                   <CardHeader className="pb-3">
@@ -971,7 +974,11 @@ export function ClassroomTeachingMode() {
                           <><Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" /><span>Analysing results…</span></>
                         )}
                         {activity.analysis_status === 'completed' && (
-                          <><Sparkles className="h-3.5 w-3.5 shrink-0" /><span>Insights ready — view in Reports</span></>
+                          <><Sparkles className="h-3.5 w-3.5 shrink-0" /><span>Insights ready — view in <button
+                    onClick={() => navigate('/teacher/reports')}
+                    className="hover:underline text-sm"
+                  > Report
+                  </button></span></>
                         )}
                         {activity.analysis_status === 'failed' && (
                           <><AlertCircle className="h-3.5 w-3.5 shrink-0" /><span>Analysis failed</span>
@@ -1053,6 +1060,8 @@ export function ClassroomTeachingMode() {
         </Card>
       </main>
 
+    </div>
+
       {/* Activity Delivery — full-screen overlay */}
       {activityPopupOpen && activeActivity && (
         <div
@@ -1067,7 +1076,7 @@ export function ClassroomTeachingMode() {
           }}
         >
           {/* Header bar */}
-          <div className={`${headerColor} px-8 py-5 flex items-center justify-between shrink-0`}>
+          <div className={`${headerColor} px-8 py-4 flex items-center justify-between shrink-0 shadow-sm`}>
             <div className="flex items-center gap-3">
               {(() => {
                 const meta = ACTIVITY_TYPE_META[activeActivity.activity_type];
@@ -1086,7 +1095,7 @@ export function ClassroomTeachingMode() {
             </Button>
           </div>
           {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto"> 
             <div className="max-w-6xl mx-auto px-2 py-10 comic-delivery">
               {renderDelivery()}
             </div>

@@ -286,13 +286,15 @@ export function ReportGeneration() {
 
   if (viewingReport) {
     return (
-      <div className="min-h-screen print:min-h-0">
+    <div className="relative min-h-screen overflow-hidden print:min-h-0">
+      <div className="absolute inset-0 z-0 bg-linear-to-b from-white/72 via-white/58 to-emerald-50/72" />
+      <div className="relative z-10">
         <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm print:hidden">
           <div className="max-w-7xl mx-auto px-6 py-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="w-8 h-8 bg-[#bafde0] rounded-lg flex items-center justify-center">
-                  <FileText className="w-4 h-4 text-black" />
+                <div className="w-12 h-12 bg-[#bafde0] rounded-lg flex items-center justify-center">
+                  <FileText className="w-8 h-8 text-black" />
                 </div>
                 <div>
                   <h1 className="text-2xl font-semibold">Report Details</h1>
@@ -307,13 +309,13 @@ export function ReportGeneration() {
           </div>
         </header>
 
-        <main className="max-w-7xl mx-auto px-4 py-8">
-          <Card className="shadow-md border">
-            <CardHeader className="bg-[#edfff8] rounded-t-lg pb-5">
+        <main className="max-w-7xl mx-auto px-6 py-8 min-h-[80vh]">
+          <Card className="border-2 border-indigo-200 shadow-md">
+            <CardHeader className="bg-linear-to-r from-indigo-100 to-purple-100">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <CardTitle className="flex items-center">{viewingReport.title}</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <CardTitle className="flex items-center gap-2 text-xl font-semibold">{viewingReport.title}</CardTitle>
+                  <p className="text-sm text-gray-700 mb-6">
                     {new Date(viewingReport.created_at).toLocaleString()}
                   </p>
                 </div>
@@ -417,7 +419,7 @@ export function ReportGeneration() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <Target className="h-4 w-4 text-blue-600" />
-                        <p className="text-base font-semibold text-gray-800">SPR Attainment Levels</p>
+                        <p className="text-lg font-semibold text-gray-800">SPR Attainment Levels</p>
                       </div>
                       {/* {viewingReport.students?.length > 0 && (
                         <Button
@@ -443,7 +445,7 @@ export function ReportGeneration() {
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-sm font-semibold text-gray-800">{spr.spr_code}</span>
                             <div className="flex items-center gap-2">
-                              <Badge className={`text-xs ${
+                              <Badge className={`text-sm ${
                                 spr.suggested_level === 3 ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
                                 : spr.suggested_level === 2 ? 'bg-blue-100 text-blue-700 border-blue-200'
                                 : 'bg-amber-100 text-amber-700 border-amber-200'
@@ -456,7 +458,7 @@ export function ReportGeneration() {
                                 ) : (
                                   <Button
                                     size="sm"
-                                    className="h-6 px-2.5 text-xs bg-[#3090A0] hover:bg-[#2FBFA5] text-white print:hidden cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="h-6 px-2.5 text-sm bg-[#3090A0] hover:bg-[#2FBFA5] text-white print:hidden cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                     disabled={anySaving}
                                     onClick={() => openSprSaveModal(spr.spr_code, spr.suggested_level, spr.spr_title)}
                                   >
@@ -467,8 +469,8 @@ export function ReportGeneration() {
                               )}
                             </div>
                           </div>
-                          <p className="text-xs text-muted-foreground">{spr.spr_title}</p>
-                          <p className="text-xs text-gray-600 mt-1">{spr.justification}</p>
+                          <p className="text-sm font-semibold text-muted-foreground">{spr.spr_title}</p>
+                          <p className="text-sm text-gray-600 mt-1">{spr.justification}</p>
                         </div>
                       );
                     })}
@@ -480,7 +482,7 @@ export function ReportGeneration() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-1.5">
                       <AlertTriangle className="h-4 w-4 text-amber-600" />
-                      <p className="text-base font-semibold text-gray-800">Flagged Observations</p>
+                      <p className="text-lg font-semibold text-gray-800">Flagged Observations</p>
                     </div>
                     {ins.interventions.map((item, i) => (
                       <div key={i} className={`p-3 rounded-lg border text-sm ${
@@ -605,12 +607,12 @@ export function ReportGeneration() {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {viewingReport.students.map(s => (
                   <div key={s.id} className="flex items-center gap-2 p-2 border rounded">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs font-semibold text-blue-600">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-sm font-semibold text-blue-600">
                       {s.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
                       <p className="text-sm font-medium">{s.name}</p>
-                      <p className="text-xs text-muted-foreground">Age {s.age}</p>
+                      <p className="text-sm text-muted-foreground">Age {s.age}</p>
                     </div>
                   </div>
                 ))}
@@ -749,19 +751,22 @@ export function ReportGeneration() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="relative min-h-screen overflow-hidden print:min-h-0">
+      <div className="absolute inset-0 z-0 bg-linear-to-b from-white/72 via-white/58 to-emerald-50/72" />
+      <div className="relative z-10">
       {/* Header */}
-      <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
+      <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm print:hidden">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-8 h-8 bg-[#bafde0] rounded-lg flex items-center justify-center">
-                <FileText className="w-4 h-4 text-black" />
+              <div className="w-12 h-12 bg-[#bafde0] rounded-lg flex items-center justify-center">
+                <FileText className="w-8 h-8 text-black" />
               </div>
               <div>
                 <h1 className="text-2xl font-semibold">Reports</h1>
@@ -778,7 +783,7 @@ export function ReportGeneration() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+      <main className="max-w-7xl mx-auto px-6 py-8 min-h-[80vh]">
         {/* Generate Reports Card */}
         {/* <Card className="border-2 border-[#bafde0] shadow-md">
           <CardHeader className="bg-[#edfff8] rounded-t-lg pb-5">
@@ -897,17 +902,17 @@ export function ReportGeneration() {
         </Card> */}
 
         {/* Past Activity Reports Card */}
-        <Card className="border-2 border-[#bafde0] shadow-md">
-          <CardHeader className="bg-[#edfff8] rounded-t-lg pb-5">
-            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+        <Card className="border-2 border-indigo-200 shadow-md">
+          <CardHeader className="bg-linear-to-r from-indigo-100 to-purple-100">
+            <CardTitle className="flex items-center gap-2 text-xl font-semibold">
               <FileText className="h-5 w-5 text-green-600" />
               Activity Reports ({pastReports.length})
             </CardTitle>
-            <CardDescription>View and print past reports</CardDescription>
+            <CardDescription className="text-sm text-gray-700 mb-6">View and print past reports</CardDescription>
           </CardHeader>
           <CardContent>
             {loadingReports ? (
-              <div className="space-y-3 py-2">
+              <div className="space-y-3">
                 {[...Array(3)].map((_, i) => (
                   <div key={i} className="p-4 border rounded-lg space-y-2 animate-pulse">
                     <div className="h-4 bg-gray-200 rounded w-1/2" />
@@ -932,7 +937,7 @@ export function ReportGeneration() {
                     onClick={() => setViewingReport(report)}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium">{report.title}</p>
+                      <p className="text-lg font-serif font-semibold">{report.title}</p>
                       <p className="text-sm text-muted-foreground mt-1 line-clamp-1">
                         {report.summary}
                       </p>
@@ -1094,6 +1099,7 @@ export function ReportGeneration() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+     </div>
     </div>
   );
 }
