@@ -132,12 +132,13 @@ export function StudentProfile() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-slate-50">
+    <div className="relative min-h-screen relative overflow-hidden bg-slate-50">
       <div className="absolute inset-0 z-0 pointer-events-none">
         <Duckpit count={30} interactive={false} className="h-full w-full opacity-100" />
       </div>
       <div className="absolute inset-0 z-0 bg-linear-to-b from-white/72 via-white/58 to-emerald-50/72" />
 
+      <div className="relative z-10">
       {/* Header */}
       <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm print:hidden">
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -487,6 +488,7 @@ export function StudentProfile() {
           </TabsContent>
         </Tabs>
       </main>
+      </div>
     </div>
   );
 }
