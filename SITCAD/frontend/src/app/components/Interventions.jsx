@@ -23,11 +23,6 @@ import {
   RefreshCw,
   Lightbulb,
   Users,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  GraduationCap,
-  Star,
   Brain,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -46,7 +41,6 @@ export function Interventions() {
   const navigate = useNavigate();
 
   const [interventions, setInterventions] = useState([]);
-  const [analyses, setAnalyses] = useState([]);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [generatingFor, setGeneratingFor] = useState(null);
@@ -59,7 +53,7 @@ export function Interventions() {
   const fetchData = useCallback(async () => {
     try {
       const idToken = await getIdToken();
-      const [interventionsRes, studentsRes, analysesRes] = await Promise.all([
+      const [interventionsRes, studentsRes] = await Promise.all([
         fetch(`${API_BASE}/ai-integrations/all-interventions`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -70,15 +64,9 @@ export function Interventions() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id_token: idToken }),
         }),
-        fetch(`${API_BASE}/ai-integrations/all-analyses`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id_token: idToken }),
-        }),
       ]);
       if (interventionsRes.ok) setInterventions(await interventionsRes.json());
       if (studentsRes.ok) setStudents(await studentsRes.json());
-      if (analysesRes.ok) setAnalyses(await analysesRes.json());
     } catch (error) {
       console.error("Error fetching interventions:", error);
     } finally {
@@ -269,6 +257,14 @@ export function Interventions() {
             Created: {formatDateTime(intervention.created_at)}
           </span>
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="px-3 cursor-pointer"
+              onClick={() => navigate(`/teacher/student/${intervention.student_id}`, { state: { from: 'interventions' } })}
+            >
+              View Profile
+            </Button>
             {intervention.status === "pending" && (
               <Button
                 size="sm"
@@ -363,6 +359,48 @@ export function Interventions() {
       <main className="max-w-7xl mx-auto px-6 py-8 min-h-[80vh] space-y-6">
         {loading ? renderSkeleton() : (
           <>
+            {/* Statistics */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="stats-card-shade border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu">
+                <CardHeader className="pb-1">
+                  <CardDescription className="stats-label">Pending Review</CardDescription>
+                  <CardTitle className="text-6xl">{pendingInterventions.length}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center text-sm text-red-600">
+                    <Clock className="mr-5 h-10 w-10" />
+                    Needs teacher review
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="stats-card-shade border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu">
+                <CardHeader className="pb-1">
+                  <CardDescription className="stats-label">Active Interventions</CardDescription>
+                  <CardTitle className="text-6xl">{inProgressInterventions.length}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center text-sm text-orange-600">
+                    <Target className="mr-5 h-10 w-10" />
+                    Support currently ongoing
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="stats-card-shade border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu">
+                <CardHeader className="pb-1">
+                  <CardDescription className="stats-label">Successful Interventions</CardDescription>
+                  <CardTitle className="text-6xl">{resolvedInterventions.length}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center text-sm text-green-600">
+                    <CheckCircle className="mr-5 h-10 w-10" />
+                    Student progress improved
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
             {/* Student quick-run section */}
             <Card className="dashboard-card-shade border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu">
               <CardHeader className="flex flex-row items-center justify-between">
@@ -414,171 +452,6 @@ export function Interventions() {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Statistics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="stats-card-shade border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu">
-                <CardHeader className="pb-1">
-                  <CardDescription className="stats-label">Pending Review</CardDescription>
-                  <CardTitle className="text-6xl">{pendingInterventions.length}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center text-sm text-red-600">
-                    <Clock className="mr-5 h-10 w-10" />
-                    Needs teacher review
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="stats-card-shade border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu">
-                <CardHeader className="pb-1">
-                  <CardDescription className="stats-label">Active Interventions</CardDescription>
-                  <CardTitle className="text-6xl">{inProgressInterventions.length}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center text-sm text-orange-600">
-                    <Target className="mr-5 h-10 w-10" />
-                    Support currently ongoing
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="stats-card-shade border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu">
-                <CardHeader className="pb-1">
-                  <CardDescription className="stats-label">Successful Interventions</CardDescription>
-                  <CardTitle className="text-6xl">{resolvedInterventions.length}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center text-sm text-green-600">
-                    <CheckCircle className="mr-5 h-10 w-10" />
-                    Student progress improved
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Student Analysis Cards */}
-            {analyses.length > 0 && (
-              <Card className="dashboard-card-shade border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle className="text-xl font-semibold flex items-center gap-2">
-                      <Brain className="h-5 w-5 text-[#3090A0]" />
-                      Student Analyses
-                    </CardTitle>
-                    <CardDescription>
-                      Latest analysis per student — improvement tracking, inclinations, and school readiness.
-                    </CardDescription>
-                  </div>
-                  <Button variant="outline" size="sm" className="cursor-pointer" onClick={fetchData}>
-                    <RefreshCw className="h-4 w-4 mr-1" /> Refresh
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {analyses.map((analysis) => (
-                    <Card key={analysis.id} className="border-2 shadow-sm">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center text-sm font-bold text-green-700">
-                              {(analysis.student_name || "?").charAt(0)}
-                            </div>
-                            <CardTitle className="text-lg">
-                              {analysis.student_name || "Student"}
-                            </CardTitle>
-                            {analysis.student_age && (
-                              <Badge variant="outline" className="text-xs">Age {analysis.student_age}</Badge>
-                            )}
-                          </div>
-                          {analysis.improvement_data?.trend && (
-                            <Badge className={`gap-1 ${
-                              analysis.improvement_data.trend === 'improving' ? 'bg-green-100 text-green-700 border-green-200' :
-                              analysis.improvement_data.trend === 'declining' ? 'bg-red-100 text-red-700 border-red-200' :
-                              analysis.improvement_data.trend === 'stable' ? 'bg-blue-100 text-blue-700 border-blue-200' :
-                              'bg-gray-100 text-gray-700 border-gray-200'
-                            }`}>
-                              {analysis.improvement_data.trend === 'improving' && <TrendingUp className="h-3 w-3" />}
-                              {analysis.improvement_data.trend === 'declining' && <TrendingDown className="h-3 w-3" />}
-                              {analysis.improvement_data.trend === 'stable' && <Minus className="h-3 w-3" />}
-                              {analysis.improvement_data.trend === 'insufficient_data' && <Brain className="h-3 w-3" />}
-                              {analysis.improvement_data.trend.replace('_', ' ')}
-                            </Badge>
-                          )}
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        {/* Overall Summary */}
-                        {analysis.overall_summary && (
-                          <p className="text-sm text-muted-foreground">{analysis.overall_summary}</p>
-                        )}
-
-                        {/* Improvement Details */}
-                        {analysis.improvement_data?.details && (
-                          <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                            <p className="text-xs font-medium text-blue-900 mb-1 flex items-center gap-1">
-                              <TrendingUp className="h-3 w-3" /> Improvement Tracking
-                            </p>
-                            <p className="text-xs text-blue-800">{analysis.improvement_data.details}</p>
-                          </div>
-                        )}
-
-                        {/* Inclinations */}
-                        {analysis.inclinations?.length > 0 && (
-                          <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
-                            <p className="text-xs font-medium text-purple-900 mb-1 flex items-center gap-1">
-                              <Star className="h-3 w-3" /> Strengths & Inclinations
-                            </p>
-                            <ul className="space-y-1">
-                              {analysis.inclinations.map((inc, i) => (
-                                <li key={i} className="text-xs text-purple-800">
-                                  <span className="font-medium">{inc.area}:</span> {inc.observation}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {/* School Readiness */}
-                        {analysis.school_readiness && (
-                          <div className={`p-3 rounded-lg border ${
-                            analysis.school_readiness.level === 'ready' ? 'bg-green-50 border-green-200' :
-                            analysis.school_readiness.level === 'almost_ready' ? 'bg-yellow-50 border-yellow-200' :
-                            'bg-red-50 border-red-200'
-                          }`}>
-                            <p className="text-xs font-medium mb-1 flex items-center gap-1">
-                              <GraduationCap className="h-3 w-3" /> Primary School Readiness
-                              <Badge className={`ml-1 text-xs px-2 py-0 ${
-                                analysis.school_readiness.level === 'ready' ? 'bg-green-200 text-green-800' :
-                                analysis.school_readiness.level === 'almost_ready' ? 'bg-yellow-200 text-yellow-800' :
-                                'bg-red-200 text-red-800'
-                              }`}>
-                                {analysis.school_readiness.level?.replace('_', ' ')}
-                              </Badge>
-                            </p>
-                            <p className="text-xs">{analysis.school_readiness.assessment}</p>
-                          </div>
-                        )}
-
-                        {/* Footer */}
-                        <div className="flex items-center justify-between pt-2 border-t text-xs text-muted-foreground">
-                          <span>Analysed: {formatDateTime(analysis.created_at)}</span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 text-xs cursor-pointer"
-                            onClick={() => navigate(`/teacher/student/${analysis.student_id}`, { state: { from: 'interventions' } })}
-                          >
-                            View Profile
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-                </CardContent>
-              </Card>
-            )}
 
             {/* Interventions Tabs */}
             <Card className="dashboard-card-shade border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu">
