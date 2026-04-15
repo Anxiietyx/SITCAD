@@ -31,43 +31,18 @@ const Duckpit = ({
 
     useEffect(() => {
         const container = sceneRef.current;
+        if (!container) return undefined;
 
-        if (!container) {
-            return undefined;
-        }
-
-        const {
-            Engine,
-            Render,
-            Runner,
-            MouseConstraint,
-            Mouse,
-            Composite,
-            Bodies,
-            Events,
-        } = Matter;
+        const { Engine, Render, Runner, MouseConstraint, Mouse, Composite, Bodies, Events } = Matter;
 
         let render;
         let runner;
         let resizeFrame;
-        let fallTimeout;
-        let fallInterval;
 
         const cleanupScene = () => {
-            // Clean up timers to prevent React strict-mode memory leaks
-            if (fallTimeout) clearTimeout(fallTimeout);
-            if (fallInterval) clearInterval(fallInterval);
-
-            if (resizeFrame) {
-                cancelAnimationFrame(resizeFrame);
-                resizeFrame = undefined;
-            }
-            if (render) {
-                Render.stop(render);
-            }
-            if (runner) {
-                Runner.stop(runner);
-            }
+            if (resizeFrame) cancelAnimationFrame(resizeFrame);
+            if (render) Render.stop(render);
+            if (runner) Runner.stop(runner);
             if (engineRef.current) {
                 Events.off(engineRef.current); 
                 Composite.clear(engineRef.current.world, false);
@@ -82,15 +57,13 @@ const Duckpit = ({
         const createScene = () => {
             const width = container.clientWidth;
             const height = container.clientHeight;
-
             if (!width || !height) return;
 
             cleanupScene();
 
             const engine = Engine.create();
-            // Keep global gravity at 0. We will apply custom gravity later.
+            // Zero gravity so they don't naturally fall
             engine.world.gravity.y = 0;
-            engine.world.gravity.x = 0;
             engineRef.current = engine;
 
             render = Render.create({
@@ -105,20 +78,9 @@ const Duckpit = ({
                 },
             });
 
-            render.canvas.style.position = 'absolute';
-            render.canvas.style.inset = '0';
-            render.canvas.style.width = '100%';
-            render.canvas.style.height = '100%';
-            render.canvas.style.pointerEvents = interactive ? 'auto' : 'none';
-            render.canvas.style.opacity = '1';
-
+            // Boundary Walls
             const wallThickness = 80;
-            const wallOptions = {
-                isStatic: true,
-                restitution: 0.4, // Lower bounce so they settle nicely when they fall
-                render: { visible: false },
-            };
-
+            const wallOptions = { isStatic: true, render: { visible: false } };
             Composite.add(engine.world, [
                 Bodies.rectangle(width / 2, height + wallThickness / 2, width + wallThickness * 2, wallThickness, wallOptions), 
                 Bodies.rectangle(width / 2, -wallThickness / 2, width + wallThickness * 2, wallThickness, wallOptions), 
@@ -131,14 +93,14 @@ const Duckpit = ({
                 const texturePath = DEFAULT_DUCK_IMAGES[Math.floor(Math.random() * DEFAULT_DUCK_IMAGES.length)];
                 const texture = `${import.meta.env.BASE_URL}${texturePath.replace(/^\//, '')}`;
 
-                const duck = Bodies.circle(
-                    Math.random() * Math.max(width - radius * 2, radius * 2) + radius,
-                    Math.random() * Math.max(height - radius * 2, radius * 2) + radius, 
+                return Bodies.circle(
+                    Math.random() * (width - radius * 2) + radius,
+                    Math.random() * (height - radius * 2) + radius, 
                     radius,
                     {
                         friction: 0.1,
-                        frictionAir: 0.04, // High air friction for the initial float
-                        restitution: 0.5,
+                        frictionAir: 0.02, // Slightly reduced for better dragging feel
+                        restitution: 0.8,   // Bouncy ducks!
                         render: {
                             sprite: {
                                 texture,
@@ -146,73 +108,36 @@ const Duckpit = ({
                                 yScale: (radius * 2) / 280,
                             },
                         },
-                    },
+                    }
                 );
-                
-                // Add a custom property to track if this specific duck has started falling
-                duck.isFalling = false;
-                return duck;
             });
 
             Composite.add(engine.world, ducks);
 
-            // Apply forces on every frame update
+            // Apply constant floating/drifting force
             Events.on(engine, 'beforeUpdate', () => {
                 const time = engine.timing.timestamp * 0.001; 
-                
                 ducks.forEach((duck, i) => {
-                    if (!duck.isFalling) {
-                        // 1. FLOATING STATE: Apply organic drifting forces
-                        const forceMagnitude = 0.00004 * duck.mass; 
-                        Matter.Body.applyForce(duck, duck.position, {
-                            x: Math.cos(time * 0.5 + i) * forceMagnitude,
-                            y: Math.sin(time * 0.7 + i * 1.5) * forceMagnitude,
-                        });
-                    } else {
-                        // 2. FALLING STATE: Apply simulated gravity
-                        // Gradually reduce air friction so they drop faster once falling
-                        if (duck.frictionAir > 0.01) {
-                            Matter.Body.set(duck, 'frictionAir', duck.frictionAir - 0.001);
-                        }
-                        
-                        // Apply a constant downward force equivalent to gravity
-                        const gravityForce = 0.0015 * duck.mass;
-                        Matter.Body.applyForce(duck, duck.position, {
-                            x: 0,
-                            y: gravityForce
-                        });
-                    }
+                    // This force creates the "floating in water" effect
+                    const forceMagnitude = 0.00003 * duck.mass; 
+                    Matter.Body.applyForce(duck, duck.position, {
+                        x: Math.cos(time * 0.5 + i) * forceMagnitude,
+                        y: Math.sin(time * 0.7 + i * 1.5) * forceMagnitude,
+                    });
                 });
             });
-
-            // --- THE TRANSITION LOGIC ---
-            // Wait 5 seconds, then start dropping them one by one
-            fallTimeout = setTimeout(() => {
-                let currentDuckIndex = 0;
-                
-                // Drop one duck every 250 milliseconds
-                fallInterval = setInterval(() => {
-                    if (currentDuckIndex < ducks.length) {
-                        ducks[currentDuckIndex].isFalling = true;
-                        currentDuckIndex++;
-                    } else {
-                        // Stop the interval once all ducks are falling
-                        clearInterval(fallInterval);
-                    }
-                }, 250); // Adjust this timing to make the stagger faster or slower
-                
-            }, 2000); 
 
             if (interactive) {
                 const mouse = Mouse.create(render.canvas);
                 const mouseConstraint = MouseConstraint.create(engine, {
                     mouse,
                     constraint: {
-                        stiffness: 0.1, 
+                        stiffness: 0.2, // Increased stiffness for more direct dragging
                         render: { visible: false },
                     },
                 });
 
+                // Prevents the mouse wheel from scrolling the page when interacting with ducks
                 mouseConstraint.mouse.element.removeEventListener('mousewheel', mouseConstraint.mouse.mousewheel);
                 mouseConstraint.mouse.element.removeEventListener('DOMMouseScroll', mouseConstraint.mouse.mousewheel);
 
@@ -240,38 +165,9 @@ const Duckpit = ({
     }, [count, interactive]);
 
     return (
-        <div
-            ref={sceneRef}
-            className={className}
-            style={{ width: '100%', height: '100%', overflow: 'hidden', position: 'relative' }}
-        >
+        <div ref={sceneRef} className={className} style={{ width: '100%', height: '100%', overflow: 'hidden', position: 'relative' }}>
+            {/* Background elements remain the same */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.16),transparent_42%),radial-gradient(circle_at_bottom,rgba(59,130,246,0.12),transparent_38%)]" />
-            <div className="absolute inset-0 overflow-hidden opacity-55">
-                {FALLBACK_DUCKS.map((duck, index) => (
-                    <img
-                        key={`${duck.image}-${index}`}
-                        src={`${import.meta.env.BASE_URL}${duck.image.replace(/^\//, '')}`}
-                        alt=""
-                        aria-hidden="true"
-                        className="absolute top-full select-none object-contain"
-                        style={{
-                            left: duck.left,
-                            width: `${duck.size}px`,
-                            height: `${duck.size}px`,
-                            animation: `duckpitFloat ${duck.duration} linear ${duck.delay} infinite`,
-                            filter: 'drop-shadow(0 18px 22px rgba(15, 23, 42, 0.12))',
-                        }}
-                    />
-                ))}
-            </div>
-            <style>{`
-                @keyframes duckpitFloat {
-                    0% { transform: translate3d(0, 18vh, 0) rotate(-8deg); opacity: 0; }
-                    12% { opacity: 0.75; }
-                    50% { transform: translate3d(18px, -36vh, 0) rotate(6deg); opacity: 0.9; }
-                    100% { transform: translate3d(-14px, -118vh, 0) rotate(-10deg); opacity: 0; }
-                }
-            `}</style>
         </div>
     );
 };
