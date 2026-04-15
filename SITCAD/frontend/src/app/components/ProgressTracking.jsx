@@ -201,12 +201,12 @@ export function ProgressTracking() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
       {/* Header */}
-      <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
+      <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm print:hidden">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-8 h-8 bg-[#bafde0] rounded-lg flex items-center justify-center">
-                <BookOpen className="w-4 h-4 text-black" />
+              <div className="w-12 h-12 bg-[#bafde0] rounded-lg flex items-center justify-center">
+                <BookOpen className="w-8 h-8 text-black" />
               </div>
               <div>
                 <h1 className="text-2xl font-semibold">{student.name}'s Progress Report</h1>
@@ -223,7 +223,7 @@ export function ProgressTracking() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-8 space-y-6">
+      <main className="max-w-7xl mx-auto px-6 py-8 min-h-[80vh] space-y-6">
         {/* Curriculum Domains */}
         {isLoadingDomains ? (
           <div className="text-center py-12">
@@ -244,16 +244,16 @@ export function ProgressTracking() {
                 <Card className="border-2 border-[#bafde0] bg-[#edfff8]">
                   <CardContent className="pt-5 pb-4">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-base font-semibold">Overall SPR Progress</p>
+                      <p className="text-lg font-semibold">Overall SPR Progress</p>
                       <span className="text-sm font-semibold text-green-700">{filledSpr} / {totalSpr} filled ({pct}%)</span>
                     </div>
                     <Progress value={pct} className="h-3" />
-                    <p className="text-xs text-muted-foreground mt-2">SPR = Standard Prestasi — assessment rubrics across all learning domains</p>
+                    <p className="text-sm text-muted-foreground mt-2">SPR = Standard Prestasi — assessment rubrics across all learning domains</p>
                   </CardContent>
                 </Card>
               );
             })()}
-            <h2 className="text-lg font-semibold">Tunjang Pembelajaran (Learning Domains)</h2>
+            <h2 className="mt-10 text-xl font-semibold">Tunjang Pembelajaran (Learning Domains)</h2>
             {domains.map(domain => {
               const config = domainConfig[domain.key] || defaultConfig;
               const Icon = config.icon;
@@ -276,10 +276,10 @@ export function ProgressTracking() {
                           <Icon className={`h-5 w-5 ${isExpanded ? 'text-white' : config.text}`} />
                         </div>
                         <div>
-                          <CardTitle className={`text-base ${isExpanded ? 'text-white' : ''}`}>
+                          <CardTitle className={`text-lg font-semibold ${isExpanded ? 'text-white' : ''}`}>
                             {domain.domain}
                           </CardTitle>
-                          <CardDescription className={`text-sm mt-0.5 ${isExpanded ? 'text-white/80' : ''}`}>
+                          <CardDescription className={`text-base mt-0.5 ${isExpanded ? 'text-white/80' : ''}`}>
                             {domain.domain_identifier} — {domain.description?.skills?.length || 0} Kemahiran
                           </CardDescription>
                         </div>
@@ -287,7 +287,7 @@ export function ProgressTracking() {
                       <div className="flex items-center gap-3">
                         {filledDomainSpr !== null && totalDomainSpr > 0 && (
                           <div className="text-right">
-                            <span className={`text-xs font-semibold ${isExpanded ? 'text-white/90' : filledDomainSpr === totalDomainSpr ? 'text-green-600' : 'text-muted-foreground'}`}>
+                            <span className={`text-sm font-semibold ${isExpanded ? 'text-white/90' : filledDomainSpr === totalDomainSpr ? 'text-green-600' : 'text-muted-foreground'}`}>
                               {filledDomainSpr}/{totalDomainSpr} filled
                             </span>
                             <div className={`h-1.5 w-20 rounded-full mt-1 ${isExpanded ? 'bg-white/30' : 'bg-gray-200'}`}>
@@ -315,11 +315,11 @@ export function ProgressTracking() {
                       {/* Focus areas */}
                       {domain.description?.focus?.length > 0 && (
                         <div>
-                          <h4 className="font-medium mb-2 text-sm">Fokus Pembelajaran</h4>
+                          <h4 className="font-semibold mb-2 text-base">Fokus Pembelajaran</h4>
                           <ul className="space-y-1">
                             {domain.description.focus.map((f, i) => (
                               <li key={i} className="flex items-start gap-2 text-sm">
-                                <span className={`mt-1.5 w-1.5 h-1.5 rounded-full ${config.badge.split(' ')[0]} shrink-0`} />
+                                <span className={`mt-1.5 w-2 h-2 rounded-full border border-emerald-700 ${config.badge.split(' ')[0]} shrink-0`} />
                                 {f}
                               </li>
                             ))}
@@ -330,7 +330,7 @@ export function ProgressTracking() {
                       {/* Skills overview */}
                       {domain.description?.skills?.length > 0 && (
                         <div>
-                          <h4 className="font-medium mb-2 text-sm">Kemahiran (Skills)</h4>
+                          <h4 className="font-semibold mb-2 text-base">Kemahiran (Skills)</h4>
                           <div className="flex flex-wrap gap-2">
                             {domain.description.skills.map(skill => (
                               <Badge key={skill.kn_code} variant="outline" className={config.badge}>
@@ -344,32 +344,32 @@ export function ProgressTracking() {
                       {/* Detailed content — Standard Kemahiran & Standard Pembelajaran */}
                       {detail ? (
                         <div className="space-y-4">
-                          <h4 className="font-medium text-sm">Standard Kemahiran (SK) & Standard Pembelajaran (SPE)</h4>
+                          <h4 className="font-semibold text-base">Standard Kemahiran (SK) & Standard Pembelajaran (SPE)</h4>
                           <Accordion type="multiple" className="space-y-2">
                             {detail.domain_content?.map((kn, idx, arr) => (
                               <AccordionItem key={kn.kn_code} value={kn.kn_code} className={`border rounded-lg ${idx === arr.length - 1 ? 'border-b-2' : ''}`}>
-                                <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                                <AccordionTrigger className="px-4 py-3 hover:no-underline border border-emerald-700">
                                   <div className="flex items-center gap-2 text-left">
                                     <Badge variant="outline" className={config.badge}>{kn.kn_code}</Badge>
                                     <span className="font-medium text-sm">{kn.kn_title}</span>
                                   </div>
                                 </AccordionTrigger>
-                                <AccordionContent className="px-4 pb-4">
+                                <AccordionContent className="mt-5 px-4 pb-4">
                                   <div className="space-y-4">
                                     {kn.kn_component_sks?.map((sk) => (
                                       <div key={sk.sk_code} className={`p-4 rounded-lg border ${config.border} ${config.bg}`}>
-                                        <div className="flex items-start gap-2 mb-3">
+                                        <div className="flex items-start gap-2">
                                           <Badge className={`${config.badge} shrink-0`}>{sk.sk_code}</Badge>
-                                          <p className="font-medium text-sm">{sk.sk_title}</p>
+                                          <p className="font-medium text-base">{sk.sk_title}</p>
                                         </div>
                                         <div className="space-y-2 ml-2">
                                           {sk.sk_component_spes?.map((spe) => (
-                                            <div key={spe.spe_code} className="flex items-start gap-2 text-sm bg-white/80 rounded p-2 border border-white">
-                                              <span className="text-xs font-mono text-muted-foreground shrink-0 mt-0.5">{spe.spe_code}</span>
+                                            <div key={spe.spe_code} className="mt-2 flex items-start gap-2 text-sm bg-white/80 rounded p-2 border border-gray/400">
+                                              <span className="text-sm font-mono text-muted-foreground shrink-0 mt-0.5">{spe.spe_code}</span>
                                               <div>
-                                                <p>{spe.spe_title}</p>
+                                                <p className='ml-5 font-medium'>{spe.spe_title}</p>
                                                 {spe.spe_note && (
-                                                  <p className="text-xs text-muted-foreground mt-1 italic">{spe.spe_note}</p>
+                                                  <p className="ml-5 text-sm font-mono text-muted-foreground mt-1 italic">{spe.spe_note}</p>
                                                 )}
                                               </div>
                                             </div>
@@ -385,21 +385,21 @@ export function ProgressTracking() {
 
                           {/* Performance Standards */}
                           {detail.performance_metrics?.length > 0 && (
-                            <div className="space-y-3">
-                              <h4 className="font-medium text-sm">Standard Prestasi (SPR) — Assessment Rubrics</h4>
+                            <div className="mt-10 space-y-3">
+                              <h4 className="font-semibold text-base">Standard Prestasi (SPR) — Assessment Rubrics</h4>
                               {detail.performance_metrics.map(spr => {
                                 const scoreKey = `${domain.key}::${spr.spr_code}`;
                                 const currentLevel = scores[scoreKey] || null;
                                 const isSaving = savingScore === scoreKey;
 
                                 return (
-                                  <Card key={spr.spr_code} className={`border ${config.border}`}>
+                                  <Card key={spr.spr_code} className={`border-3 ${config.border}`}>
                                     <CardHeader className="pb-2">
                                       <div className="flex items-start gap-2">
                                         <Badge className={config.badge}>{spr.spr_code}</Badge>
-                                        <CardTitle className="text-sm font-medium">{spr.spr_title}</CardTitle>
+                                        <CardTitle className="text-base font-semibold">{spr.spr_title}</CardTitle>
                                       </div>
-                                      <CardDescription className="text-xs">
+                                      <CardDescription className="text-sm ml-0.5">
                                         Covers: {spr.spr_component_sks?.join(', ')}
                                       </CardDescription>
                                     </CardHeader>
@@ -414,7 +414,7 @@ export function ProgressTracking() {
                                               className={`flex items-start gap-3 p-2 rounded-lg border transition-all ${
                                                 isSelected
                                                   ? 'bg-green-50 border-green-300'
-                                                  : 'border-transparent'
+                                                  : 'border-2'
                                               } ${isTeacher ? 'cursor-pointer hover:bg-gray-50' : ''}`}
                                               onClick={() => {
                                                 if (isTeacher && !isSaving) {
@@ -442,10 +442,10 @@ export function ProgressTracking() {
                                         })}
                                       </div>
                                       {!currentLevel && user.role === 'teacher' && (
-                                        <p className="text-xs text-muted-foreground mt-2 italic">Click a level above to score this student.</p>
+                                        <p className="text-sm text-muted-foreground mt-2 italic">Click a level above to score this student.</p>
                                       )}
                                       {!currentLevel && user.role === 'parent' && (
-                                        <p className="text-xs text-muted-foreground mt-2 italic">Not yet scored by teacher.</p>
+                                        <p className="text-sm text-muted-foreground mt-2 italic">Not yet scored by teacher.</p>
                                       )}
                                     </CardContent>
                                   </Card>

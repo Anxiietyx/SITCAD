@@ -226,10 +226,10 @@ export function Interventions() {
       <CardContent className="space-y-4">
         {/* Concern */}
         <div className="p-4 bg-orange-50 rounded-lg border-2 border-orange-200">
-          <p className="text-lg font-medium text-orange-900 mb-1">
+          <p className="text-base font-medium text-orange-900 mb-1">
             Concern Identified:
           </p>
-          <p className="text-base text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             {intervention.concern}
           </p>
         </div>
@@ -237,10 +237,10 @@ export function Interventions() {
         {/* AI Reasoning */}
         {intervention.ai_reasoning && (
           <div className="p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
-            <p className="text-lg font-medium text-blue-900 mb-1 flex items-center gap-2">
+            <p className="text-base font-medium text-blue-900 mb-1 flex items-center gap-2">
               <Sparkles className="h-4 w-4" /> AI Reasoning:
             </p>
-            <p className="text-base text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               {intervention.ai_reasoning}
             </p>
           </div>
@@ -249,10 +249,10 @@ export function Interventions() {
         {/* Recommended Actions */}
         {intervention.recommended_actions && intervention.recommended_actions.length > 0 && (
           <div>
-            <p className="text-lg font-medium mb-3">Recommended Actions:</p>
+            <p className="text-base font-medium mb-3">Recommended Actions:</p>
             <ul className="space-y-3">
               {intervention.recommended_actions.map((action, index) => (
-                <li key={index} className="flex items-start gap-2 text-base">
+                <li key={index} className="flex items-start gap-2 text-sm">
                   <div className="w-5 h-5 rounded-full bg-green-300 text-black-600 flex items-center justify-center text-xs font-medium shrink-0 mt-1">
                     {index + 1}
                   </div>
@@ -336,20 +336,16 @@ export function Interventions() {
   );
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-50">
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <Duckpit count={24} gravity={0.5} friction={0.9975} wallBounce={0.9} className="h-full w-full opacity-100" />
-      </div>
+    <div className="relative min-h-screen overflow-hidden print:min-h-0">
       <div className="absolute inset-0 z-0 bg-linear-to-b from-white/72 via-white/58 to-emerald-50/72" />
-
       <div className="relative z-10">
       {/* Header */}
-      <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
+      <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm print:hidden">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-8 h-8 bg-[#bafde0] rounded-lg flex items-center justify-center">
-                <AlertTriangle className="w-4 h-4 text-black" />
+              <div className="w-12 h-12 bg-[#bafde0] rounded-lg flex items-center justify-center">
+                <AlertTriangle className="w-8 h-8 text-black" />
               </div>
               <div>
                 <h1 className="text-2xl font-semibold">AI-Powered Student Interventions</h1>
@@ -364,14 +360,14 @@ export function Interventions() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+      <main className="max-w-7xl mx-auto px-6 py-8 min-h-[80vh] space-y-6">
         {loading ? renderSkeleton() : (
           <>
             {/* Student quick-run section */}
             <Card className="dashboard-card-shade border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu">
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="text-xl font-semibold flex items-center gap-2">
                     <Brain className="h-5 w-5 text-[#3090A0]" />
                     Run Intervention Analysis
                   </CardTitle>
@@ -385,7 +381,7 @@ export function Interventions() {
                   {students.map((student) => (
                     <Card
                       key={student.id}
-                      className={`cursor-pointer border-2 hover:shadow-lg transition-shadow ${generatingFor === student.id ? "border-blue-300 animate-pulse" : student.needs_intervention ? "border-yellow-300" : "border-white/70"}`}
+                      className={`cursor-pointer border-2 hover:shadow-lg transition-shadow ${generatingFor === student.id ? "border-blue-300 animate-pulse" : student.needs_intervention ? "border-yellow-300" : "border-gray/70"}`}
                       onClick={() => generatingFor ? null : handleGenerateForStudent(student.id)}
                     >
                       <CardContent className="pt-5 text-center">
@@ -466,7 +462,7 @@ export function Interventions() {
               <Card className="dashboard-card-shade border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu">
                 <CardHeader className="flex flex-row items-center justify-between">
                   <div>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="text-xl font-semibold flex items-center gap-2">
                       <Brain className="h-5 w-5 text-[#3090A0]" />
                       Student Analyses
                     </CardTitle>
@@ -587,7 +583,7 @@ export function Interventions() {
             {/* Interventions Tabs */}
             <Card className="dashboard-card-shade border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="text-xl font-semibold flex items-center gap-2">
                   <Target className="h-5 w-5 text-[#3090A0]" />
                   Intervention List
                 </CardTitle>

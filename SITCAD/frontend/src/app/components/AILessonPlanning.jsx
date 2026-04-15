@@ -336,26 +336,16 @@ export function AILessonPlanning() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-50">
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <Duckpit
-          count={24}
-          gravity={0.5}
-          friction={0.9975}
-          wallBounce={0.9}
-          className="h-full w-full opacity-100"
-        />
-      </div>
+    <div className="relative min-h-screen overflow-hidden print:min-h-0">
       <div className="absolute inset-0 z-0 bg-linear-to-b from-white/72 via-white/58 to-emerald-50/72" />
-
       <div className="relative z-10">
         {/* Header */}
-        <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm">
+        <header className="bg-white/80 border-b shadow-sm sticky top-0 z-20 backdrop-blur-sm print:hidden">
           <div className="max-w-7xl mx-auto px-6 py-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="w-8 h-8 bg-[#bafde0] rounded-lg flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-black" />
+                <div className="w-12 h-12 bg-[#bafde0] rounded-lg flex items-center justify-center">
+                  <Sparkles className="w-8 h-8 text-black" />
                 </div>
                 <div>
                   <h1 className="text-2xl font-semibold">
@@ -378,7 +368,7 @@ export function AILessonPlanning() {
           </div>
         </header>
 
-        <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+        <main className="max-w-7xl mx-auto px-6 py-8 min-h-[80vh]">
           <Tabs
             value={activeTab}
             onValueChange={setActiveTab}
@@ -396,9 +386,10 @@ export function AILessonPlanning() {
             {/* ══════════════════════════════════════════════════════════
               TAB 1: GENERATOR  (form → generating → review)
               ══════════════════════════════════════════════════════════ */}
-            <TabsContent value="generator" className="space-y-6">
+            <TabsContent value="generator" className="space-y-6 min-h-[500px]">
               {/* ─── STEP I: INPUT FORM ─── */}
               {state.step === "form" && (
+              <div className="space-y-4">
                 <Card className="border-2 border-indigo-200 shadow-md">
                   <CardHeader className="bg-linear-to-r from-indigo-100 to-purple-100">
                     <CardTitle className="flex items-center gap-2 text-lg font-semibold">
@@ -718,6 +709,7 @@ export function AILessonPlanning() {
                     </Button>
                   </CardContent>
                 </Card>
+                </div>
               )}
 
               {/* ─── STEP III: GENERATING (mascot loading) ─── */}
@@ -1496,7 +1488,7 @@ export function AILessonPlanning() {
             {/* ══════════════════════════════════════════════════════════
               TAB 2: MY PLANS LIST
               ══════════════════════════════════════════════════════════ */}
-            <TabsContent value="list" className="space-y-6">
+            <TabsContent value="list" className="space-y-6 min-h-[600px]">
               {/* Detail view of a saved plan */}
               {viewingPlan ? (
                 <div className="space-y-4 animate-in fade-in duration-500">
@@ -1848,10 +1840,10 @@ export function AILessonPlanning() {
                 </div>
               ) : (
                 /* Plans list */
-                <Card>
-                  <CardHeader>
-                    <CardTitle>My Plans</CardTitle>
-                    <CardDescription>
+                <Card className="border-2 border-indigo-200 shadow-md">
+                  <CardHeader className="bg-linear-to-r from-indigo-100 to-purple-100">
+                    <CardTitle className="flex items-center gap-2 text-xl font-semibold">My Plans</CardTitle>
+                    <CardDescription className="text-sm text-gray-700 mb-2">
                       Click a plan to view details
                     </CardDescription>
                   </CardHeader>
@@ -1885,7 +1877,7 @@ export function AILessonPlanning() {
                             onClick={() => { setViewingPlan(plan); setViewingWeekTab(0); }}
                           >
                             <div>
-                              <p className="font-medium">{plan.title}</p>
+                              <p className="text-lg font-semibold font-serif">{plan.title}</p>
                               <div className="flex gap-2 mt-1">
                                 <Badge
                                   variant="outline"
@@ -1942,7 +1934,7 @@ export function AILessonPlanning() {
             </TabsContent>
           </Tabs>
         </main>
-      </div>
+        </div>
     </div>
   );
 }

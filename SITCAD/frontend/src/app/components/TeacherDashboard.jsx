@@ -17,8 +17,7 @@ export function TeacherDashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  if (!user) return null;
-
+  const [sortOption, setSortOption] = useState("default");
   const [students, setStudents] = useState([]);
   const [isLoadingStudents, setIsLoadingStudents] = useState(true);
   const [interventionCount, setInterventionCount] = useState(0);
@@ -29,6 +28,11 @@ export function TeacherDashboard() {
   const [classroom, setClassroom] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingUnassigned, setIsLoadingUnassigned] = useState(false);
+  const [filterAge, setFilterAge] = useState("all");
+  const [filterClass, setFilterClass] = useState("all");
+
+  // ✅ AFTER all hooks
+  if (!user) return null;
 
   // Fetch teacher's students and intervention count on mount
   useEffect(() => {
@@ -156,6 +160,21 @@ export function TeacherDashboard() {
     }
   };
 
+  const filteredStudents = students.filter(s => {
+  const matchAge = filterAge === "all" || s.age.toString() === filterAge;
+  const matchClass = filterClass === "all" || s.classroom === filterClass;
+  return matchAge && matchClass;
+  });
+
+  const finalStudents = [...filteredStudents].sort((a, b) => {
+    if (sortOption === "age") return a.age - b.age;
+    if (sortOption === "class") return (a.classroom || "").localeCompare(b.classroom || "");
+    return 0;
+  });
+
+  const uniqueAges = [...new Set(students.map(s => s.age))];
+  const uniqueClasses = [...new Set(students.map(s => s.classroom).filter(Boolean))];
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-slate-50">
       <div className="absolute inset-0 z-0 pointer-events-none">
@@ -184,7 +203,7 @@ export function TeacherDashboard() {
           </div>
         </header>
 
-        <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+        <main className="max-w-7xl mx-auto px-6 py-8 min-h-[80vh] space-y-6">
           {/* Quick Action Cards */}
           {/* <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
             <Card className="cursor-pointer border-white shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle} onClick={() => navigate('/teacher/activities')}>
@@ -227,9 +246,9 @@ export function TeacherDashboard() {
 
           {/* Statistics Overview */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card className="border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={statsCardShadeStyle}>
+            <Card className="border-black/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={statsCardShadeStyle}>
               <CardHeader className="pb-1">
-                <CardDescription className="stats-label">Total Students</CardDescription>
+                <CardDescription className="text-lg font-semibold stats-label">Total Students</CardDescription>
                 <CardTitle className="text-6xl">{classroomStats.totalStudents}</CardTitle>
               </CardHeader>
               <CardContent>
@@ -240,9 +259,9 @@ export function TeacherDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={statsCardShadeStyle}>
+            <Card className="border-black/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={statsCardShadeStyle}>
               <CardHeader className="pb-1">
-                <CardDescription className="stats-label">Average Progress</CardDescription>
+                <CardDescription className="text-lg font-semibold stats-label">Average Progress</CardDescription>
                 <CardTitle className="text-6xl">{classroomStats.averageProgress}%</CardTitle>
               </CardHeader>
               <CardContent>
@@ -253,9 +272,9 @@ export function TeacherDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={statsCardShadeStyle}>
+            <Card className="border-black/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={statsCardShadeStyle}>
               <CardHeader className="pb-1">
-                <CardDescription className="stats-label">On Track</CardDescription>
+                <CardDescription className="text-lg font-semibold stats-label">On Track</CardDescription>
                 <CardTitle className="text-6xl">{classroomStats.onTrack}</CardTitle>
               </CardHeader>
               <CardContent>
@@ -266,9 +285,9 @@ export function TeacherDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={statsCardShadeStyle}>
+            <Card className="border-black/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={statsCardShadeStyle}>
               <CardHeader className="pb-1">
-                <CardDescription className="stats-label">Needs Support</CardDescription>
+                <CardDescription className="text-lg font-semibold stats-label">Needs Support</CardDescription>
                 <CardTitle className="text-6xl">{classroomStats.needingSupport}</CardTitle>
               </CardHeader>
               <CardContent>
@@ -287,10 +306,10 @@ export function TeacherDashboard() {
 
           {/* AI Insights Summary */}
           {analyses.length > 0 && (
-            <Card className="border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle}>
+            <Card className="border-black/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle}>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="text-xl font-semibold flex items-center gap-2">
                     <Sparkles className="h-5 w-5 text-amber-500" />
                     AI Insights
                   </CardTitle>
@@ -312,7 +331,7 @@ export function TeacherDashboard() {
                   {analyses.slice(0, 6).map(a => (
                     <div
                       key={a.id}
-                      className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                      className="p-4 border-2 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors"
                       onClick={() => navigate(`/teacher/student/${a.student_id}`)}
                     >
                       <div className="flex items-center justify-between mb-1">
@@ -355,21 +374,52 @@ export function TeacherDashboard() {
           )}
 
           {/* All Students */}
-          <Card className="border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle}>
+          <Card className="border-black/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle}>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>My Students</CardTitle>
+                <CardTitle className='text-xl font-semibold'>My Students</CardTitle>
                 <CardDescription>
                   Click on a student to view their profile and learning progress
                 </CardDescription>
               </div>
-              <Button
-                className="bg-[#3090A0] hover:bg-[#2FBFA5] text-white gap-2 cursor-pointer"
-                onClick={handleOpenAssignDialog}
-              >
-                <UserPlus className="h-4 w-4" />
-                Add Student
-              </Button>
+
+              {/* RIGHT SIDE CONTROLS */}
+              <div className="flex items-center gap-3">
+                <p>Filter By:</p>
+                  {/* AGE FILTER */}
+                  <select
+                    className="border rounded-md px-3 py-2 text-sm cursor-pointer"
+                    value={filterAge}
+                    onChange={(e) => setFilterAge(e.target.value)}
+                  >
+                    <option value="all">All Ages</option>
+                    {uniqueAges.map(age => (
+                      <option key={age} value={age}>Age {age}</option>
+                    ))}
+                  </select>
+
+                  {/* CLASS FILTER */}
+                  <select
+                    className="border rounded-md px-3 py-2 text-sm cursor-pointer"
+                    value={filterClass}
+                    onChange={(e) => setFilterClass(e.target.value)}
+                  >
+                    <option value="all">All Classes</option>
+                    {uniqueClasses.map(cls => (
+                      <option key={cls} value={cls}>{cls}</option>
+                    ))}
+                  </select>
+
+                  {/* ADD BUTTON */}
+                  <Button
+                    className="bg-[#3090A0] hover:bg-[#2FBFA5] text-white gap-2 cursor-pointer"
+                    onClick={handleOpenAssignDialog}
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    Add Student
+                  </Button>
+              </div>
+
               <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
                 <DialogContent className="max-w-lg">
                   <DialogHeader>
@@ -469,12 +519,22 @@ export function TeacherDashboard() {
                   <p className="text-sm text-muted-foreground">No students assigned yet.</p>
                   <p className="text-xs text-muted-foreground">Click "Add Student" to assign students registered by parents.</p>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {students.map(student => (
+              ) : finalStudents.length === 0 ? (
+                  <div className="text-center py-8 space-y-2">
+                    <Users className="h-8 w-8 mx-auto text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">
+                      No students match the selected filters.
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Try selecting a different age or class.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {finalStudents.map(student => (
                     <Card
                       key={student.id}
-                      className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu pb-4"
+                      className="cursor-pointer border-gray/80 shadow-md hover:shadow-lg transition-shadow transform-gpu pb-4"
                       style={dashboardCardShadeStyle}
                       onClick={() => navigate(`/teacher/student/${student.id}`)}
                     >
