@@ -88,6 +88,11 @@ export function TeacherDashboard() {
 
   const needsAttention = students.filter(s => s.needs_intervention);
 
+  // Calculate trend-based metrics from analyses
+  const improving = analyses.filter(a => a.improvement_data?.trend === 'improving').length;
+  const steady = analyses.filter(a => a.improvement_data?.trend === 'stable').length;
+  const declining = analyses.filter(a => a.improvement_data?.trend === 'declining').length;
+
   const handleOpenAssignDialog = async () => {
     setAssignDialogOpen(true);
     setIsLoadingUnassigned(true);
@@ -132,9 +137,10 @@ export function TeacherDashboard() {
   };
   const classroomStats = {
     totalStudents: students.length,
-    averageProgress: 0,
+    improving,
+    steady,
+    declining,
     needingSupport: interventionCount || needsAttention.length,
-    onTrack: 0,
   };
 
   const statsCardShadeOpacity = 0.92;
@@ -204,48 +210,8 @@ export function TeacherDashboard() {
         </header>
 
         <main className="max-w-7xl mx-auto px-6 py-8 min-h-[80vh] space-y-6">
-          {/* Quick Action Cards */}
-          {/* <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            <Card className="cursor-pointer border-white shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle} onClick={() => navigate('/teacher/activities')}>
-              <CardContent className="pt-6 text-center">
-                <Calendar className="h-8 w-8 mx-auto mb-2 text-[#3090A0]" />
-                <p className="text-sm font-medium">Activities</p>
-              </CardContent>
-            </Card>
-            <Card className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle} onClick={() => navigate('/teacher/ai-lesson-planning')}>
-              <CardContent className="pt-6 text-center">
-                <Sparkles className="h-8 w-8 mx-auto mb-2 text-[#3090A0]" />
-                <p className="text-sm font-medium">AI Lessons</p>
-              </CardContent>
-            </Card>
-            <Card className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle} onClick={() => navigate('/teacher/reports')}>
-              <CardContent className="pt-6 text-center">
-                <FileText className="h-8 w-8 mx-auto mb-2 text-[#3090A0]" />
-                <p className="text-sm font-medium">Reports</p>
-              </CardContent>
-            </Card>
-            <Card className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle} onClick={() => navigate('/teacher/communication')}>
-              <CardContent className="pt-6 text-center">
-                <MessageSquare className="h-8 w-8 mx-auto mb-2 text-[#3090A0]" />
-                <p className="text-sm font-medium">Messages</p>
-              </CardContent>
-            </Card>
-            <Card className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle} onClick={() => navigate('/teacher/classroom-mode')}>
-              <CardContent className="pt-6 text-center">
-                <Monitor className="h-8 w-8 mx-auto mb-2 text-[#3090A0]" />
-                <p className="text-sm font-medium">Classroom</p>
-              </CardContent>
-            </Card>
-            <Card className="cursor-pointer border-white/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={dashboardCardShadeStyle} onClick={() => navigate('/teacher/ai-analysis')}>
-              <CardContent className="pt-6 text-center">
-                <Brain className="h-8 w-8 mx-auto mb-2 text-[#3090A0]" />
-                <p className="text-sm font-medium">AI Analysis</p>
-              </CardContent>
-            </Card>
-          </div> */}
-
-          {/* Statistics Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Statistics Overview - Classroom Health Pulse */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <Card className="border-black/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={statsCardShadeStyle}>
               <CardHeader className="pb-1">
                 <CardDescription className="text-lg font-semibold stats-label">Total Students</CardDescription>
@@ -254,50 +220,63 @@ export function TeacherDashboard() {
               <CardContent>
                 <div className="flex items-center text-sm text-[#3090A0]">
                   <Users className="mr-5 h-10 w-10" />
-                  Active learners
+                  All learners
                 </div>
               </CardContent>
             </Card>
 
             <Card className="border-black/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={statsCardShadeStyle}>
               <CardHeader className="pb-1">
-                <CardDescription className="text-lg font-semibold stats-label">Average Progress</CardDescription>
-                <CardTitle className="text-6xl">{classroomStats.averageProgress}%</CardTitle>
+                <CardDescription className="text-lg font-semibold stats-label">Improving</CardDescription>
+                <CardTitle className="text-6xl text-green-600">{classroomStats.improving}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center text-sm text-[#3090A0]">
+                <div className="flex items-center text-sm text-green-600">
                   <TrendingUp className="mr-5 h-10 w-10" />
-                  Class performance
+                  Positive trend
                 </div>
               </CardContent>
             </Card>
 
             <Card className="border-black/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={statsCardShadeStyle}>
               <CardHeader className="pb-1">
-                <CardDescription className="text-lg font-semibold stats-label">On Track</CardDescription>
-                <CardTitle className="text-6xl">{classroomStats.onTrack}</CardTitle>
+                <CardDescription className="text-lg font-semibold stats-label">Steady</CardDescription>
+                <CardTitle className="text-6xl text-gray-600">{classroomStats.steady}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center text-sm text-[#3090A0]">
-                  <TrendingUp className="mr-5 h-10 w-10" />
-                  Meeting milestones
+                <div className="flex items-center text-sm text-gray-600">
+                  <Minus className="mr-5 h-10 w-10" />
+                  Stable progress
                 </div>
               </CardContent>
             </Card>
 
             <Card className="border-black/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={statsCardShadeStyle}>
               <CardHeader className="pb-1">
-                <CardDescription className="text-lg font-semibold stats-label">Needs Support</CardDescription>
-                <CardTitle className="text-6xl">{classroomStats.needingSupport}</CardTitle>
+                <CardDescription className="text-lg font-semibold stats-label">Declining</CardDescription>
+                <CardTitle className="text-6xl text-orange-600">{classroomStats.declining}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center text-sm text-orange-600">
+                  <TrendingDown className="mr-5 h-10 w-10" />
+                  Needs attention
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-black/70 shadow-md hover:shadow-lg transition-shadow transform-gpu" style={statsCardShadeStyle}>
+              <CardHeader className="pb-1">
+                <CardDescription className="text-lg font-semibold stats-label">Interventions</CardDescription>
+                <CardTitle className="text-6xl text-yellow-600">{classroomStats.needingSupport}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center text-sm text-yellow-600">
                   <AlertTriangle className="mr-5 h-10 w-10" />
                   <button
                     onClick={() => navigate('/teacher/interventions')}
-                    className="hover:underline"
+                    className="hover:underline cursor-pointer"
                   >
-                    View interventions
+                    View
                   </button>
                 </div>
               </CardContent>

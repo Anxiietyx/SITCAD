@@ -69,6 +69,7 @@ class LessonPlan(Base):
   unit_theme = Column(String, nullable=True)                    # overarching unit theme
   weeks = Column(JSON, nullable=True)                           # [{week, theme, activities}] for unit plans
   image_style = Column(String, nullable=True, default="cartoon") # "cartoon" or "photorealistic"
+  is_deleted = Column(Boolean, nullable=False, default=False)   # soft-delete flag
   created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 
