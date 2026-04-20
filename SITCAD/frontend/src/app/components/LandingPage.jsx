@@ -52,11 +52,10 @@ function FloatingIcon({ icon: Icon, className }) {
   );
 }
 
-const TOTAL_SLIDES = 6;
+const TOTAL_SLIDES = 5; // COMEBACK
 
 const slideLabels = [
   "Home",
-  "Pricing",
   "Features",
   "How It Works",
   "AI Engine",
@@ -407,98 +406,7 @@ export function LandingPage() {
           </section>
 
           {/* ===== SLIDE 2 — Plans & Pricing ===== */}
-          <section className="w-screen h-screen flex-shrink-0 flex flex-col items-center justify-center relative px-8 pt-14 bg-white">
-            {/* Mascot */}
-            <img
-              src="/mascot/clipboard_1.png"
-              alt="Mascot with clipboard"
-              className="absolute bottom-10 left-[4%] w-36 lg:w-44 drop-shadow-lg animate-float pointer-events-none select-none"
-            />
-
-            <div className="max-w-7xl w-full mx-auto space-y-2">
-              {/* ===== HEADER ===== */}
-              <div className="text-center">
-                <h2 className="text-4xl lg:text-4xl font-bold mb-2 font-serif">
-                  Plans & Pricing
-                </h2>
-
-                <p className="text-muted-foreground text-2xl font-medium max-w-5xl mx-auto leading-relaxed">
-                  Flexible yearly plans designed for both teachers and parents —
-                  empowering smarter classrooms and stronger learning
-                  connections.
-                </p>
-              </div>
-
-              {/* ===== CARD CONTAINER ===== */}
-              <div className="relative">
-                <div className="absolute -inset-3 bg-gradient-to-br from-[#F46197]/15 via-[#EFCA08]/10 to-[#55D6BE]/15 rounded-3xl blur-2xl"></div>
-
-                <Card className="relative bg-transparent border-0 shadow-none">
-                  <CardContent className="p-4 lg:p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto items-stretch">
-                      {/* ===== PARENT PLAN ===== */}
-                      <div className="flex flex-col justify-between h-full rounded-xl border-2 border-[#3090A0]/50 backdrop-blur-md bg-white/40 p-6 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:scale-[1.03]">
-                        <div>
-                          <h3 className="text-2xl font-bold text-center mb-4 text-[#3090A0]">
-                            Parent
-                          </h3>
-
-                          <div className="text-center mb-5">
-                            <p className="text-4xl font-bold">RM99</p>
-                            <p className="text-lg text-muted-foreground">
-                              per year
-                            </p>
-                          </div>
-
-                          <div className="space-y-2 text-lg">
-                            <p>✔ Real-time progress updates</p>
-                            <p>✔ Direct teacher communication</p>
-                            <p>✔ Child development insights</p>
-                            <p>✔ Activity recommendations</p>
-                            <p className="text-muted-foreground">
-                              ✖ AI lesson tools
-                            </p>
-                          </div>
-                        </div>
-
-                        <Button className="mt-6 w-full bg-[#55B0A0] hover:bg-[#3fc9b0] text-white text-lg">
-                          Choose Plan
-                        </Button>
-                      </div>
-
-                      {/* ===== TEACHER PLAN (HIGHLIGHT) ===== */}
-                      <div className="flex flex-col justify-between h-full rounded-xl border-2 border-[#3090A0]/50 backdrop-blur-md bg-white/40 p-6 transition-all duration-300 hover:-translate-y-3 hover:shadow-xl hover:scale-[1.03]">
-                        <div>
-                          <h3 className="text-2xl font-bold text-center mb-4 text-[#3090A0]">
-                            Teacher
-                          </h3>
-
-                          <div className="text-center mb-5">
-                            <p className="text-4xl font-bold">RM199</p>
-                            <p className="text-lg text-muted-foreground">
-                              per year
-                            </p>
-                          </div>
-
-                          <div className="space-y-2 text-lg">
-                            <p>✔ AI lesson planning</p>
-                            <p>✔ Student progress tracking</p>
-                            <p>✔ Automated reports</p>
-                            <p>✔ Classroom management tools</p>
-                            <p>✔ Parent communication system</p>
-                          </div>
-                        </div>
-
-                        <Button className="mt-6 w-full bg-[#55B0A0] hover:bg-[#3fc9b0] text-white text-lg">
-                          Choose Plan
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </section>
+          {/* DROPPED */}
 
           {/* ===== SLIDE 3 — Features ===== */}
           <section
