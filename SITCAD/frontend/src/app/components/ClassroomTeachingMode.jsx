@@ -321,7 +321,7 @@ function QuizDelivery({ activity, onComplete }) {
         </div>
       )}
 
-      <h3 className="text-xl font-bold text-gray-800 text-center" style={CONTENT_FONT}>{currentQ.question}</h3>
+      <h3 className="text-3xl font-bold text-gray-800 text-center" style={CONTENT_FONT}>{currentQ.question}</h3>
 
       <div className="grid grid-cols-2 gap-3">
         {currentQ.options.map((option, idx) => {
@@ -372,7 +372,6 @@ function ImageDelivery({ activity, onComplete }) {
   const cards = content?.images || [];
   const [started, setStarted] = useState(false);
   const [cardIdx, setCardIdx] = useState(0);
-  const [showPoint, setShowPoint] = useState(false);
   const [finished, setFinished] = useState(false);
   const startTimeRef = useRef(null);
   const cardStartRef = useRef(null);
@@ -397,7 +396,6 @@ function ImageDelivery({ activity, onComplete }) {
       setFinished(true);
     } else {
       setCardIdx(prev => prev + 1);
-      setShowPoint(false);
       cardStartRef.current = Date.now();
     }
   };
@@ -405,7 +403,6 @@ function ImageDelivery({ activity, onComplete }) {
   const goPrev = () => {
     recordCardTime();
     setCardIdx(prev => Math.max(0, prev - 1));
-    setShowPoint(false);
     cardStartRef.current = Date.now();
   };
 
@@ -501,24 +498,18 @@ function ImageDelivery({ activity, onComplete }) {
 
         <h3 style={{ fontFamily: "'Comic Neue', 'Comic Sans MS', 'Comic Sans', 'Chalkboard SE', cursive", fontSize: '3rem', fontWeight: 'bold', color: '#1f2937', marginTop: '1rem', textAlign: 'center', transform: 'scale(1.2)' }}>{card.label}</h3>
 
-        {!showPoint && card.learning_point && (
-          <Button variant="outline" onClick={() => setShowPoint(true)}
-            className="mt-3 text-base font-semibold border-orange-200 text-orange-700 hover:bg-orange-50 cursor-pointer">
-            Reveal Learning Point
-          </Button>
-        )}
-        {showPoint && card.learning_point && (
-          <p className="mt-3 text-2xl font-semibold text-gray-600 bg-orange-50 px-4 py-3 rounded-lg border border-orange-200 max-w-sm text-center animate-in fade-in duration-300" style={CONTENT_FONT}>
+        {card.learning_point && (
+          <p className="mt-3 text-2xl font-semibold text-gray-600 bg-orange-50 px-4 py-3 rounded-lg border border-orange-200 max-w-2xl text-center animate-in fade-in duration-300" style={CONTENT_FONT}>
             {card.learning_point}
           </p>
         )}
       </div>
 
-      <div className="flex gap-3">
-        <Button variant="outline" onClick={goPrev} disabled={cardIdx === 0} className="flex-1 cursor-pointer text-base font-medium">
+      <div className="flex gap-3 mt-8">
+        <Button variant="outline" onClick={goPrev} disabled={cardIdx === 0} className="flex-1 cursor-pointer text-lg font-medium">
           <ChevronLeft className="mr-2 h-4 w-4" /> Previous
         </Button>
-        <Button onClick={goNext} className="text-base flex-1 bg-orange-500 hover:bg-orange-600 text-white cursor-pointer font-medium">
+        <Button onClick={goNext} className="text-lg flex-1 bg-orange-500 hover:bg-orange-600 text-white cursor-pointer font-medium">
           {cardIdx + 1 >= cards.length
             ? <><CheckCircle2 className="mr-2 h-4 w-4" /> Finish</>
             : <><ChevronRight className="mr-2 h-4 w-4" /> Next Card</>}
@@ -684,7 +675,7 @@ function StoryDelivery({ activity, onComplete }) {
         )}
 
         <div className="mt-6 px-2 max-w-2xl">
-          <p className="text-3xl text-gray-800 leading-relaxed text-center" style={CONTENT_FONT}>{page.text}</p>
+          <p className="text-3xl font-bold text-gray-800 leading-relaxed text-center" style={CONTENT_FONT}>{page.text}</p>
         </div>
       </div>
 
@@ -1075,8 +1066,20 @@ export function ClassroomTeachingMode() {
             }
           }}
         >
+          {/* Duckpit background */}
+          <div className="absolute inset-0 z-0 pointer-events-none">
+            <Duckpit
+              count={32}
+              gravity={0.5}
+              friction={0.9975}
+              wallBounce={0.9}
+              className="h-full w-full opacity-50"
+            />
+          </div>
+          <div className="absolute inset-0 z-0 bg-linear-to-b from-white/72 via-white/58 to-emerald-50/72" />
+          
           {/* Header bar */}
-          <div className={`${headerColor} px-8 py-4 flex items-center justify-between shrink-0 shadow-sm`}>
+          <div className={`relative z-10 ${headerColor} px-8 py-4 flex items-center justify-between shrink-0 shadow-sm`}>
             <div className="flex items-center gap-3">
               {(() => {
                 const meta = ACTIVITY_TYPE_META[activeActivity.activity_type];
@@ -1095,9 +1098,13 @@ export function ClassroomTeachingMode() {
             </Button>
           </div>
           {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto"> 
+          <div className="relative z-10 flex-1 overflow-y-auto">
             <div className="max-w-6xl mx-auto px-2 py-10 comic-delivery">
-              {renderDelivery()}
+              <Card className="bg-white shadow-lg">
+                <CardContent className="p-8">
+                  {renderDelivery()}
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>

@@ -10,7 +10,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { LogOut, Users, AlertTriangle, TrendingUp, TrendingDown, BookOpen, Calendar, Sparkles, FileText, MessageSquare, Monitor, Brain, UserPlus, Search, Star, GraduationCap, Minus } from 'lucide-react';
-import Duckpit from './Duckpit';
 import { useState, useEffect } from 'react';
 
 export function TeacherDashboard() {
@@ -143,11 +142,11 @@ export function TeacherDashboard() {
     needingSupport: interventionCount || needsAttention.length,
   };
 
-  const statsCardShadeOpacity = 0.92;
+  const statsCardShadeOpacity = 1;
   const statsCardShadeStyle = {
     backgroundColor: `rgb(255 255 255 / ${statsCardShadeOpacity})`,
   };
-  const dashboardCardShadeOpacity = 0.88;
+  const dashboardCardShadeOpacity = 1;
   const dashboardCardShadeStyle = {
     backgroundColor: `rgb(255 255 255 / ${dashboardCardShadeOpacity})`,
   };
@@ -182,16 +181,7 @@ export function TeacherDashboard() {
   const uniqueClasses = [...new Set(students.map(s => s.classroom).filter(Boolean))];
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-50">
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <Duckpit
-          count={32}
-          gravity={0.5}
-          friction={0.9975}
-          wallBounce={0.9}
-          className="h-full w-full opacity-100"
-        />
-      </div>
+    <div className="relative min-h-screen overflow-hidden print:min-h-0">
       <div className="absolute inset-0 z-0 bg-linear-to-b from-white/72 via-white/58 to-emerald-50/72" />
 
       <div className="relative z-10">
