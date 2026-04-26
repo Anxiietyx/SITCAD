@@ -36,6 +36,7 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
+  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
@@ -148,6 +149,7 @@ export function AILessonPlanning() {
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [activeWeekTab, setActiveWeekTab] = useState(0);
   const [viewingWeekTab, setViewingWeekTab] = useState(0);
+  const [deletingPlanId, setDeletingPlanId] = useState(null);
 
   // Loading mascot carousel state
   const [mascotIndex, setMascotIndex] = useState(0);
@@ -297,9 +299,9 @@ export function AILessonPlanning() {
     }
   };
 
-  const deletePlan = async (planId, planType) => {
-    const label = planType === "unit" ? "Unit Plan" : "Lesson Plan";
-    if (!window.confirm(`Delete this ${label}?`)) return;
+  const handleDeletePlan = async (planId) => {
+    const plan = savedPlans.find(p => p.id === planId);
+    const label = plan?.plan_type === "unit" ? "Unit Plan" : "Lesson Plan";
     try {
       const idToken = await getIdToken();
       const res = await fetch(`${API_BASE}/lesson-plans/${planId}/delete`, {
@@ -310,10 +312,16 @@ export function AILessonPlanning() {
       if (res.ok) {
         toast.success(`${label} deleted`);
         if (viewingPlan?.id === planId) setViewingPlan(null);
+        setDeletingPlanId(null);
         fetchSavedPlans();
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        const errorMsg = errorData.detail || errorData.message || `Failed to delete ${label}`;
+        toast.error(errorMsg);
       }
     } catch (err) {
-      toast.error("Failed to delete");
+      toast.error("Failed to delete - network error");
+      console.error("Delete error:", err);
     }
   };
 
@@ -1918,7 +1926,7 @@ export function AILessonPlanning() {
                                 className="text-red-500 hover:text-red-700 h-8 w-8 p-0 cursor-pointer"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  deletePlan(plan.id, plan.plan_type);
+                                  setDeletingPlanId(plan.id);
                                 }}
                               >
                                 <Trash2 className="h-4 w-4" />
@@ -1935,6 +1943,27 @@ export function AILessonPlanning() {
           </Tabs>
         </main>
         </div>
+
+        {/* Delete Lesson Plan Dialog */}
+        <AlertDialog open={!!deletingPlanId} onOpenChange={(open) => { if (!open) setDeletingPlanId(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this lesson plan?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete the lesson plan and all its content. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="cursor-pointer">Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-red-600 hover:bg-red-700 text-white cursor-pointer"
+                onClick={() => handleDeletePlan(deletingPlanId)}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
     </div>
   );
 }

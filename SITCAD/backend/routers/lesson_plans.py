@@ -97,7 +97,10 @@ async def list_lesson_plans(request: AuthenticatedRequest, db: Session = Depends
     teacher = _verify_teacher(request.id_token, db)
     plans = (
         db.query(models.LessonPlan)
-        .filter(models.LessonPlan.teacher_id == teacher.id)
+        .filter(
+            models.LessonPlan.teacher_id == teacher.id,
+            models.LessonPlan.is_deleted == False
+        )
         .order_by(models.LessonPlan.created_at.desc())
         .all()
     )
@@ -111,6 +114,7 @@ async def get_lesson_plan(plan_id: str, request: AuthenticatedRequest, db: Sessi
     plan = db.query(models.LessonPlan).filter(
         models.LessonPlan.id == plan_id,
         models.LessonPlan.teacher_id == teacher.id,
+        models.LessonPlan.is_deleted == False
     ).first()
     if not plan:
         raise HTTPException(status_code=404, detail="Lesson plan not found")
@@ -119,15 +123,17 @@ async def get_lesson_plan(plan_id: str, request: AuthenticatedRequest, db: Sessi
 
 @router.post("/{plan_id}/delete")
 async def delete_lesson_plan(plan_id: str, request: AuthenticatedRequest, db: Session = Depends(get_db)):
-    """Delete a lesson plan."""
+    """Delete a lesson plan (soft delete)."""
     teacher = _verify_teacher(request.id_token, db)
     plan = db.query(models.LessonPlan).filter(
         models.LessonPlan.id == plan_id,
         models.LessonPlan.teacher_id == teacher.id,
+        models.LessonPlan.is_deleted == False
     ).first()
     if not plan:
         raise HTTPException(status_code=404, detail="Lesson plan not found")
-    db.delete(plan)
+    
+    plan.is_deleted = True
     db.commit()
     return {"detail": "Lesson plan deleted"}
 
@@ -155,5 +161,6 @@ def _plan_to_dict(plan: models.LessonPlan) -> dict:
         "unit_theme": plan.unit_theme,
         "weeks": plan.weeks,
         "image_style": plan.image_style,
+        "is_deleted": plan.is_deleted,
         "created_at": plan.created_at.isoformat() if plan.created_at else None,
     }
