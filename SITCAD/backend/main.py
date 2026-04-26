@@ -28,16 +28,12 @@ models.Base.metadata.create_all(bind=database.engine)
 app = FastAPI(title="SITCAD SabahSprout API")
 
 # Configure CORS
-# Allows your Vite frontend (port 5173) to communicate with this API
+raw_origins = os.getenv("ALLOWED_ORIGINS")
+origins = [origin.strip() for origin in raw_origins.split(",")]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "https://sitcad-sabahsprout.web.app",
-        "https://sitcad-sabahsprout.firebaseapp.com",
-        "https://sitcad-api-884480710214.asia-southeast1.run.app"
-    ],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -53,4 +49,3 @@ app.include_router(lesson_plans.router)
 app.include_router(activities.router)
 app.include_router(reports.router)
 app.include_router(messages.router)
-#app.include_router(students.router)
