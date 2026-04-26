@@ -26,7 +26,7 @@ SabahSprout is an AI-driven platform designed to automate administrative reporti
 - **Auth SDK**: Firebase Admin SDK
 - **AI/ML**: Vertex AI
 
-## 📖 Domain Logic: DSKP KSPK
+## 📖 Domain Logic: DSKP KSPK Revision 2026
 The system integrates pedagogical suggestions based on:
 - Tunjang Komunikasi
 - Tunjang Kerohanian, Sikap dan Nilai
@@ -37,6 +37,6 @@ The system integrates pedagogical suggestions based on:
 
 ## 🗺️ Roadmap
 - [x] Firebase Authentication and User Role logic.
-- [ ] RAG pipeline for DSKP document querying.
-- [ ] Student progress dashboard with PostgreSQL integration.
-- [ ] Deployment to Google Cloud Run.
+- [x] RAG pipeline for DSKP KSPK 2026 document querying.
+- [x] Firebase-PostgreSQL Backend Deployment.
+- [x] Frontend Deployment to Firebase Deploy.
