@@ -15,8 +15,8 @@ load_dotenv(_BACKEND_DIR / ".env")
 
 # Initialize Firebase Admin SDK
 # Local dev: use service account JSON. Cloud Run: use Application Default Credentials.
-_cred_path = _BACKEND_DIR / "sitcad-sabahsprout-firebase-adminsdk.json"
-_app_options = {"storageBucket": os.environ.get("FIREBASE_STORAGE_BUCKET", "sitcad-sabahsprout.firebasestorage.app")}
+_cred_path = _BACKEND_DIR / "sabahsprout-496313-firebase-adminsdk.json"
+_app_options = {"storageBucket": os.environ.get("FIREBASE_STORAGE_BUCKET", "sabahsprout-496313.firebasestorage.app")}
 if _cred_path.exists():
     firebase_admin.initialize_app(credentials.Certificate(str(_cred_path)), _app_options)
 else:
