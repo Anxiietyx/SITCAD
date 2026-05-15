@@ -5,6 +5,7 @@ import zipfile
 import asyncio
 import logging
 import models
+import base64
 from firebase_admin import auth as firebase_auth, storage as fb_storage
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
@@ -125,16 +126,80 @@ def _activity_to_dict(act: models.Activity, db: Session) -> dict:
         "created_at": act.created_at.isoformat() if act.created_at else None,
         "completed_at": act.completed_at.isoformat() if act.completed_at else None,
     }
+    
+
+def upload_base64_to_storage(base64_str: str, path_prefix: str = "activities") -> str:
+    """
+    Uploads Base64 to a UBLA-enabled bucket without using legacy ACLs.
+    """
+    try:
+        # 1. Clean the Base64 string
+        if "," in base64_str:
+            base64_str = base64_str.split(",")[1]
+        
+        image_data = base64.b64decode(base64_str)
+        
+        # 2. Setup the blob
+        filename = f"{path_prefix}/{uuid.uuid4()}.png"
+        bucket = fb_storage.bucket()
+        blob = bucket.blob(filename)
+        
+        # 3. Upload (Do NOT call blob.make_public() here)
+        blob.upload_from_string(image_data, content_type="image/png")
+        
+        # 4. Construct the Public URL manually
+        # This URL works because we granted 'allUsers' the 'Storage Object Viewer' role
+        public_url = f"https://storage.googleapis.com/{bucket.name}/{filename}"
+        
+        logging.info(f"Successfully uploaded activity image: {public_url}")
+        return public_url
+        
+    except Exception as e:
+        logging.error(f"Failed to upload image to storage: {e}")
+        return ""
+    
+
+def process_generated_content_images(content: dict) -> dict:
+    """
+    Recursively finds Base64 strings in the generated_content and uploads them.
+    """
+    if not isinstance(content, dict):
+        return content
+
+    # Handle 'image' activity type
+    if "images" in content and isinstance(content["images"], list):
+        for img in content["images"]:
+            url = img.get("image_url", "")
+            if url and url.startswith("data:image"):
+                img["image_url"] = upload_base64_to_storage(url)
+
+    # Handle 'quiz' activity type
+    if "questions" in content and isinstance(content["questions"], list):
+        for q in content["questions"]:
+            url = q.get("image_url", "")
+            if url and url.startswith("data:image"):
+                q["image_url"] = upload_base64_to_storage(url)
+
+    # Handle 'story' activity type
+    if "pages" in content and isinstance(content["pages"], list):
+        for p in content["pages"]:
+            url = p.get("image_url", "")
+            if url and url.startswith("data:image"):
+                p["image_url"] = upload_base64_to_storage(url)
+
+    return content
 
 
 # ── Endpoints ─────────────────────────────────────────────────────
 
 @router.post("/create")
 async def create_activity(request: CreateActivityRequest, db: Session = Depends(get_db)):
-    """Create a new activity (manual or from lesson plan)."""
+    """Create a new activity and swap Base64 images for permanent Storage URLs."""
     teacher = _verify_teacher(request.id_token, db)
 
-    # Validate lesson plan reference
+    # Intercept and process Base64 images before saving to DB
+    clean_content = process_generated_content_images(request.generated_content)
+
     if request.source == "lesson_plan" and request.lesson_plan_id:
         plan = db.query(models.LessonPlan).filter(
             models.LessonPlan.id == request.lesson_plan_id,
@@ -153,19 +218,17 @@ async def create_activity(request: CreateActivityRequest, db: Session = Depends(
         learning_area=request.learning_area,
         duration_minutes=request.duration_minutes,
         activity_type=request.activity_type,
-        generated_content=request.generated_content,
+        generated_content=clean_content,  # Stores public URLs
         assigned_to=request.assigned_to,
         status="pending",
     )
     db.add(activity)
     db.flush()
 
-    # If individual, link specific students
     if request.assigned_to == "individual" and request.student_ids:
         for sid in request.student_ids:
             db.add(models.ActivityStudent(activity_id=activity.id, student_id=sid))
     elif request.assigned_to == "class":
-        # Assign to all students of this teacher
         students = db.query(models.Student).filter(models.Student.teacher_id == teacher.id).all()
         for s in students:
             db.add(models.ActivityStudent(activity_id=activity.id, student_id=s.id))
