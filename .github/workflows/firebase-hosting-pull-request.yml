@@ -28,5 +28,5 @@ jobs:
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SITCAD_CAPSTONE }}
-          projectId: sitcad-sabahsprout
+          projectId: sabahsprout-496313
           entryPoint: SITCAD/frontend

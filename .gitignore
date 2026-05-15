@@ -28,6 +28,7 @@ SITCAD/backend/routers/__pycache__
 *.sqlite
 *.db
 SITCAD/backend/sitcad-sabahsprout-firebase-adminsdk.json
+SITCAD/backend/sabahsprout-496313-firebase-adminsdk.json
 SITCAD/frontend/.env.production
 SITCAD/frontend/.env
 SITCAD/backend/.env

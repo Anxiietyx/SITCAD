@@ -10,3 +10,5 @@ cloud-sql-python-connector[pg8000]
 pg8000
 firebase_admin
 Pillow
+google-cloud-aiplatform
+google-genai

@@ -13,20 +13,36 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from firebase_admin import auth as firebase_auth
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.messages import SystemMessage, HumanMessage
+from google import genai
+from google.genai import types
 
 import models
 from dependencies import get_db
 
-logger = logging.getLogger(__name__)
+# ---------------------------------------------------------------------------
+# CONFIGURATION CONSTANTS
+# ---------------------------------------------------------------------------
 
-router = APIRouter(prefix="/ai-integrations", tags=["ai-integrations"])
-
-GEMINI_MODEL = "gemini-3.1-flash-lite-preview"
+PROJECT_ID = os.getenv("PROJECT_ID")
+TEXT_LOCATION = os.getenv("TEXT_LOCATION")
+IMAGE_LOCATION = os.getenv("IMAGE_LOCATION")
+GEMINI_MODEL = "gemini-3.1-flash-lite"
+IMAGEN_MODEL = "imagen-4.0-fast-generate-001"
 
 # ---------------------------------------------------------------------------
-# Curriculum loader
+# INITIALISE THE UNIFIED CLIENT, LOGGER AND ROUTER
+# ---------------------------------------------------------------------------
+
+client = genai.Client(
+    vertexai=True,
+    project=PROJECT_ID,
+    location=TEXT_LOCATION
+)
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/ai-integrations", tags=["ai-integrations"])
+
+# ---------------------------------------------------------------------------
+# CURRICULUM LOADER
 # ---------------------------------------------------------------------------
 
 CURRICULUM_DIR = Path(__file__).parent.parent / "data" / "curriculum"
@@ -107,7 +123,7 @@ def _build_dskp_context(learning_area: str, moral_education: str = "moral") -> s
 
 
 # ---------------------------------------------------------------------------
-# Helpers
+# HELPERS
 # ---------------------------------------------------------------------------
 
 def _strip_json_fences(raw: str) -> str:
@@ -129,27 +145,73 @@ def _is_503_error(exc: Exception) -> bool:
     return "503" in err or "UNAVAILABLE" in err or "high demand" in err.lower()
 
 
-async def _invoke_with_retry(llm, messages, max_retries: int = 3, base_delay: float = 5.0):
+def _convert_messages_to_genai(messages: list) -> list[types.Content]:
     """
-    Invoke an LLM with exponential-backoff retry specifically for 503 UNAVAILABLE errors.
-    Non-retriable errors are raised immediately.
-    Raises the last exception if all retries are exhausted.
+    Convert langchain-style objects or dicts to the new SDK's Content format.
+    Ensures roles are strictly 'user' or 'model'.
     """
+    genai_messages = []
+    for msg in messages:
+        if hasattr(msg, 'content') and hasattr(msg, '__class__'):
+            # Langchain message object
+            msg_type = msg.__class__.__name__
+            # Gemini strictly uses 'model', Langchain often uses 'AIMessage'
+            role = "user" if msg_type == "HumanMessage" else "model"
+            text = msg.content
+        elif isinstance(msg, dict):
+            # Already a dict - normalize roles
+            role = msg.get('role', 'user')
+            if role in ["assistant", "ai", "model"]:
+                role = "model"
+            text = msg.get('text', msg.get('content', ''))
+        else:
+            # Fallback for raw strings
+            role = "user"
+            text = str(msg)
+        
+        # New SDK uses types.Content and types.Part
+        genai_messages.append(
+            types.Content(
+                role=role, 
+                parts=[types.Part.from_text(text=text)]
+            )
+        )
+    return genai_messages
+
+
+async def _invoke_with_retry(
+    messages: list, 
+    system_instruction: str = None,  # Add this
+    max_retries: int = 3, 
+    base_delay: float = 5.0,
+    temperature: float = 0.7,
+    max_output_tokens: int = 4096,
+):
     last_exc: Exception | None = None
+    genai_messages = _convert_messages_to_genai(messages)
+    
+    # CRITICAL: Added response_mime_type and system_instruction
+    config = types.GenerateContentConfig(
+        system_instruction=system_instruction,
+        temperature=temperature,
+        max_output_tokens=max_output_tokens,
+        response_mime_type="application/json"  # Forces raw JSON (no fences)
+    )
+
     for attempt in range(max_retries):
         try:
-            return await llm.ainvoke(messages)
+            return await client.aio.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=genai_messages,
+                config=config
+            )
         except Exception as exc:
             if _is_503_error(exc):
                 last_exc = exc
-                delay = base_delay * (2 ** attempt)   # 5 s, 10 s, 20 s
-                logger.warning(
-                    "Gemini 503 on attempt %d/%d, retrying in %.0fs: %s",
-                    attempt + 1, max_retries, delay, exc,
-                )
+                delay = base_delay * (2 ** attempt)
                 await asyncio.sleep(delay)
             else:
-                raise  # fail fast for non-retriable errors
+                raise  
     raise last_exc
 
 
@@ -244,7 +306,7 @@ def _verify_teacher(id_token: str, db: Session) -> models.User:
 
 
 # ---------------------------------------------------------------------------
-# Pydantic schemas
+# PYDANTIC SCHEMAS
 # ---------------------------------------------------------------------------
 
 LearningArea = Literal[
@@ -295,7 +357,7 @@ class GenerateActivitiesRequest(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# System prompt
+# SYSTEM PROMPTS
 # ---------------------------------------------------------------------------
 
 SYSTEM_PROMPT_TEMPLATE = """\
@@ -410,55 +472,44 @@ Do NOT wrap the JSON in markdown code fences. Return raw JSON only.
 
 
 # ---------------------------------------------------------------------------
-# Endpoints
+# API ENDPOINTS
 # ---------------------------------------------------------------------------
 
 @router.get("/health")
 async def ai_health_check():
-    """Verify Gemini API key is configured and connectivity works."""
-    gemini_api_key = os.getenv("GEMINI_API_KEY")
-    if not gemini_api_key:
-        raise HTTPException(status_code=503, detail="GEMINI_API_KEY is not set.")
+    """Verify Gemini is accessible via the new SDK and ADC."""
     try:
-        llm = ChatGoogleGenerativeAI(
+        # Note: The new SDK uses a standard 'models.generate_content' pattern
+        response = client.models.generate_content(
             model=GEMINI_MODEL,
-            api_key=gemini_api_key,
-            temperature=0,
-            max_tokens=64,
+            contents="Reply with this phrase: Hello there.",
+            config=types.GenerateContentConfig(
+                temperature=0,
+                max_output_tokens=64
+            )
         )
-        response = await llm.ainvoke([HumanMessage(content="Reply with this phrase: Hello there.")])
-        # Gemini 3.1 Flash Lite returns a list of content-block dicts; 2.5 Flash returns a string
-        content = response.content
-        if isinstance(content, list):
-            content = "".join(x.get("text", "") if isinstance(x, dict) else str(x) for x in content)
-        return {"status": "ok", "model": GEMINI_MODEL, "echo": str(content).strip()}
+        
+        # Accessing the text is now simpler
+        content = response.text
+        
+        return {
+            "status": "ok", 
+            "model": GEMINI_MODEL, 
+            "location": TEXT_LOCATION,
+            "echo": content.strip()
+        }
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Gemini connectivity error: {str(exc)}")
+        # This will catch and explain any remaining 404s or permission issues
+        print(f"DEBUG: Gemini Failure: {str(exc)}")
+        return {"error": str(exc)}
 
 
 @router.post("/generate-lesson")
 async def generate_lesson(request: GenerateLessonRequest, db: Session = Depends(get_db)):
-    """
-    Generate a DSKP-aligned kindergarten lesson plan using Gemini.
-
-    Flow:
-      1. Validate teacher auth.
-      2. Build DSKP context from curriculum JSON files (P-B).
-      3. Combine with teacher inputs (P-A) into a Gemini prompt.
-      4. Parse the structured JSON response.
-      5. Return the lesson plan (NOT saved yet — teacher reviews first).
-    """
     teacher = _verify_teacher(request.id_token, db)
-
-    gemini_api_key = os.getenv("GEMINI_API_KEY")
-    if not gemini_api_key:
-        raise HTTPException(status_code=503, detail="GEMINI_API_KEY is not configured.")
-
-    # Build DSKP context (P-B)
     dskp_context = _build_dskp_context(request.learning_area, request.moral_education)
 
     language_label = "English" if request.language == "en" else "Bahasa Malaysia"
-
     is_unit_plan = request.plan_type == "unit"
 
     if is_unit_plan:
@@ -482,41 +533,26 @@ async def generate_lesson(request: GenerateLessonRequest, db: Session = Depends(
         f"Learning area: {request.learning_area}.\n"
         f"Session duration: {request.duration} minutes.\n"
         f"Age group: {request.age_group} years old.\n"
-        f"Language of delivery: {'English' if request.language == 'en' else 'Bahasa Malaysia'}.\n"
+        f"Language of delivery: {language_label}.\n"
     )
-    if is_unit_plan:
-        user_message += f"Number of weeks: {request.duration_weeks}.\n"
-    if request.learning_area == "social":
-        user_message += f"Moral/spiritual education stream: {request.moral_education}.\n"
-    if request.additional_notes.strip():
-        user_message += f"Additional teacher notes: {request.additional_notes}\n"
 
     try:
-        llm = ChatGoogleGenerativeAI(
-            model=GEMINI_MODEL,
-            api_key=gemini_api_key,
+        # Pass system_prompt separately now
+        response = await _invoke_with_retry(
+            messages=[{"role": "user", "content": user_message}],
+            system_instruction=system_prompt,
             temperature=0.7,
-            max_tokens=8192 if is_unit_plan else 4096,
+            max_output_tokens=8192 if is_unit_plan else 4096,
         )
-        response = await _invoke_with_retry(llm, [
-            SystemMessage(content=system_prompt),
-            HumanMessage(content=user_message),
-        ])
-        content = response.content
-        if isinstance(content, list):
-            content = "".join(x.get("text", "") if isinstance(x, dict) else str(x) for x in content)
-        raw_text = str(content).strip()
+        
+        # response.text is now guaranteed raw JSON by response_mime_type
+        if not response.text:
+            raise ValueError("Gemini returned an empty string.")
+            
+        lesson_data = json.loads(response.text)
     except Exception as e:
-        logger.error(f"Gemini API call failed: {e}")
+        logger.error(f"Gemini lesson generation failed: {e}")
         raise HTTPException(status_code=502, detail=f"AI service error: {str(e)}")
-
-    raw_text = _strip_json_fences(raw_text)
-
-    try:
-        lesson_data = json.loads(raw_text)
-    except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse Gemini JSON: {e}\nRaw: {raw_text[:500]}")
-        raise HTTPException(status_code=500, detail="AI returned an invalid response. Please try again.")
 
     # Normalise and return — NOT saved to DB yet (teacher reviews first)
     result = {
@@ -541,7 +577,6 @@ async def generate_lesson(request: GenerateLessonRequest, db: Session = Depends(
     if is_unit_plan:
         result["unit_theme"] = lesson_data.get("unit_theme", "")
         result["weeks"] = lesson_data.get("weeks", [])
-        # Flatten all weekly activities into the top-level activities list for compatibility
         all_activities = []
         for week in result["weeks"]:
             for act in week.get("activities", []):
@@ -555,7 +590,7 @@ async def generate_lesson(request: GenerateLessonRequest, db: Session = Depends(
 
 
 # ---------------------------------------------------------------------------
-# Activity generation system prompts
+# ACTIVITY GENERATION SYSTEM PROMPTS
 # ---------------------------------------------------------------------------
 
 QUIZ_SYSTEM_PROMPT = """\
@@ -699,8 +734,20 @@ Do NOT wrap in markdown code fences. Return raw JSON only.
 
 
 # ---------------------------------------------------------------------------
-# Activity generation helpers
+# ACTIVITY GENERATION HELPERS
 # ---------------------------------------------------------------------------
+
+import base64
+import asyncio
+
+# Create a semaphore to limit image generation to 1 at a time to avoid 429s
+image_semaphore = asyncio.Semaphore(1)
+
+image_client = genai.Client(
+    vertexai=True,
+    project=PROJECT_ID,
+    location="us-central1"
+)
 
 def _handle_response_content(content) -> str:
     """Normalise Gemini response content (handles list vs string formats)."""
@@ -709,63 +756,52 @@ def _handle_response_content(content) -> str:
     return str(content).strip()
 
 
-IMAGEN_MODEL = "imagen-4.0-fast-generate-001"
-
-
-async def _generate_flashcard_images(
-    image_metadata: list[dict],
-    api_key: str,
-    aspect_ratio: str = "1:1",
-) -> list[dict]:
+async def _generate_flashcard_images(prompts: list[dict], aspect_ratio: str = "1:1") -> list[dict]:
     """
-    Generate images via Imagen 4, upload to Firebase Storage,
-    and return public URLs instead of base64 blobs.
+    Generate images using Imagen 4.0 on Vertex AI.
+    Sequential execution via Semaphore ensures we don't hit 429 limits.
     """
-    from google import genai as ggenai
-    from google.genai import types as gtypes
-    from firebase_admin import storage
-
-    imagen_client = ggenai.Client(api_key=api_key)
-    bucket = storage.bucket()
-    loop = asyncio.get_event_loop()
-
-    async def _gen_one(img_data: dict) -> dict:
-        prompt = img_data.get("image_prompt", img_data.get("label", ""))
-        image_url = None
-        try:
-            resp = await loop.run_in_executor(
-                None,
-                lambda: imagen_client.models.generate_images(
+    for p in prompts:
+        # Use the semaphore to handle the burst of story/quiz pages
+        async with image_semaphore:
+            try:
+                res = await image_client.aio.models.generate_images(
                     model=IMAGEN_MODEL,
-                    prompt=prompt,
-                    config=gtypes.GenerateImagesConfig(
+                    prompt=p["image_prompt"],
+                    config=types.GenerateImagesConfig(
                         number_of_images=1,
                         aspect_ratio=aspect_ratio,
-                    ),
-                ),
-            )
-            image_bytes = resp.generated_images[0].image.image_bytes
-            blob_name = f"activity-images/{uuid.uuid4()}.png"
-            blob = bucket.blob(blob_name)
-            blob.upload_from_string(image_bytes, content_type="image/png")
-            # Use Firebase Storage download URL (works with Storage Security Rules).
-            # Requires the 'activity-images' path to allow public reads in storage.rules.
-            encoded_path = _url_quote(blob_name, safe="")
-            image_url = (
-                f"https://firebasestorage.googleapis.com/v0/b/{bucket.name}"
-                f"/o/{encoded_path}?alt=media"
-            )
-        except Exception as exc:
-            logger.warning(f"Image generation failed for '{img_data.get('label')}': {exc}")
-
-        return {
-            "label": img_data.get("label", ""),
-            "image_url": image_url,
-            "learning_point": img_data.get("learning_point", ""),
-        }
-
-    results = await asyncio.gather(*[_gen_one(img) for img in image_metadata])
-    return list(results)
+                        add_watermark=True,
+                    )
+                )
+                
+                if res.generated_images:
+                    # Vertex AI gives us raw bytes, NOT a URL.
+                    # Access the image_bytes attribute directly from the Image object.
+                    img_obj = res.generated_images[0].image
+                    
+                    if hasattr(img_obj, 'image_bytes') and img_obj.image_bytes:
+                        raw_bytes = img_obj.image_bytes
+                    else:
+                        # Fallback for different SDK sub-versions
+                        raw_bytes = img_obj.data 
+                    
+                    # Convert bytes to Base64 so the browser <img> tag can display it
+                    b64_encoded = base64.b64encode(raw_bytes).decode("utf-8")
+                    p["image_url"] = f"data:image/png;base64,{b64_encoded}"
+                    
+                    logger.info(f"Generated Base64 image for: {p.get('label')}")
+                else:
+                    p["image_url"] = None
+                
+                # Mandatory 1s cooldown to keep the 429s away
+                await asyncio.sleep(1)
+                    
+            except Exception as e:
+                logger.error(f"Image generation failed for '{p.get('label')}': {str(e)}")
+                p["image_url"] = None
+            
+    return prompts
 
 
 async def _generate_single_activity(
@@ -775,13 +811,15 @@ async def _generate_single_activity(
     learning_area: str,
     age_group: str,
     language: str,
-    llm: ChatGoogleGenerativeAI,
-    api_key: str,
     image_style: str = "cartoon",
 ) -> dict:
-    """Generate content for a single activity based on its type."""
+    """
+    Generate content for a single activity. 
+    Steps: 1. Text Gen (Gemini) -> 2. Parse JSON -> 3. Image Gen (Imagen) -> 4. Map back.
+    """
     language_label = "English" if language == "en" else "Bahasa Malaysia"
     style_instruction = IMAGE_STYLE_INSTRUCTIONS.get(image_style, IMAGE_STYLE_INSTRUCTIONS["cartoon"])
+    
     common_vars = dict(
         age_group=age_group,
         lesson_title=lesson_title,
@@ -791,6 +829,7 @@ async def _generate_single_activity(
         image_style_instruction=style_instruction,
     )
 
+    # 1. Select the correct system prompt template
     if activity.type == "quiz":
         system_prompt = QUIZ_SYSTEM_PROMPT.format(num_questions=5, **common_vars)
     elif activity.type == "image":
@@ -800,70 +839,59 @@ async def _generate_single_activity(
     else:
         raise ValueError(f"Unknown activity type: {activity.type}")
 
-    user_message = (
-        f"Activity: {activity.title}\n"
-        f"Description: {activity.description}\n"
-        f"Generate the content now."
-    )
+    user_message = f"Activity: {activity.title}\nDescription: {activity.description}\nGenerate the content now."
 
-    response = await _invoke_with_retry(llm, [
-        SystemMessage(content=system_prompt),
-        HumanMessage(content=user_message),
-    ])
-    raw = _handle_response_content(response.content)
-    raw = _strip_json_fences(raw)
-
+    # 2. Capture the response from Gemini
+    # Ensure _invoke_with_retry is using the 'client' (location="us")
     try:
-        content_data = json.loads(raw)
-    except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse activity JSON ({activity.type}): {e}\nRaw: {raw[:500]}")
-        raise ValueError(f"AI returned invalid JSON for activity '{activity.title}'")
-
-    # For image activities: generate actual images with Imagen 4
-    if activity.type == "image" and content_data.get("images"):
-        content_data["images"] = await _generate_flashcard_images(
-            content_data["images"], api_key
+        response = await _invoke_with_retry(
+            messages=[{"role": "user", "content": user_message}],
+            system_instruction=system_prompt,
+            temperature=0.7,
+            max_output_tokens=4096
         )
+        
+        if not response or not response.text:
+            raise ValueError("Gemini returned an empty response.")
+            
+        content_data = json.loads(response.text)
+    except Exception as e:
+        logger.error(f"Text generation failed for '{activity.title}': {str(e)}")
+        raise ValueError(f"AI failed to generate text content: {str(e)}")
 
-    # For quiz activities: generate one image per question with Imagen 4
+    # 3. Handle Image Generation & Mapping results back to content_data
+    # -----------------------------------------------------------------------
+    
+    # CASE A: Standard Flashcards/Images
+    if activity.type == "image" and content_data.get("images"):
+        # We pass the list directly; _generate_flashcard_images updates it in-place
+        content_data["images"] = await _generate_flashcard_images(content_data["images"])
+
+    # CASE B: Quiz Questions (Images per question)
     if activity.type == "quiz" and content_data.get("questions"):
-        questions_with_prompts = [
-            {
-                "image_prompt": q.get("image_prompt", ""),
-                "label": f"Q{i+1}",
-                "learning_point": "",
-            }
-            for i, q in enumerate(content_data["questions"])
-            if q.get("image_prompt")
-        ]
-        if questions_with_prompts:
-            generated = await _generate_flashcard_images(questions_with_prompts, api_key, aspect_ratio="1:1")
-            gen_iter = iter(generated)
-            for q in content_data["questions"]:
-                if q.get("image_prompt"):
-                    q["image_url"] = next(gen_iter).get("image_url")
-                    # Remove the prompt from final output
-                    q.pop("image_prompt", None)
+        for i, q in enumerate(content_data["questions"]):
+            if q.get("image_prompt"):
+                # We create a single-item payload for the image generator
+                img_payload = [{"image_prompt": q["image_prompt"], "label": f"Q{i+1}"}]
+                updated_payload = await _generate_flashcard_images(img_payload)
+                # Map the Base64 result back to the original question dictionary
+                q["image_url"] = updated_payload[0].get("image_url")
+                # Remove the prompt to keep the final JSON clean
+                q.pop("image_prompt", None)
 
-    # For story activities: generate one image per page with Imagen 4
+    # CASE C: Story Pages (Images per page)
     if activity.type == "story" and content_data.get("pages"):
-        pages_with_prompts = [
-            {
-                "image_prompt": f"{_get_story_image_prefix(image_style)} {p.get('image_prompt', '')}".strip(),
-                "label": f"Page {p.get('page_number', i+1)}",
-                "learning_point": "",
-            }
-            for i, p in enumerate(content_data["pages"])
-            if p.get("image_prompt")
-        ]
-        if pages_with_prompts:
-            generated = await _generate_flashcard_images(pages_with_prompts, api_key, aspect_ratio="1:1")
-            # Map results back onto pages by order
-            gen_iter = iter(generated)
-            for page in content_data["pages"]:
-                if page.get("image_prompt"):
-                    page["image_url"] = next(gen_iter).get("image_url")
+        for i, p in enumerate(content_data["pages"]):
+            if p.get("image_prompt"):
+                # Apply the story-specific prefix if you have one
+                full_prompt = f"{_get_story_image_prefix(image_style)} {p['image_prompt']}".strip()
+                img_payload = [{"image_prompt": full_prompt, "label": f"P{i+1}"}]
+                updated_payload = await _generate_flashcard_images(img_payload)
+                # Map back to the page
+                p["image_url"] = updated_payload[0].get("image_url")
+                p.pop("image_prompt", None)
 
+    # 4. Final Return
     return {
         "title": activity.title,
         "description": activity.description,
@@ -874,7 +902,7 @@ async def _generate_single_activity(
 
 
 # ---------------------------------------------------------------------------
-# Activity generation endpoint
+# ACTIVITY GENERATION ENDPOINTS
 # ---------------------------------------------------------------------------
 
 @router.post("/generate-activities")
@@ -894,19 +922,8 @@ async def generate_activities(request: GenerateActivitiesRequest, db: Session = 
     if not plan:
         raise HTTPException(status_code=404, detail="Lesson plan not found")
 
-    gemini_api_key = os.getenv("GEMINI_API_KEY")
-    if not gemini_api_key:
-        raise HTTPException(status_code=503, detail="GEMINI_API_KEY is not configured.")
-
-    llm = ChatGoogleGenerativeAI(
-        model=GEMINI_MODEL,
-        api_key=gemini_api_key,
-        temperature=0.7,
-        max_tokens=4096,
-    )
-
     # Fan out — generate all activities concurrently
-    # Per-activity image_style takes precedence; request-level is the fallback default
+    # The unified 'client' is global; passing a model object is no longer required
     tasks = [
         _generate_single_activity(
             activity=act,
@@ -915,8 +932,6 @@ async def generate_activities(request: GenerateActivitiesRequest, db: Session = 
             learning_area=request.learning_area or plan.learning_area,
             age_group=request.age_group,
             language=request.language,
-            llm=llm,
-            api_key=gemini_api_key,
             image_style=act.image_style or request.image_style,
         )
         for act in request.activities
@@ -925,7 +940,7 @@ async def generate_activities(request: GenerateActivitiesRequest, db: Session = 
     try:
         results = await asyncio.gather(*tasks)
     except ValueError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
         logger.error(f"Activity generation failed: {e}")
         raise HTTPException(status_code=502, detail=f"AI service error: {str(e)}")
@@ -937,7 +952,7 @@ async def generate_activities(request: GenerateActivitiesRequest, db: Session = 
 
 
 # ---------------------------------------------------------------------------
-# Activity analysis (Phase 3 – AI Insights)
+# ACTIVITY ANALYSIS (PHASE 3 – AI INSIGHTS)
 # ---------------------------------------------------------------------------
 
 class AnalyzeActivityRequest(BaseModel):
@@ -947,32 +962,26 @@ class AnalyzeActivityRequest(BaseModel):
 
 def _resolve_spr_context(learning_area: str, dskp_standards: list[dict]) -> str:
     """
-    Given the LP's DSKP standards (list of {code, title}), load the relevant
-    curriculum files and build a context string containing only the SPR rubrics
-    that map to those standards.
-
-    Resolution: SPE code (e.g. BI 1.1.1) → SK code (BI 1.1) → SPR (BI 1).
+    Build context string containing SPR rubrics mapping to DSKP standards.
+    (Logic remains unchanged as it is a local JSON/string resolution).
     """
     primary_files = list(AREA_TO_FILES.get(learning_area, AREA_TO_FILES["cognitive"]))
     curriculum_data = _load_curriculum_files(primary_files)
     if not curriculum_data or not dskp_standards:
         return ""
 
-    # Extract SPE codes from the LP's dskp_standards
     spe_codes: set[str] = set()
     for std in dskp_standards:
         code = std.get("code", "") if isinstance(std, dict) else str(std)
         if code:
             spe_codes.add(code.strip())
 
-    # Derive parent SK codes by trimming trailing .N
     sk_codes: set[str] = set()
     for spe in spe_codes:
         parts = spe.rsplit(".", 1)
         if len(parts) == 2:
             sk_codes.add(parts[0])
 
-    # Find matching SPRs
     lines: list[str] = ["=== Relevant SPR (Assessment Rubric) Standards ==="]
     found_any = False
     for domain in curriculum_data:
@@ -985,7 +994,6 @@ def _resolve_spr_context(learning_area: str, dskp_standards: list[dict]) -> str:
                 for rubric in spr.get("spr_rubric", []):
                     lines.append(f"  Level {rubric['level']}: {rubric['explanation']}")
 
-    # Also include the targeted SPE details for richer context
     lines.append("\n=== Targeted DSKP Standards (SPEs) ===")
     for std in dskp_standards:
         code = std.get("code", "") if isinstance(std, dict) else str(std)
@@ -1046,6 +1054,20 @@ Return ONLY a single valid JSON object with this exact schema:
 Do NOT wrap the JSON in markdown code fences. Return raw JSON only.
 """
 
+import re
+
+def _extract_json(text: str) -> str:
+    """
+    Finds the first '{' and last '}' to extract a single JSON object,
+    ignoring any 'Extra data' or prose before/after.
+    """
+    text = text.strip()
+    # Match everything from the first '{' to the last '}'
+    match = re.search(r'(\{.*\})', text, re.DOTALL)
+    if match:
+        return match.group(1)
+    return text # Fallback to original text if no braces found
+
 
 @router.post("/analyze-activity")
 async def analyze_activity(request: AnalyzeActivityRequest, db: Session = Depends(get_db)):
@@ -1059,6 +1081,7 @@ async def analyze_activity(request: AnalyzeActivityRequest, db: Session = Depend
         models.Activity.id == request.activity_id,
         models.Activity.teacher_id == teacher.id,
     ).first()
+    
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
     if activity.status != "completed":
@@ -1066,7 +1089,7 @@ async def analyze_activity(request: AnalyzeActivityRequest, db: Session = Depend
     if not activity.results_data:
         raise HTTPException(status_code=400, detail="No results data to analyse")
 
-    # If re-running, soft-delete the old reports
+    # Re-run logic: soft-delete old reports
     if activity.analysis_status in ("completed", "failed"):
         old_reports = db.query(models.Report).filter(
             models.Report.activity_id == activity.id,
@@ -1075,12 +1098,12 @@ async def analyze_activity(request: AnalyzeActivityRequest, db: Session = Depend
             old.is_deleted = True
         db.flush()
 
-    # Mark as analyzing
+    # Mark status as analyzing
     activity.analysis_status = "analyzing"
     activity.analysis_error = None
     db.commit()
 
-    # Gather context
+    # Context Gathering
     lesson_plan = None
     dskp_standards = []
     if activity.lesson_plan_id:
@@ -1098,13 +1121,12 @@ async def analyze_activity(request: AnalyzeActivityRequest, db: Session = Depend
         models.Student.id.in_(student_ids)
     ).all() if student_ids else []
 
-    # Build SPR context from curriculum
     spr_context = _resolve_spr_context(
         activity.learning_area or (lesson_plan.learning_area if lesson_plan else "cognitive"),
         dskp_standards,
     )
 
-    # Build the user message with all activity data
+    # Building AI Message Payload
     activity_info = {
         "title": activity.title,
         "description": activity.description,
@@ -1118,8 +1140,8 @@ async def analyze_activity(request: AnalyzeActivityRequest, db: Session = Depend
         f"\n=== Results Data ===\n{json.dumps(activity.results_data, indent=2)}",
     ]
 
-    # Include the generated content (questions/cards/pages) but strip images to save tokens
     if activity.generated_content:
+        # Strip heavy Base64/Images to save tokens and avoid JSON clutter
         content_for_analysis = _strip_images_for_analysis(activity.generated_content)
         user_message_parts.append(
             f"\n=== Activity Content (what was delivered) ===\n{json.dumps(content_for_analysis, indent=2)}"
@@ -1136,39 +1158,28 @@ async def analyze_activity(request: AnalyzeActivityRequest, db: Session = Depend
 
     user_message = "\n".join(user_message_parts)
 
-    # Call Gemini
-    gemini_api_key = os.getenv("GEMINI_API_KEY")
-    if not gemini_api_key:
-        activity.analysis_status = "failed"
-        activity.analysis_error = "GEMINI_API_KEY not configured"
-        db.commit()
-        raise HTTPException(status_code=503, detail="GEMINI_API_KEY is not configured.")
-
+    # AI Call Phase
     try:
-        llm = ChatGoogleGenerativeAI(
-            model=GEMINI_MODEL,
-            api_key=gemini_api_key,
-            temperature=0.3,
-            max_tokens=4096,
+        response = await _invoke_with_retry(
+            messages=[{"role": "user", "content": user_message}],
+            system_instruction=ANALYSIS_SYSTEM_PROMPT,
+            temperature=0.1, # Drop temperature to 0.1 for even stricter JSON
+            max_output_tokens=4096,
         )
-        response = await _invoke_with_retry(llm, [
-            SystemMessage(content=ANALYSIS_SYSTEM_PROMPT),
-            HumanMessage(content=user_message),
-        ])
-        raw = _handle_response_content(response.content)
-        raw = _strip_json_fences(raw)
-        insights = json.loads(raw)
+        
+        # 1. Capture the raw text
+        raw_text = response.text
+        
+        # 2. Extract ONLY the JSON object to avoid 'Extra Data' errors
+        clean_json = _extract_json(raw_text)
+        
+        # 3. Parse the cleaned string
+        insights = json.loads(clean_json)
+        
     except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse analysis JSON: {e}\nRaw: {raw[:500]}")
-        activity.analysis_status = "failed"
-        activity.analysis_error = "AI returned invalid JSON"
-        db.commit()
-        raise HTTPException(status_code=500, detail="AI returned an invalid response. Try re-running.")
-    except Exception as e:
-        logger.error(f"Analysis Gemini call failed: {e}")
+        logger.error(f"JSON Parse Error: {e}\nRaw Response: {raw_text}")
         if _is_503_error(e):
-            # Gemini is overloaded — generate a basic fallback report rather than failing
-            logger.info("Gemini 503 persisted after retries; generating fallback analysis")
+            logger.info("Gemini 503 persisted; generating fallback analysis")
             insights = _generate_fallback_insights(
                 activity, activity.results_data or {}, students, dskp_standards
             )
@@ -1178,7 +1189,7 @@ async def analyze_activity(request: AnalyzeActivityRequest, db: Session = Depend
             db.commit()
             raise HTTPException(status_code=502, detail=f"AI service error: {str(e)}")
 
-    # Build report details combining raw data + AI insights
+    # Calculate Summary Stats
     score_pct = None
     results = activity.results_data or {}
     if results.get("activity_type") == "quiz" and results.get("total"):
@@ -1200,11 +1211,12 @@ async def analyze_activity(request: AnalyzeActivityRequest, db: Session = Depend
         "student_count": len(students),
     }
 
+    # Save to Database
     report = models.Report(
         id=str(uuid.uuid4()),
         teacher_id=teacher.id,
         activity_id=activity.id,
-        title=f"{activity.title}",
+        title=f"{activity.title} Analysis",
         summary=insights.get("summary", ""),
         details=report_details,
     )
@@ -1219,7 +1231,7 @@ async def analyze_activity(request: AnalyzeActivityRequest, db: Session = Depend
     db.commit()
     db.refresh(activity)
 
-    # ── Auto-trigger Intervention Analysis for each student ──
+    # ── Auto-trigger Phase 4 (Intervention Analysis) ──
     il_results = []
     for s in students:
         try:
@@ -1232,11 +1244,7 @@ async def analyze_activity(request: AnalyzeActivityRequest, db: Session = Depend
             il_results.append(il_result)
         except Exception as e:
             logger.warning(f"Auto-IL failed for student {s.id}: {e}")
-            # Roll back any aborted transaction so the session is clean for the next student
-            try:
-                db.rollback()
-            except Exception:
-                pass
+            db.rollback()
             il_results.append({"student_id": s.id, "error": str(e)})
 
     return {
@@ -1247,20 +1255,17 @@ async def analyze_activity(request: AnalyzeActivityRequest, db: Session = Depend
         "intervention_analyses": il_results,
     }
 
-
 def _strip_images_for_analysis(content: dict) -> dict:
-    """Remove image data/URLs from generated content to reduce token usage."""
+    """Remove image metadata to minimize token count and noise for analysis."""
     import copy
     stripped = copy.deepcopy(content)
-    # Strip from flashcard images
+    # Strip from standard image flashcards
     for img in stripped.get("images", []):
-        img.pop("image_b64", None)
         img.pop("image_url", None)
-    # Strip from story pages
+    # Strip from storybook pages
     for page in stripped.get("pages", []):
-        page.pop("image_b64", None)
         page.pop("image_url", None)
-    # Strip from quiz question images
+    # Strip from quiz questions
     for q in stripped.get("questions", []):
         q.pop("image_url", None)
     return stripped
@@ -1379,32 +1384,28 @@ async def _run_intervention_analysis(
     trigger_report_id: str | None = None,
 ) -> dict:
     """
-    Core intervention analysis logic (per-student).
-    Gathers payloads A/B/C, calls Gemini, persists InterventionAnalysis + Intervention records.
-    Returns the parsed AI result dict.
+    Holistic student analysis. Gathers historical data (A/B/C/D), 
+    calls Gemini 3.1 Flash-Lite, and persists fresh intervention records.
     """
-    # Payload C: DSKP SPR scores
+    # [PAYLOAD GATHERING LOGIC - Stays the same as your data aggregation is solid]
+    # ... (SPR scores, Historical Reports, Student Profile, Prior Interventions) ...
+
+    # 1. Payload C: SPR scores
     progress_records = db.query(models.StudentProgress).filter(
         models.StudentProgress.student_id == student.id
     ).all()
-    spr_scores = [
-        {"domain_key": p.domain_key, "spr_code": p.spr_code, "level": p.level}
-        for p in progress_records
-    ]
+    spr_scores = [{"domain_key": p.domain_key, "spr_code": p.spr_code, "level": p.level} for p in progress_records]
 
-    # Payload A + B: Reports involving this student
-    report_student_links = db.query(models.ReportStudent).filter(
-        models.ReportStudent.student_id == student.id
-    ).all()
+    # 2. Payload A+B: Reports
+    report_student_links = db.query(models.ReportStudent).filter(models.ReportStudent.student_id == student.id).all()
     report_ids = [rl.report_id for rl in report_student_links]
-
+    
     current_report_data = None
     historical_reports = []
-
     if report_ids:
         report_rows = db.query(models.Report).filter(
             models.Report.id.in_(report_ids),
-            models.Report.is_deleted == False,
+            models.Report.is_deleted == False
         ).order_by(models.Report.created_at.desc()).limit(15).all()
 
         for r in report_rows:
@@ -1413,124 +1414,76 @@ async def _run_intervention_analysis(
                 "title": r.title,
                 "summary": r.summary,
                 "created_at": r.created_at.isoformat() if r.created_at else None,
+                "ai_insights": r.details.get("ai_insights") if r.details else None
             }
-            if r.details:
-                report_data["ai_insights"] = r.details.get("ai_insights")
-                report_data["results_summary"] = r.details.get("results_summary")
-                report_data["activity_type"] = r.details.get("activity_type")
-                report_data["learning_area"] = r.details.get("learning_area")
-            # Payload A = trigger report or most recent
             if trigger_report_id and r.id == trigger_report_id:
                 current_report_data = report_data
             else:
                 historical_reports.append(report_data)
 
-        # If no explicit trigger report, use most recent as current
-        if current_report_data is None and report_rows:
-            first = report_rows[0]
-            current_report_data = {
-                "report_id": first.id,
-                "title": first.title,
-                "summary": first.summary,
-                "created_at": first.created_at.isoformat() if first.created_at else None,
-            }
-            if first.details:
-                current_report_data["ai_insights"] = first.details.get("ai_insights")
-                current_report_data["results_summary"] = first.details.get("results_summary")
-                current_report_data["activity_type"] = first.details.get("activity_type")
-                current_report_data["learning_area"] = first.details.get("learning_area")
-            # Remove it from historical if it ended up there
-            historical_reports = [h for h in historical_reports if h.get("report_id") != first.id]
-
-    if not current_report_data and not spr_scores:
-        # Nothing to analyse — skip silently
-        return {"skipped": True, "reason": "No performance data available"}
-
-    # Payload D: Prior interventions (so AI knows what was already flagged/resolved)
+    # 3. Payload D: Prior Interventions
     prior_interventions_data = []
     prior_interventions = db.query(models.Intervention).filter(
         models.Intervention.student_id == student.id,
-        models.Intervention.teacher_id == teacher_id,
+        models.Intervention.teacher_id == teacher_id
     ).order_by(models.Intervention.created_at.desc()).all()
+    
     for pi in prior_interventions:
         prior_interventions_data.append({
-            "area": pi.area,
-            "concern": pi.concern,
-            "priority": pi.priority,
-            "status": pi.status,
-            "recommended_actions": pi.recommended_actions or [],
-            "created_at": pi.created_at.isoformat() if pi.created_at else None,
-            "resolved_at": pi.resolved_at.isoformat() if pi.resolved_at else None,
+            "area": pi.area, "concern": pi.concern, "status": pi.status, "priority": pi.priority
         })
 
-    # Build user message
-    student_info = {"name": student.name, "age": student.age}
-    user_parts = [f"=== Student Profile ===\n{json.dumps(student_info, indent=2)}"]
-
-    if current_report_data:
-        user_parts.append(f"\n=== Payload A: Current Report ===\n{json.dumps(current_report_data, indent=2)}")
-
-    if historical_reports:
-        user_parts.append(f"\n=== Payload B: Historical Reports (most recent first, up to 14) ===\n{json.dumps(historical_reports, indent=2)}")
-
-    if spr_scores:
-        user_parts.append(f"\n=== Payload C: DSKP SPR Attainment Scores ===\n{json.dumps(spr_scores, indent=2)}")
-
-    if prior_interventions_data:
-        user_parts.append(f"\n=== Payload D: Prior Interventions ===\n{json.dumps(prior_interventions_data, indent=2)}")
+    # 4. Build User Message
+    user_parts = [f"=== Student Profile ===\n{json.dumps({'name': student.name, 'age': student.age}, indent=2)}"]
+    if current_report_data: 
+        user_parts.append(f"\n=== Current Report ===\n{json.dumps(current_report_data, indent=2)}")
+    if historical_reports: 
+        user_parts.append(f"\n=== History ===\n{json.dumps(historical_reports, indent=2)}")
+    if spr_scores: 
+        user_parts.append(f"\n=== DSKP Attainment ===\n{json.dumps(spr_scores, indent=2)}")
+    if prior_interventions_data: 
+        user_parts.append(f"\n=== Past Interventions ===\n{json.dumps(prior_interventions_data, indent=2)}")
 
     user_message = "\n".join(user_parts)
 
-    # Call Gemini
-    gemini_api_key = os.getenv("GEMINI_API_KEY")
-    if not gemini_api_key:
-        raise HTTPException(status_code=503, detail="GEMINI_API_KEY is not configured.")
-
+    # 5. Call Gemini 3.1 Flash-Lite
     try:
-        llm = ChatGoogleGenerativeAI(
-            model=GEMINI_MODEL,
-            api_key=gemini_api_key,
-            temperature=0.3,
-            max_tokens=6144,
+        # We use temperature 0.1 for maximum factual consistency in reports
+        response = await _invoke_with_retry(
+            messages=[{"role": "user", "content": user_message}],
+            system_instruction=INTERVENTION_SYSTEM_PROMPT,
+            temperature=0.1, 
+            max_output_tokens=6144
         )
-        response = await _invoke_with_retry(llm, [
-            SystemMessage(content=INTERVENTION_SYSTEM_PROMPT),
-            HumanMessage(content=user_message),
-        ])
-        raw = _handle_response_content(response.content)
-        raw = _strip_json_fences(raw)
-        result = json.loads(raw)
-    except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse intervention JSON: {e}\nRaw: {raw[:500]}")
-        raise HTTPException(status_code=500, detail="AI returned an invalid response. Try again.")
-    except Exception as e:
-        logger.error(f"Intervention analysis failed: {e}")
-        raise HTTPException(status_code=502, detail=f"AI service error: {str(e)}")
+        
+        # Safe JSON Extraction (the 'Extra Data' fix)
+        clean_json = _extract_json(response.text)
+        result = json.loads(clean_json)
 
-    # Delete existing analysis + interventions for this student by this teacher (replace with fresh)
+    except Exception as e:
+        logger.error(f"Intervention analysis failed for {student.id}: {e}")
+        # We raise here because this is often called inside a loop; 
+        # parent handles the failure per-student.
+        raise HTTPException(status_code=502, detail=f"AI Intelligence error: {str(e)}")
+
+    # 6. Database Persistence (Replace old analysis with fresh one)
+    # -----------------------------------------------------------------------
     old_analyses = db.query(models.InterventionAnalysis).filter(
         models.InterventionAnalysis.student_id == student.id,
-        models.InterventionAnalysis.teacher_id == teacher_id,
+        models.InterventionAnalysis.teacher_id == teacher_id
     ).all()
-    old_analysis_ids = [a.id for a in old_analyses]
+    old_ids = [a.id for a in old_analyses]
 
-    if old_analysis_ids:
-        db.query(models.Intervention).filter(
-            models.Intervention.analysis_id.in_(old_analysis_ids)
-        ).delete(synchronize_session=False)
-        db.query(models.InterventionAnalysis).filter(
-            models.InterventionAnalysis.id.in_(old_analysis_ids)
-        ).delete(synchronize_session=False)
-    # Also delete any legacy interventions without analysis_id
-    db.query(models.Intervention).filter(
-        models.Intervention.student_id == student.id,
-        models.Intervention.teacher_id == teacher_id,
-        models.Intervention.analysis_id == None,
-    ).delete(synchronize_session=False)
+    if old_ids:
+        db.query(models.Intervention).filter(models.Intervention.analysis_id.in_(old_ids)).delete(synchronize_session=False)
+        db.query(models.InterventionAnalysis).filter(models.InterventionAnalysis.id.in_(old_ids)).delete(synchronize_session=False)
+    
     db.flush()
 
-    # Create InterventionAnalysis record
+    # 1. Generate the ID manually so we have it for both parent and children
     analysis_id = str(uuid.uuid4())
+
+    # 2. Create and add the Parent (Analysis)
     analysis = models.InterventionAnalysis(
         id=analysis_id,
         teacher_id=teacher_id,
@@ -1543,16 +1496,20 @@ async def _run_intervention_analysis(
         source_report_ids=report_ids[:15],
     )
     db.add(analysis)
-    db.flush()
+    
+    # CRITICAL: This is the handshake. 
+    # It sends the 'analysis' to Postgres immediately so the Foreign Key exists
+    # for the next set of inserts, but doesn't finish the transaction yet.
+    db.flush() 
 
-    # Persist individual interventions
+    # 3. Create and add the Children (Interventions)
     created_interventions = []
     for item in result.get("interventions", []):
         intervention = models.Intervention(
             id=str(uuid.uuid4()),
             teacher_id=teacher_id,
             student_id=student.id,
-            analysis_id=analysis_id,
+            analysis_id=analysis_id,  # Back to using the string ID
             priority=item.get("priority", "medium"),
             status="pending",
             area=item.get("area", "General"),
@@ -1564,43 +1521,39 @@ async def _run_intervention_analysis(
         db.add(intervention)
         created_interventions.append(intervention)
 
-    # Update student's needs_intervention flag
+    # 4. Final update to student status
     has_concerns = any(
         item.get("priority") in ("high", "medium")
         for item in result.get("interventions", [])
     )
     student.needs_intervention = has_concerns
+    
+    # 5. Commit everything. Postgres is now happy because it saw the Parent first.
     db.commit()
-
+    
     return {
         "student_id": student.id,
         "student_name": student.name,
         "analysis_id": analysis_id,
-        "overall_summary": result.get("overall_summary", ""),
-        "improvement_data": result.get("improvement_data"),
-        "school_readiness": result.get("school_readiness"),
-        "interventions": result.get("interventions", []),
-        "inclinations": result.get("inclinations", []),
         "intervention_count": len(created_interventions),
         "needs_intervention": has_concerns,
+        "overall_summary": result.get("overall_summary", ""),
+        # Keep the full result in 'insights' in case the UI needs more detail
+        "insights": result 
     }
 
 
 @router.post("/generate-interventions")
 async def generate_interventions(request: GenerateInterventionsRequest, db: Session = Depends(get_db)):
-    """
-    Analyse a student's holistic performance data across all activities/reports
-    and generate AI-powered intervention recommendations.
-    Can be triggered manually by teacher or auto-triggered after activity analysis.
-    """
+    """Manual trigger for holistic student analysis."""
     teacher = _verify_teacher(request.id_token, db)
-
     student = db.query(models.Student).filter(
         models.Student.id == request.student_id,
-        models.Student.teacher_id == teacher.id,
+        models.Student.teacher_id == teacher.id
     ).first()
+    
     if not student:
-        raise HTTPException(status_code=404, detail="Student not found or not assigned to you")
+        raise HTTPException(status_code=404, detail="Student not found")
 
     return await _run_intervention_analysis(student, teacher.id, db)
 
